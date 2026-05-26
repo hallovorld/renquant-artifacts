@@ -9,6 +9,7 @@ from renquant_artifacts import (
     hash_jsonable,
     sha256_file,
     validate_feature_contract,
+    validate_model_evidence_contract,
     validate_panel_artifact_contract,
 )
 
@@ -45,6 +46,48 @@ def test_panel_artifact_contract_rejects_missing_embargo() -> None:
 
     assert result.ok is False
     assert "missing cv_embargo_days" in result.errors
+
+
+def test_model_evidence_contract_accepts_sequence_shape() -> None:
+    payload = {
+        "input_feature_cols": ["alpha_1", "alpha_2"],
+        "trained_date": "2026-05-25",
+        "config_fingerprint": "sha256:cfg",
+        "sequence_shape": {"rows": 800, "timesteps": 64, "features": 2},
+        "lookahead_days": 60,
+        "train_run_id": "patchtst-run-1",
+        "oos_mean_ic": 0.02,
+        "oos_std_ic": 0.01,
+        "oos_per_fold_ic": [0.01, 0.03],
+        "cv_method": "purged-walk-forward",
+        "cv_embargo_days": 60,
+    }
+
+    result = validate_model_evidence_contract(payload, strict=True)
+
+    assert result.ok is True
+    assert result.details["feature_field"] == "input_feature_cols"
+    assert result.details["n_features"] == 2
+
+
+def test_model_evidence_contract_rejects_embargo_shorter_than_horizon() -> None:
+    payload = {
+        "feature_cols": ["alpha_1"],
+        "trained_date": "2026-05-25",
+        "config_fingerprint": "sha256:cfg",
+        "lookahead_days": 60,
+        "train_run_id": "bad-run",
+        "oos_mean_ic": 0.02,
+        "oos_std_ic": 0.01,
+        "oos_per_fold_ic": [0.01, 0.03],
+        "cv_method": "purged-walk-forward",
+        "cv_embargo_days": 5,
+    }
+
+    result = validate_model_evidence_contract(payload, strict=True)
+
+    assert result.ok is False
+    assert "cv_embargo_days=5 < lookahead_days=60" in result.errors
 
 
 def test_panel_artifact_contract_blocks_sentiment_without_runtime_gate() -> None:

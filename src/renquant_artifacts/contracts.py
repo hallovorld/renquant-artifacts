@@ -34,6 +34,14 @@ PANEL_STRICT_FIELDS = (
     "cv_embargo_days",
 )
 
+MODEL_EVIDENCE_REQUIRED_FIELDS = (
+    "trained_date",
+    "config_fingerprint",
+    "lookahead_days",
+)
+
+MODEL_EVIDENCE_STRICT_FIELDS = PANEL_STRICT_FIELDS
+
 SENTIMENT_FEATURE_COLS = ("sentiment_pos_share", "mean_sentiment", "n_articles_log")
 
 SENTIMENT_RUNTIME_GATE_CONTRACTS = {"trained_zeroing", "runtime_zeroing"}
@@ -231,6 +239,107 @@ def validate_panel_artifact_contract(
     )
 
 
+def validate_model_evidence_contract(
+    payload: dict[str, Any],
+    *,
+    strict: bool = False,
+    runtime_config: dict[str, Any] | None = None,
+    feature_field_candidates: Iterable[str] = (
+        "feature_cols",
+        "feature_columns",
+        "input_feature_cols",
+    ),
+) -> ContractResult:
+    """Validate model evidence shared by non-panel and panel artifacts.
+
+    This is intentionally model-family agnostic. PatchTST, GBDT, and future
+    shadow models should all carry the same out-of-sample evidence fields even
+    when their shape metadata differs.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    required = list(MODEL_EVIDENCE_REQUIRED_FIELDS)
+    if strict:
+        required.extend(MODEL_EVIDENCE_STRICT_FIELDS)
+
+    for key in required:
+        if _is_missing(payload.get(key)):
+            (errors if strict or key in MODEL_EVIDENCE_REQUIRED_FIELDS else warnings).append(
+                f"missing {key}"
+            )
+
+    feature_cols, feature_field = _first_feature_cols(payload, feature_field_candidates)
+    if not isinstance(feature_cols, list) or not feature_cols:
+        errors.append(
+            "model evidence contract requires a non-empty feature column list "
+            f"in one of {list(feature_field_candidates)}"
+        )
+
+    folds = payload.get("oos_per_fold_ic")
+    if folds is not None:
+        if not isinstance(folds, list) or not folds:
+            errors.append("oos_per_fold_ic must be a non-empty list when present")
+        elif not all(_finite_number(v) for v in folds):
+            errors.append("oos_per_fold_ic contains non-finite values")
+
+    for key in ("oos_mean_ic", "oos_std_ic", "eval_ic", "training_train_ic"):
+        if key in payload and not _is_missing(payload.get(key)):
+            if not _finite_number(payload.get(key)):
+                errors.append(f"{key} must be finite")
+
+    lookahead = payload.get("lookahead_days")
+    embargo = payload.get("cv_embargo_days")
+    if not _is_missing(lookahead) and not _is_missing(embargo):
+        try:
+            if int(embargo) < int(lookahead):
+                errors.append(
+                    f"cv_embargo_days={embargo} < lookahead_days={lookahead}"
+                )
+        except (TypeError, ValueError):
+            errors.append("lookahead_days and cv_embargo_days must be integers")
+
+    shape_rows = _shape_rows(payload)
+    if shape_rows is not None:
+        try:
+            if int(shape_rows) <= 0:
+                errors.append("shape rows must be positive")
+        except (TypeError, ValueError):
+            errors.append("shape rows must be an integer")
+
+    if not strict:
+        for key in MODEL_EVIDENCE_STRICT_FIELDS:
+            if _is_missing(payload.get(key)):
+                warnings.append(f"missing {key}; next retrain must stamp it")
+
+    sentiment_req = sentiment_runtime_gate_requirement(payload, runtime_config)
+    if sentiment_req["required"] and not has_sentiment_runtime_gate_contract(payload):
+        disabled = ", ".join(sentiment_req["disabled_regimes"][:8])
+        features = ", ".join(sentiment_req["sentiment_feature_cols"])
+        errors.append(
+            "missing sentiment_runtime_gate_contract for sentiment feature_cols "
+            f"[{features}] while runtime disables sentiment in regime(s): {disabled}"
+        )
+
+    return ContractResult(
+        name="model_evidence",
+        ok=not errors,
+        errors=errors,
+        warnings=warnings,
+        details={
+            "n_features": len(feature_cols) if isinstance(feature_cols, list) else 0,
+            "feature_field": feature_field,
+            "trained_date": payload.get("trained_date"),
+            "lookahead_days": payload.get("lookahead_days"),
+            "cv_embargo_days": payload.get("cv_embargo_days"),
+            "oos_mean_ic": payload.get("oos_mean_ic"),
+            "sentiment_runtime_gate_required": sentiment_req["required"],
+            "sentiment_runtime_gate_disabled_regimes": sentiment_req["disabled_regimes"],
+            "sentiment_runtime_gate_feature_cols": sentiment_req["sentiment_feature_cols"],
+        },
+    )
+
+
 def has_sentiment_runtime_gate_contract(payload: dict[str, Any]) -> bool:
     """Return whether an artifact declares a compatible sentiment gate contract."""
     for source in _metadata_sources(payload):
@@ -415,6 +524,25 @@ def _metadata_sources(payload: dict[str, Any]) -> list[dict[str, Any]]:
     if isinstance(nested, dict):
         sources.append(nested)
     return sources
+
+
+def _first_feature_cols(
+    payload: dict[str, Any],
+    candidates: Iterable[str],
+) -> tuple[Any, str | None]:
+    for key in candidates:
+        value = payload.get(key)
+        if isinstance(value, list) and value:
+            return value, str(key)
+    return None, None
+
+
+def _shape_rows(payload: dict[str, Any]) -> Any | None:
+    for key in ("panel_shape", "sequence_shape", "dataset_shape"):
+        shape = payload.get(key)
+        if isinstance(shape, dict) and "rows" in shape:
+            return shape.get("rows")
+    return None
 
 
 def _strip_volatile(obj: Any) -> Any:
