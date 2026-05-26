@@ -1,0 +1,35 @@
+schema_version: 1
+name: renquant-artifacts
+role: artifact registry manifests and validation pipeline
+operating_model: https://github.com/hallovorld/RenQuant/blob/main/doc/arch/subrepo-operating-model.md
+repo_map: RENQUANT_REPOS.md
+pipeline_required: true
+branch_policy:
+  main: stable interface for downstream repos and automation
+  feature_branches: experiments, optimizations, and large upgrades
+source_repo:
+  name: RenQuant
+  never_delete: true
+dependencies:
+  - renquant-common
+inputs:
+  - artifact URI
+  - metrics record
+  - data/config/code fingerprints
+outputs:
+  - artifact manifest
+  - promotion registry
+  - validation report
+owns:
+  - artifact manifests
+  - promotion status registry
+  - metrics summaries
+  - retention metadata
+forbidden:
+  - large checkpoints in normal Git
+  - raw databases
+  - model training code
+  - broker execution
+automation:
+  test: make test
+  doctor: make doctor

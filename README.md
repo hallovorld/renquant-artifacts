@@ -2,6 +2,17 @@
 
 Artifact-registry repository for RenQuant.
 
+Operating model: https://github.com/hallovorld/RenQuant/blob/main/doc/arch/subrepo-operating-model.md
+
+Repository map: [RENQUANT_REPOS.md](RENQUANT_REPOS.md)
+
+Local automation:
+
+```bash
+make test
+make doctor
+```
+
 This repo tracks artifact manifests, fingerprints, metrics, promotion status,
 and object locations. It does not store large model checkpoints, random
 experiment dumps, live WAL files, or raw databases in normal Git.

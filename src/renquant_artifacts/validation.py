@@ -48,3 +48,10 @@ class ArtifactManifestValidationJob(Job):
 class ArtifactManifestValidationPipeline(Pipeline):
     def __init__(self) -> None:
         super().__init__([ArtifactManifestValidationJob()], name="artifact-manifest-validation")
+
+
+def validate_artifact_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Validate an artifact manifest and return its audit report."""
+    ctx = ArtifactManifestContext(manifest)
+    ArtifactManifestValidationPipeline().run(ctx)
+    return ctx.validation_report
