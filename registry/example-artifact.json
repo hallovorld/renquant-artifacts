@@ -1,0 +1,13 @@
+{
+  "artifact_id": "example-panel-ltr-fixture",
+  "model_family": "gbdt-panel-ltr",
+  "strategy": "renquant_104",
+  "fingerprint": "sha256:example",
+  "uri": "object://renquant-artifacts/example-panel-ltr-fixture.json",
+  "promotion_status": "diagnostic",
+  "metrics": {
+    "accepted": false,
+    "oos_mean_ic": 0.0
+  },
+  "retention_class": "fixture"
+}
