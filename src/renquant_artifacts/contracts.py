@@ -46,7 +46,12 @@ SENTIMENT_FEATURE_COLS = ("sentiment_pos_share", "mean_sentiment", "n_articles_l
 
 SENTIMENT_RUNTIME_GATE_CONTRACTS = {"trained_zeroing", "runtime_zeroing"}
 
-SENTIMENT_DEFAULT_REGIME_POLICY = {
+# Sentiment-regime policy defaults (legacy 3x3 sentiment-vol × spike grid).
+# Keys are sentiment-regime identifiers, NOT macro regimes — see
+# renquant_common.RegimeLabel for the canonical macro taxonomy. The mixing
+# of macro + sentiment keys here is a legacy structural smell flagged for
+# cleanup (RFC §"Branch Model" / strategy-104 config.py TODO).
+SENTIMENT_DEFAULT_REGIME_POLICY: dict[str, bool] = {
     "HIGH_SPIKED": True,
     "HIGH_NORMAL": True,
     "MED_CALM": True,
@@ -56,11 +61,19 @@ SENTIMENT_DEFAULT_REGIME_POLICY = {
     "LOW_NORMAL": False,
     "MED_NORMAL": False,
     "HIGH_CALM": True,
-    "BULL_CALM": False,
-    "BULL_VOLATILE": True,
-    "BULL_STRONG": False,
-    "BEAR": True,
-    "CHOPPY": True,
+}
+
+# Macro-regime defaults — keyed by renquant_common.RegimeLabel.value so the
+# enum is the single source of truth and any regime rename / addition is
+# caught by the boundary test in renquant-common.
+from renquant_common import RegimeLabel as _RegimeLabel  # noqa: E402
+
+MACRO_DEFAULT_REGIME_POLICY: dict[str, bool] = {
+    _RegimeLabel.BULL_CALM.value: False,
+    _RegimeLabel.BULL_VOLATILE.value: True,
+    _RegimeLabel.BULL_STRONG.value: False,
+    _RegimeLabel.BEAR.value: True,
+    _RegimeLabel.CHOPPY.value: True,
 }
 
 _VOLATILE_CONFIG_KEYS = {
@@ -382,7 +395,11 @@ def sentiment_effective_regime_policy(
         .get("sentiment", {})
     )
     global_enabled = bool(panel_sent.get("enabled", True))
-    policy = dict(SENTIMENT_DEFAULT_REGIME_POLICY)
+    # Sentiment policy needs both the 9 sentiment regimes (HIGH_*/MED_*/LOW_*)
+    # and the 5 macro regimes (RegimeLabel members) — they coexist in
+    # legacy `regime_params` blocks; see SENTIMENT_DEFAULT_REGIME_POLICY /
+    # MACRO_DEFAULT_REGIME_POLICY at top of module.
+    policy = {**SENTIMENT_DEFAULT_REGIME_POLICY, **MACRO_DEFAULT_REGIME_POLICY}
     explicit_policy = panel_sent.get("regime_policy") or {}
     if isinstance(explicit_policy, dict):
         for regime, enabled in explicit_policy.items():

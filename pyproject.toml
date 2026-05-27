@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "renquant-artifacts"
-version = "0.1.0"
+version = "0.2.0"
 description = "Artifact registry and validation workflows for RenQuant."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["renquant-common>=0.1.0"]
+dependencies = ["renquant-common>=0.2,<0.3"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
