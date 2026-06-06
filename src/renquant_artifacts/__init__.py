@@ -19,6 +19,7 @@ from .validation import (
     ArtifactManifestContext,
     ArtifactManifestValidationPipeline,
     validate_artifact_manifest,
+    validate_triad_sidecar_contract,
 )
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "validate_feature_contract",
     "validate_model_evidence_contract",
     "validate_panel_artifact_contract",
+    "validate_triad_sidecar_contract",
 ]

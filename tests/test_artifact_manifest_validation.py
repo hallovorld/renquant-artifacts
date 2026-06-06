@@ -5,7 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from renquant_artifacts import ArtifactManifestContext, ArtifactManifestValidationPipeline
+from renquant_artifacts import (
+    ArtifactManifestContext,
+    ArtifactManifestValidationPipeline,
+    validate_triad_sidecar_contract,
+)
 
 
 def test_example_artifact_manifest_validates() -> None:
@@ -43,3 +47,49 @@ def test_local_absolute_artifact_uri_is_rejected() -> None:
     })
     with pytest.raises(ValueError, match="developer-local"):
         ArtifactManifestValidationPipeline().run(ctx)
+
+
+def test_triad_sidecar_preflight_warns_when_not_required() -> None:
+    report = validate_triad_sidecar_contract({"artifact_id": "candidate"}, required=False)
+
+    assert report["ok"] is True
+    assert report["present"] is False
+    assert report["warnings"] == ["leakage triad sidecar is absent"]
+
+
+def test_triad_sidecar_preflight_fails_closed_when_required() -> None:
+    with pytest.raises(ValueError, match="missing leakage triad"):
+        validate_triad_sidecar_contract({"artifact_id": "prod"}, required=True)
+
+
+def test_triad_sidecar_preflight_requires_all_roles() -> None:
+    manifest = {
+        "triad_report": {
+            "candidate": {"role": "candidate"},
+            "baseline": {"role": "baseline"},
+            "shadow": {"role": "shadow"},
+            "leakage_safe": True,
+        }
+    }
+
+    report = validate_triad_sidecar_contract(manifest, required=True)
+
+    assert report["ok"] is True
+    assert report["present"] is True
+    assert report["roles"] == {
+        "candidate": "candidate",
+        "baseline": "baseline",
+        "shadow": "shadow",
+    }
+
+
+def test_triad_sidecar_preflight_rejects_unsafe_report() -> None:
+    with pytest.raises(ValueError, match="leakage_safe=true"):
+        validate_triad_sidecar_contract({
+            "triad_report": {
+                "candidate": {"role": "candidate"},
+                "baseline": {"role": "baseline"},
+                "shadow": {"role": "shadow"},
+                "leakage_safe": False,
+            }
+        })
