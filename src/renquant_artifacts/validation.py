@@ -55,3 +55,51 @@ def validate_artifact_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
     ctx = ArtifactManifestContext(manifest)
     ArtifactManifestValidationPipeline().run(ctx)
     return ctx.validation_report
+
+
+def validate_triad_sidecar_contract(
+    manifest: dict[str, Any],
+    *,
+    required: bool = False,
+) -> dict[str, Any]:
+    """Validate the leakage-triad sidecar surface for one artifact manifest.
+
+    This preflight is intentionally explicit for the first retrofit PR: callers
+    can audit current prod/shadow manifests without changing the default
+    manifest gate until sidecars exist everywhere.
+    """
+    sidecar = manifest.get("triad_report") or manifest.get("leakage_triad")
+    if sidecar is None:
+        if required:
+            raise ValueError("artifact manifest missing leakage triad sidecar")
+        return {
+            "ok": True,
+            "required": False,
+            "present": False,
+            "warnings": ["leakage triad sidecar is absent"],
+        }
+    if not isinstance(sidecar, dict):
+        raise ValueError("leakage triad sidecar must be an object")
+
+    required_keys = ("candidate", "baseline", "shadow", "leakage_safe")
+    missing = [key for key in required_keys if key not in sidecar]
+    if missing:
+        raise ValueError(f"leakage triad sidecar missing required keys: {missing}")
+    if sidecar.get("leakage_safe") is not True:
+        raise ValueError("leakage triad sidecar must declare leakage_safe=true")
+
+    roles = {
+        key: (sidecar.get(key) or {}).get("role")
+        for key in ("candidate", "baseline", "shadow")
+        if isinstance(sidecar.get(key), dict)
+    }
+    for expected in ("candidate", "baseline", "shadow"):
+        if roles.get(expected) != expected:
+            raise ValueError(f"leakage triad {expected} role must be {expected!r}")
+
+    return {
+        "ok": True,
+        "required": bool(required),
+        "present": True,
+        "roles": roles,
+    }
