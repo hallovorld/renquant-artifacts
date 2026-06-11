@@ -499,6 +499,9 @@ def build_run_bundle(
             getattr(ctx, "_regime_evidence", None)
             or _regime_evidence_from_ctx(ctx)
         )
+        bundle["data_verification"] = _json_safe(
+            getattr(ctx, "_data_verification", None) or {}
+        )
 
     return bundle
 

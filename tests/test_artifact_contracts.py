@@ -164,6 +164,13 @@ def test_sha256_file_and_run_bundle_record_provenance(tmp_path) -> None:
         confidence=0.8,
         ohlcv={},
         regime_state=None,
+        _data_verification={
+            "fundamentals": {
+                "ok": False,
+                "stale_days": 121,
+                "reasons": ["stale 121d > 20d"],
+            },
+        },
     )
     config = {
         "watchlist": ["MSFT", "AAPL"],
@@ -184,3 +191,5 @@ def test_sha256_file_and_run_bundle_record_provenance(tmp_path) -> None:
     assert bundle["artifact_hashes"]["panel"].startswith("sha256:")
     assert bundle["panel_contract"]["ok"] is True
     assert bundle["pipeline_flags"]["buy_blocked"] is True
+    assert bundle["data_verification"]["fundamentals"]["ok"] is False
+    assert bundle["data_verification"]["fundamentals"]["stale_days"] == 121
