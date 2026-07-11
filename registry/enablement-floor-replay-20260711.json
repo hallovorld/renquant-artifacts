@@ -1,0 +1,13 @@
+{
+ "artifact_id": "enablement-floor-replay-20260711",
+ "fingerprint": "sha256:db81fa15ed05f1a05144d00bc3ca2a422f7f5ea5b44fcbc8ce07277156bdc498",
+ "metrics": {
+  "accepted": false,
+  "note": "Sealed, content-addressed replay of the RS-2 one-share-floor rescue mechanism over the production decision ledger (orchestrator #471). r3 (Codex re-review 2026-07-11): canonical selection now explicitly filters run_type='live' (sealed per row); regime cap/reserve values are resolved per-run from the exact renquant-strategy-104 git commit active at that run's timestamp (commit sha + file sha256 sealed), not a hardcoded table; n_buys is explicitly asserted ==0 before a rescue counts toward 'zero admission distortion' (fails closed, excludes, does not assume). All three checks pass cleanly on the current data. Corrected numbers unchanged from r2: 6/11 unambiguous canonical dates rescued, delta range $392.13-$1356.18/session, mean $911.13. This is RETROSPECTIVE EXPLORATORY REPLAY EVIDENCE ONLY -- it can inform a recorded RS-2 deviation decision but cannot itself satisfy the preregistered gate."
+ },
+ "model_family": "decision-ledger-replay",
+ "promotion_status": "diagnostic",
+ "retention_class": "experiment-pinned",
+ "strategy": "renquant_104",
+ "uri": "store://experiments/enablement-floor-replay-20260711/RUN-LOCK.json"
+}
