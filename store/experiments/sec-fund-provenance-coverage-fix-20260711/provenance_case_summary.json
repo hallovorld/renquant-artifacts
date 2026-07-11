@@ -1,0 +1,40 @@
+{
+  "a_coverage_increases": {
+    "note": "coverage goes from NaN forever (pre-fix) to finite (post-fix carry-forward)",
+    "post_fix_book_to_price_finite": true,
+    "post_fix_book_to_price_value": 0.8199999999918,
+    "post_fix_earnings_yield_finite": true,
+    "post_fix_earnings_yield_value": 0.1199999999988,
+    "pre_fix_book_to_price_finite": false,
+    "pre_fix_earnings_yield_finite": false
+  },
+  "b_row_level_provenance_unchanged": {
+    "available_at": "2020-08-01",
+    "fiscal_period_end": "2020-06-30",
+    "note": "still describes only the LATEST (10-Q) filing -- the insufficient signal a naive freshness check keyed on these alone would trust"
+  },
+  "c_feature_level_provenance_retains_older_source": {
+    "book_to_price_source_age_days": 101,
+    "book_to_price_source_available_at": "2020-05-01",
+    "earnings_yield_source_age_days": 101,
+    "earnings_yield_source_available_at": "2020-05-01",
+    "earnings_yield_source_fiscal_period_end": "2020-03-31",
+    "note": "ey/b2p correctly attribute to the OLDER 10-K (2020-05-01, age 101d) because shares was carried forward from it; roe attributes to the fresh 10-Q (2020-08-01, age 9d) because NI+equity both refreshed there",
+    "roe_source_age_days": 9,
+    "roe_source_available_at": "2020-08-01"
+  },
+  "d_freshness_verdict": {
+    "default_150d_bound": {
+      "earnings_yield_fresh_ok": true,
+      "overall_freshness_ok": true
+    },
+    "note": "a tight 'current-quarter' (60d) assertion correctly FAILS ey/b2p (101d > 60d) while PASSING roe (9d <= 60d); the lenient default (150d) still passes at 101d -- the mechanism trips on genuine staleness, not jitter",
+    "tight_60d_bound": {
+      "book_to_price_fresh_ok": false,
+      "earnings_yield_fresh_ok": false,
+      "overall_freshness_ok": false,
+      "roe_fresh_ok": true
+    }
+  },
+  "scenario": "10-K (end=2020-03-31, available=2020-05-01) tags shares=10.0; 10-Q (end=2020-06-30, available=2020-08-01) refreshes NetIncomeLoss/Assets/StockholdersEquity but OMITS the shares tag (the dominant pre-fix coverage hole per orchestrator PR #475). Evaluated on the daily serving row for 2020-08-10 (9 days after the 10-Q, 101 days after the 10-K)."
+}

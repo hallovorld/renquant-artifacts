@@ -1,0 +1,37 @@
+{
+  "combined_axis_verdict": {
+    "coverage_ok_combined": false,
+    "legacy_coverage_ok": true,
+    "note": "the legacy number ALONE says healthy; the combined verdict correctly says UNHEALTHY -- exactly Codex's ask ('do not publish an apparently healthy fundamentals input artifact for a 16% priced universe')",
+    "prerequisite_price_coverage_ok": false,
+    "universe_coverage_ok": false
+  },
+  "earnings_yield_legacy_priced_relative": {
+    "coverage": 1.0,
+    "denominator": "priced_tickers",
+    "n_expected": 1,
+    "n_have": 1,
+    "note": "1/1 priced -> a PERFECT 1.0 that looks healthy in isolation (the exact problem Codex flagged: this number alone cannot see the OHLCV outage)"
+  },
+  "earnings_yield_universe_denominator_new": {
+    "n_universe_expected": 10,
+    "note": "SAME 1 finite cell against the FULL declared universe -> 0.10, correctly flagged unhealthy (floor 0.30)",
+    "universe_coverage": 0.1,
+    "universe_denominator": "declared_scored_universe",
+    "universe_ok": false
+  },
+  "gross_profitability_unaffected": {
+    "coverage": 1.0,
+    "note": "price-INdependent feature stays healthy on BOTH denominators -- only the price-dependent features are correctly capped by the OHLCV outage",
+    "universe_coverage": 1.0,
+    "universe_ok": true
+  },
+  "prerequisite_price_coverage_new": {
+    "coverage": 0.1,
+    "n_expected": 10,
+    "n_have": 1,
+    "note": "axis-level: 1/10 priced, correctly flagged unhealthy (floor 0.50) independent of any ratio's own coverage",
+    "ok": false
+  },
+  "scenario": "10 declared/scored tickers, only 1 priced on the last serving date (reproduces the real 131-of-831-priced incident at a 1-of-10 scale). earnings_yield is finite for that 1 priced name."
+}

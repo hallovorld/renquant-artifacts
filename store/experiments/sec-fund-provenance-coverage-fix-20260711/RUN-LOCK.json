@@ -1,0 +1,56 @@
+{
+  "artifact_id": "sec-fund-provenance-coverage-fix-20260711",
+  "description": "Sealed before/after evidence for renquant-base-data#43 (fix(sec-fundamentals): valuation-ratio coverage + IMPUTED-SHARE guard). Codex (haorensjtu-dev) reviewed the PR CHANGES_REQUESTED on commit 7d1577165d9b0aea27688f9207d1115f9d6a7233: the coverage/freshness guard could certify stale or unavailable ratio inputs as healthy, which is worse than no guard, because it creates false confidence. Two P1 fixes were made in response (commit 360b778fa2438a60dc845f849973790a04d53870, pushed to the PR branch) and are reproduced here from controlled/synthetic fixtures -- no live-tree read, no network call, no production path touched.",
+  "extraction_method": "Standalone run of reproduce_provenance_and_coverage_fix.py (this bundle) against renquant-base-data commit 360b778fa2438a60dc845f849973790a04d53870 (branch fix/sec-fund-ratio-coverage, PR #43), checked out in an isolated detached-HEAD worktree with PYTHONPATH pointed at that worktree's src/ plus a sibling renquant-common/src/. All inputs are synthetic fixtures constructed in-script (a 10-K/10-Q pair for the provenance case; a 10-ticker/1-priced frame for the coverage-denominator case) -- no SEC EDGAR network call, no OHLCV/production data read, no git operation in any live or shared tree.",
+  "reviewed_pr": {
+    "repo": "hallovorld/renquant-base-data",
+    "pr": 43,
+    "title": "fix(sec-fundamentals): valuation-ratio coverage (67/70/317 of 826 -> full) + IMPUTED-SHARE guard",
+    "pre_fix_reviewed_commit": "7d1577165d9b0aea27688f9207d1115f9d6a7233",
+    "post_fix_commit": "360b778fa2438a60dc845f849973790a04d53870",
+    "codex_reviewer": "haorensjtu-dev",
+    "codex_verdict": "CHANGES_REQUESTED"
+  },
+  "fix_1_provenance_freshness": {
+    "codex_finding": "forward_fill_to_daily's ffill() carries each missing raw concept across filings, but the emitted fiscal_period_end/available_at is always the newest filing row -- a daily ratio can use shares/revenue/equity from an older filing while appearing to have the newest quarter provenance, defeating P-FUND-FRESHNESS.",
+    "fix": "forward_fill_to_daily(track_concept_provenance=True) now carries per-concept <concept>__source_available_at/__source_fiscal_period_end alongside each carried value. compute_derived_features derives each feature's own <feature>_source_available_at/_source_fiscal_period_end/_source_age_days from the OLDEST of its actual contributing operands (via _coalesce_with_provenance + _oldest_operand_provenance in src/renquant_base_data/sec_fundamentals.py). compute_feature_freshness() exposes a contractable per-feature max-age verdict (DEFAULT_FEATURE_MAX_AGE_DAYS).",
+    "reproduction_scenario": "10-K (end=2020-03-31, available=2020-05-01) tags CommonStockSharesOutstanding=10.0; the next 10-Q (end=2020-06-30, available=2020-08-01) refreshes NetIncomeLoss/Assets/StockholdersEquity but OMITS the shares tag -- the dominant pre-fix coverage hole per orchestrator PR #475 (~475 of 759 earnings_yield holes). Evaluated on the daily serving row for 2020-08-10.",
+    "results": {
+      "a_coverage_increases": "pre-fix: earnings_yield/book_to_price NaN forever after the 10-Q (whole-row wipe). post-fix: both finite (ey=0.12, b2p=0.82) via carry-forward.",
+      "b_row_level_provenance_unchanged": "fiscal_period_end=2020-06-30, available_at=2020-08-01 -- still describes only the latest filing (the insufficient signal a naive check would trust).",
+      "c_feature_level_provenance_correct": "earnings_yield_source_available_at=2020-05-01 (the OLDER 10-K that actually supplied the carried shares operand), age=101 days. book_to_price: same. roe_source_available_at=2020-08-01 (NI+equity both refreshed by the 10-Q), age=9 days.",
+      "d_freshness_verdict": "a tight 60-day 'current quarter' bound correctly FAILS earnings_yield and book_to_price (101d > 60d) while PASSING roe (9d <= 60d); the lenient default 150-day bound still passes at 101d (trips on genuine staleness, not filing jitter)."
+    },
+    "source_file": "provenance_case_summary.json (full numbers) + provenance_case_daily_features.parquet (full post-fix daily feature frame incl. all *_source_available_at/_source_fiscal_period_end/_source_age_days columns)"
+  },
+  "fix_2_coverage_denominator": {
+    "codex_finding": "the manifest measures earnings_yield/book_to_price only over n_priced (131 of 831 served) -- 0.91 coverage can be reported while ~700 served/scored names silently get no price-dependent ratio at all. The OHLCV failure was hidden by the denominator choice.",
+    "fix": "compute_feature_coverage() now emits BOTH the legacy priced/served-relative coverage AND universe_coverage (same finite-cell count, denominator = the full declared/scored universe), plus an axis-level prerequisite_price_coverage (priced tickers / declared universe). The combined coverage_ok verdict (also folded into write_daily_ingestion_manifest's top-level coverage_ok) is unhealthy when ANY required contract fails: legacy_coverage_ok AND universe_coverage_ok AND prerequisite_price_coverage_ok AND freshness_ok.",
+    "reproduction_scenario": "10 declared/scored tickers, only 1 priced on the last serving date (reproduces the real 131-of-831-priced incident at a fast, self-contained 1-of-10 scale -- the ratio, and the fix, are denominator-invariant). earnings_yield is finite for that 1 priced name.",
+    "results": {
+      "legacy_priced_relative": "earnings_yield coverage = 1.0 (1/1 priced) -- a PERFECT number that looks healthy in isolation; this is exactly the problem Codex flagged.",
+      "universe_denominator_new": "SAME 1 finite cell against the full 10-ticker declared universe -> universe_coverage = 0.10, universe_ok = False (floor 0.30).",
+      "prerequisite_price_coverage_new": "1/10 priced -> coverage = 0.10, ok = False (floor 0.50) -- independent of any ratio's own coverage.",
+      "gross_profitability_unaffected": "a price-INdependent feature stays healthy on BOTH denominators (coverage = universe_coverage = 1.0) -- only price-dependent features are correctly capped by the OHLCV outage.",
+      "combined_axis_verdict": "legacy_coverage_ok=True (misleading alone) but universe_coverage_ok=False and prerequisite_price_coverage_ok=False -> combined coverage_ok=False. The axis correctly reports UNHEALTHY, matching Codex's literal ask: 'do not publish an apparently healthy fundamentals input artifact for a 16% priced universe.'"
+    },
+    "source_file": "coverage_denominator_summary.json (full numbers) + coverage_denominator_case.parquet (the 10-ticker fixture frame)"
+  },
+  "test_suite_claim_fix": {
+    "codex_finding": "remove the claim of a full green suite while test_fetchers_lift::test_byte_equivalent_to_umbrella remains known failing in the documented execution.",
+    "root_cause_found": "the prior _UMBRELLA = parents[2]/'RenQuant'/... path heuristic can find a directory merely NAMED 'RenQuant' at that fixed relative depth in an ad hoc scratch/worktree layout -- observed directly in this session: a stale, non-git directory copy (no working .git, no subrepos.lock.json) with a DIVERGENT kernel/ produced a genuine byte-MISMATCH failure, not a clean skip, purely from siting -- not from any actual code drift.",
+    "fix": "the resolver now only trusts a candidate 'RenQuant' directory that also carries the umbrella's own subrepos.lock.json marker file (unique to a genuine umbrella checkout, auto-generating every subrepo's RENQUANT_REPOS.md), plus an explicit RENQUANT_UMBRELLA_PATH env override for CI/worktree configs. Verified directly in this session: (1) the real sibling checkout at /Users/renhao/git/github/RenQuant -> resolved and PASSED the real byte comparison; (2) this fix's own isolated worktree (no RenQuant sibling) -> resolved to None, clean SKIP; (3) the earlier session's worktree directory structure containing the stale same-named 'RenQuant' copy -> now also resolves to None (marker check fails), clean SKIP instead of a false FAILURE.",
+    "full_suite_result": "make test in the isolated fix worktree: 402 passed, 1 skipped (test_byte_equivalent_to_umbrella correctly SKIPS here -- no genuine RenQuant sibling in this worktree; verified separately that it PASSES with a real byte comparison when run from the canonical sibling-checkout layout)."
+  },
+  "files": {
+    "reproduce_provenance_and_coverage_fix.py": "the exact reproduction script run to produce every number in this bundle",
+    "provenance_case_summary.json": "before/after/provenance/freshness numbers for the 10-Q-missing-shares scenario, human-readable",
+    "provenance_case_daily_features.parquet": "full post-fix daily feature frame (ticker SSS) including all *_source_available_at/_source_fiscal_period_end/_source_age_days columns",
+    "coverage_denominator_summary.json": "legacy vs. universe-denominator coverage numbers for the 1-of-10-priced scenario, human-readable",
+    "coverage_denominator_case.parquet": "the 10-ticker/1-priced fixture frame fed to compute_feature_coverage"
+  },
+  "absent_fields": [
+    "A live-feed rebuild against the real 826/831-name production universe (out of scope -- the operator landing step per PR #43's own body; requires a network SEC EDGAR refresh, not run here).",
+    "A canary/shadow re-run of the renquant-pipeline P-FUND-FRESHNESS gate consuming this manifest's new fields (no consumer is wired to this manifest yet, confirmed by a cross-repo grep during this review response)."
+  ]
+}
