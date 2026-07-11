@@ -1,0 +1,102 @@
+{
+  "artifact_id": "meta-score-attribution-20260711",
+  "description": "Sealed evidence for the META score-attribution research doc (orchestrator PR #475: why the live XGB panel's META raw score fell 07-06→-0.176 while META rallied +11.5%). Codex reviewed PR #475 CHANGES_REQUESTED: the original doc overclaimed a 'LEARNED ... dispersion tilt' / '74% root cause' / economic verdict from an approximate, off-manifold, non-causal attribution. This bundle exists so the corrected doc's defensible claim -- 'same-model, approximate replay suggests sensitivity to the STD60 feature on this path; this does NOT establish a 74% root cause, an economic dispersion premium, or a reason to change the strategy' -- rests on sealed, content-addressed inputs/outputs rather than mutable local scratch state.",
+  "extraction_method": "Standalone offline replay of the live serving path (backtesting/renquant_104/kernel/panel_pipeline/job_panel_scoring.py::ApplyScoresTask): alpha158 features computed online from the OHLCV cache, 5 fundamentals features from sec_fundamentals_daily.parquet (as-of, context-median-filled), PEAD/SUE from earnings_surprise/ (60d decay, context-median-filled), sentiment zeroed under the BULL_CALM trained-zeroing gate, then the pinned artifact's clip/global-z transform, scored with the pinned booster (xgboost 2.1.4, pred_contribs=True for SHAP). All reads read-only; no production path written; no git operation in the live umbrella tree or primary checkouts; isolated worktree; local compute only. Script: reproduce_meta.py (this bundle).",
+  "model_fingerprint": {
+    "panel_artifact_sha256": "5211f6bebd90ca088c7fe2492cae1845369b80b84e53ed347d3c27d7a864c9cf",
+    "panel_artifact_path": "backtesting/renquant_104/artifacts/prod/panel-ltr.alpha158_fund.json (live umbrella tree; read-only sha256, NOT copied into this store)",
+    "trained_date": "2026-07-06",
+    "verification_note": "Full sha256 computed read-only 2026-07-11 against the live production path; matches the '5211f6be…' prefix cited in the research doc and the run-bundle-recorded panel sha for all three sessions (07-06 ebb9c2ca, 07-07 dc2a3247, 07-10 6f9d5284), and its 07-09/07-10/07-11 weekly_rollback copies -- confirming the model was byte-stable across the whole attribution window."
+  },
+  "transform_fingerprint": {
+    "status": "not independently sealed -- does not exist as a separate object",
+    "note": "The serving transform (feature_cols + clip/global-z stats) is embedded in the same panel artifact file fingerprinted above; there is no separate transform artifact in the current serving path to fingerprint independently. booster.json in this bundle is the booster_raw_json field extracted from that artifact (for standalone xgboost.Booster reproduction) -- its own sha256 below is a derived-extract hash, not an independent model/transform fingerprint."
+  },
+  "universe_as_of_snapshot": {
+    "pinned_strategy_104_commit": "0e5d989137b62e0d57a470a51088d64c8b1ee4ce",
+    "config_path_checked": "ranking.panel_scoring.conviction_gate.demean_cross_sectional",
+    "demean_cross_sectional": false,
+    "watchlist_n": 145,
+    "note": "demean_cross_sectional=false confirmed directly from this pinned commit's configs/strategy_config.json -- the 2026-06-25 monitored demean exception is not active in this snapshot."
+  },
+  "reproduction_fidelity": {
+    "2026-07-06": {
+      "run_id": "2026-07-06-live-ebb9c2ca",
+      "n_scored": 44,
+      "n_recorded": 41,
+      "corr": 0.9825909350978081,
+      "mean_abs_diff": 0.02462870561767642,
+      "max_abs_diff": 0.14720125123858452
+    },
+    "2026-07-07": {
+      "run_id": "2026-07-07-live-dc2a3247",
+      "n_scored": 43,
+      "n_recorded": 40,
+      "corr": 0.9825805087501344,
+      "mean_abs_diff": 0.025326703183236533,
+      "max_abs_diff": 0.1437909733504057
+    },
+    "2026-07-10": {
+      "run_id": "2026-07-10-live-6f9d5284",
+      "n_scored": 88,
+      "n_recorded": 88,
+      "corr": 0.9841055800478615,
+      "mean_abs_diff": 0.025139232142299243,
+      "max_abs_diff": 0.18694595992565155
+    },
+    "meta_specific": {
+      "07-06_pred": -0.023945773020386696,
+      "07-06_recorded": -0.04688194394111633,
+      "07-07_pred": -0.03416869416832924,
+      "07-07_recorded": -0.060439713299274445,
+      "07-10_pred": -0.1478712111711502,
+      "07-10_recorded": -0.17647118866443634,
+      "reproduced_delta_07-06_to_07-10": -0.1239254381507635,
+      "recorded_delta_07-06_to_07-10": -0.12958924472332,
+      "note": "computed directly from repro_summary.parquet, this bundle"
+    },
+    "codex_point_a_status": "max_abs_diff (0.144-0.187/day) is now measured and sealed here -- it is LARGER than META's entire recorded weekly move (0.130), confirming Codex's point that this reproduction error is material, not incidental. Rank-order agreement, gate-decision agreement, and a SHAP additivity residual check are NOT computed in this bundle -- see absent_fields."
+  },
+  "shap_top_contributors_meta": {
+    "2026-07-06": {"STD30": -0.02502, "CORD60": -0.0202, "STD60": 0.01877, "KLEN": 0.01739, "book_to_price": 0.01301, "MIN60": -0.01095},
+    "2026-07-07": {"STD30": -0.02394, "CORD60": -0.02064, "KLEN": 0.01754, "book_to_price": 0.01212, "earnings_yield": -0.011, "asset_growth": 0.01022},
+    "2026-07-10": {"STD60": -0.07238, "CORD60": -0.02901, "STD30": -0.01904, "asset_growth": 0.01441, "gross_profitability": -0.01341, "earnings_yield": -0.01263},
+    "note": "top-|contribution| features per day from contribs_<day>.parquet (xgboost pred_contribs), this bundle. This is model-representation attribution (SHAP-style), not a causal economic decomposition -- see the research doc's Known Limitations (d)."
+  },
+  "pdp_sweep_summary": {
+    "source": "std60_sweep.csv, this bundle",
+    "n_points": 100,
+    "std60_range_swept": [0.03, 0.2],
+    "sample_points": {
+      "0.03": -0.26493824,
+      "0.0529": -0.14787121,
+      "0.0614": -0.03593738,
+      "0.09": 0.02867658,
+      "0.15": 0.0379275,
+      "0.2": 0.0379275
+    },
+    "caveat": "single-row, off-manifold sweep on META's actual 07-10 feature row -- ROC/MIN/KLEN/CORD60 and the rest of the technical family held fixed at META's actual values while STD60 alone is varied. Not a conditional ALE/SHAP sweep. See the research doc's STD60-confound section and Known Limitations (c)."
+  },
+  "files": {
+    "reproduce_meta.py": "the exact reproduction/attribution script run to produce every number in this bundle and cited in the research doc",
+    "booster.json": "booster_raw_json extracted from the pinned panel artifact, loadable standalone via xgboost.Booster().load_model()",
+    "recorded_scores.json": "recorded live serving rows (raw_panel, rank_score, mu, etc.) for the three sessions, pulled from the run bundles, used as the reproduction target",
+    "repro_summary.parquet": "per-ticker, per-day predicted vs. recorded raw score and diff for all three sessions -- source of the reproduction_fidelity numbers above",
+    "contribs_2026-07-06.parquet": "full per-ticker SHAP contribution matrix (xgboost pred_contribs), 2026-07-06",
+    "contribs_2026-07-07.parquet": "full per-ticker SHAP contribution matrix, 2026-07-07",
+    "contribs_2026-07-10.parquet": "full per-ticker SHAP contribution matrix, 2026-07-10",
+    "features_raw_2026-07-06.parquet": "exact as-of raw feature snapshot fed to the booster, 2026-07-06 (universe/as-of snapshot)",
+    "features_raw_2026-07-07.parquet": "exact as-of raw feature snapshot, 2026-07-07",
+    "features_raw_2026-07-10.parquet": "exact as-of raw feature snapshot, 2026-07-10",
+    "std60_sweep.csv": "raw partial-dependence sweep output (STD60 value -> predicted score) on META's 07-10 row"
+  },
+  "absent_fields": [
+    "An independent transform fingerprint distinct from the panel artifact -- does not exist as a separate object in the current serving path.",
+    "Rank-order agreement between the replay and the live serving ranks (not computed).",
+    "Gate-decision agreement -- whether replay error would flip any veto/admission decision (not computed).",
+    "SHAP additivity residual check (not computed).",
+    "Conditional ALE / conditional SHAP outputs (not computed -- the sealed PDP sweep is the single-row, off-manifold version Codex flagged as insufficient).",
+    "A path-consistent rescore recomputing every dependent technical feature from a valid counterfactual price path (not computed).",
+    "Any pre-registered walk-forward forward-test result (the forward test described in the research doc is a design sketch only; it has not been run)."
+  ]
+}

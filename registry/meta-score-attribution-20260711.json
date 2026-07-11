@@ -1,0 +1,17 @@
+{
+ "artifact_id": "meta-score-attribution-20260711",
+ "fingerprint": "sha256:87a7ef84b1b31cbf9823686ccc573f9348a33906efe3b671b4078b37eb125200",
+ "metrics": {
+  "sessions_covered": 3,
+  "reproduction_corr_range": "0.9826-0.9841",
+  "reproduction_max_abs_diff_range": "0.1438-0.1869",
+  "std60_shap_delta_meta": -0.0912,
+  "shap_delta_total_meta": -0.124,
+  "note": "Sealed evidence for the META score-attribution research doc (orchestrator PR #475). Codex reviewed the PR CHANGES_REQUESTED: the original doc's 'LEARNED ... dispersion tilt' / '74% root cause' verdict overclaimed causality/economics from an approximate, off-manifold, non-causal attribution. This bundle seals the panel-artifact fingerprint, the pinned universe/as-of config commit, per-day reproduction fidelity (including the previously-unreported max-absolute-error, which exceeds META's entire weekly move), the SHAP contribution matrices, and the raw PDP sweep -- so the corrected doc's defensible claim ('same-model, approximate replay suggests sensitivity to the STD60 feature on this path; this does NOT establish a 74% root cause, an economic dispersion premium, or a reason to change the strategy') rests on sealed inputs, not mutable local scratch state. Fields with no independently-verifiable value in this run (independent transform fingerprint, rank/gate agreement, SHAP additivity residual, conditional ALE/SHAP, pre-registered forward test) are listed as absent in RUN-LOCK.json, not fabricated."
+ },
+ "model_family": "panel-ltr-attribution-forensics",
+ "promotion_status": "diagnostic",
+ "retention_class": "experiment-pinned",
+ "strategy": "renquant_104",
+ "uri": "store://experiments/meta-score-attribution-20260711/RUN-LOCK.json"
+}
