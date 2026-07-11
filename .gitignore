@@ -12,3 +12,9 @@ __pycache__/
 *.db-wal
 _hf_trainer/
 checkpoints/
+
+# store/ is the PINNED ARTIFACT STORE — blobs there are the point of the
+# repo. Re-include what the global blob patterns above exclude; every store
+# file must appear in store/STORE-MANIFEST.json (content-sha verified in CI).
+!store/**/*.pt
+!store/**/*.pkl

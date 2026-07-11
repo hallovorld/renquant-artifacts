@@ -1,0 +1,13 @@
+{
+  "artifact_id": "shadow-ab-pt07-seed44-model",
+  "model_family": "hf-patchtst-panel",
+  "strategy": "renquant_104",
+  "fingerprint": "sha256:07046963994dbb8da29bfc66f99d21399e39d6d2dbd842c180299bce67c07571",
+  "uri": "store://patchtst_shadow/pt07_strict_trainfit_embargo60_20260522/seed_44/hf_patchtst_all_seed44_model.pt",
+  "promotion_status": "shadow",
+  "metrics": {
+    "accepted": true,
+    "note": "D6-2a experiment pinned copy; full sha in store/STORE-MANIFEST.json"
+  },
+  "retention_class": "experiment-pinned"
+}

@@ -1,0 +1,13 @@
+{
+  "artifact_id": "shadow-ab-pt07-seed44-calibrator",
+  "model_family": "panel-rank-calibration",
+  "strategy": "renquant_104",
+  "fingerprint": "sha256:bc3b8a8f803e46853fe04e74ed661171a11a00fbe2d8d8143880d37faaba2ee7",
+  "uri": "store://shadow/panel-rank-calibration.hf_patchtst_seed44_trainfit_20230103_20240409.json",
+  "promotion_status": "shadow",
+  "metrics": {
+    "accepted": true,
+    "note": "D6-2a experiment pinned copy"
+  },
+  "retention_class": "experiment-pinned"
+}
