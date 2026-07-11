@@ -1,0 +1,240 @@
+{
+  "kind": "gen1-input-vs-gen2-observation-field-agreement",
+  "schema_version": 1,
+  "generated_at": "2026-07-11T20:27:30Z",
+  "compares": {
+    "left": {
+      "description": "gen-1's hash-attested INPUT snapshots committed in this bundle: source-lock.snapshot.json (subrepos[*].{remote,branch,commit,role,status}) and runtime-inventory.snapshot.json (host, repos[*].path).",
+      "captured_at": "2026-07-11T17:42:15Z",
+      "source_lock_snapshot_sha256": "ca31e11ce2846cce1b81968e57351286f0f3e97bcf964e85be37ca12c0b3fb36",
+      "source_lock_snapshot_sha256_note": "Hash of the raw, byte-verbatim gen-1-capture-time file (unmodified since capture; matches attestation.json.source_lock_sha256). A caveat about source_repo.role's authority scope is recorded separately in source-lock-role-disclaimer.json (referenced from attestation.json.source_lock_role_disclaimer_ref) and does not affect this hash.",
+      "runtime_inventory_snapshot_sha256": "d7521b300d728ef6ceac917554a21ad2fdf54e7aeeb4ae5a6dc48613d4151a4a",
+      "runtime_inventory_snapshot_sha256_matches_attestation": true
+    },
+    "right": {
+      "description": "capture-verify-output.json: a LATER, SEPARATE gen-2 capture-dry-run observation (manifest.generation=2, manifest.deployment.state='captured', manifest.deployment.supersedes_sha256 == gen-1's own manifest sha256). NOT a re-verification or reproduction of gen-1's own manifest-generation output.",
+      "observed_at": "2026-07-11T19:48:06Z",
+      "manifest_sha256": "108b1a0659866ec5dc99d6f88833ba88a263dee0cfd7ba17f4dae9d71ab68c53",
+      "manifest_generation": 2,
+      "manifest_deployment_state": "captured",
+      "manifest_supersedes_sha256": "e302ee0bbaa8086fb6d68230f7f780a931246e20f73f82909ff0120e411c847f",
+      "supersedes_matches_attestation_manifest_gen1_sha256": true
+    }
+  },
+  "fields_compared": [
+    "repos.<name>.{remote,branch,commit,role,status} for all 9 repos",
+    "runtime_inventory.host",
+    "runtime_inventory.repos.<name>.path for all 9 repos"
+  ],
+  "fields_not_compared": [
+    "manifest.artifact_store -- no gen-1-attested source for this field is committed in this bundle; not cross-checkable here.",
+    "manifest.deployment.* -- describes the gen-2 dry-run/verify run itself, not a gen-1 property."
+  ],
+  "per_repo": {
+    "renquant-artifacts": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-artifacts",
+        "branch": "main",
+        "commit": "c71edf7fa6e723c9a4475782f54914b71b694043",
+        "role": "artifact registry \u2014 RECEIVES trained models from the factory; consumed by sim/backtest/strategy-104",
+        "status": "bootstrapped"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-artifacts",
+        "branch": "main",
+        "commit": "c71edf7fa6e723c9a4475782f54914b71b694043",
+        "role": "artifact registry \u2014 RECEIVES trained models from the factory; consumed by sim/backtest/strategy-104",
+        "status": "bootstrapped"
+      },
+      "match": true
+    },
+    "renquant-backtesting": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-backtesting",
+        "branch": "main",
+        "commit": "8f6700ab35589d7ada518305ea8cd5aaa598af47",
+        "role": "backtesting, LEAN assembly, simulation, forensics; CONSUMES models from renquant-artifacts",
+        "status": "bootstrapped"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-backtesting",
+        "branch": "main",
+        "commit": "8f6700ab35589d7ada518305ea8cd5aaa598af47",
+        "role": "backtesting, LEAN assembly, simulation, forensics; CONSUMES models from renquant-artifacts",
+        "status": "bootstrapped"
+      },
+      "match": true
+    },
+    "renquant-base-data": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-base-data",
+        "branch": "main",
+        "commit": "1bdfeb6fc601432f9614b4b6167a2ff9fb09ed73",
+        "role": "base-data manifests + the training-data INPUT consumed by the model factory",
+        "status": "active"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-base-data",
+        "branch": "main",
+        "commit": "1bdfeb6fc601432f9614b4b6167a2ff9fb09ed73",
+        "role": "base-data manifests + the training-data INPUT consumed by the model factory",
+        "status": "active"
+      },
+      "match": true
+    },
+    "renquant-common": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-common",
+        "branch": "main",
+        "commit": "f5cb6ab2cf4eca6d726d23bfbd4da10db5be1a4c",
+        "role": "shared primitives + contracts + shared TRAINING/EVAL utilities (Task/Job/Pipeline, purged_cv, walk_forward_splits, hmm_regime_labels, config_consistency) \u2014 imported by the model factory & pipeline",
+        "status": "bootstrapped"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-common",
+        "branch": "main",
+        "commit": "f5cb6ab2cf4eca6d726d23bfbd4da10db5be1a4c",
+        "role": "shared primitives + contracts + shared TRAINING/EVAL utilities (Task/Job/Pipeline, purged_cv, walk_forward_splits, hmm_regime_labels, config_consistency) \u2014 imported by the model factory & pipeline",
+        "status": "bootstrapped"
+      },
+      "match": true
+    },
+    "renquant-execution": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-execution",
+        "branch": "main",
+        "commit": "42e5d7d722513f16d8d17508303b2b93c64aaa55",
+        "role": "broker execution and order-audit pipeline",
+        "status": "bootstrapped"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-execution",
+        "branch": "main",
+        "commit": "42e5d7d722513f16d8d17508303b2b93c64aaa55",
+        "role": "broker execution and order-audit pipeline",
+        "status": "bootstrapped"
+      },
+      "match": true
+    },
+    "renquant-model": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-model",
+        "branch": "main",
+        "commit": "84a3c1864f195bc0c71c3fad2c15544a0a89b0bc",
+        "role": "MODEL FACTORY \u2014 ingests base-data + common code, runs research/training (GBDT + PatchTST families), and produces models published to renquant-artifacts",
+        "status": "active"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-model",
+        "branch": "main",
+        "commit": "84a3c1864f195bc0c71c3fad2c15544a0a89b0bc",
+        "role": "MODEL FACTORY \u2014 ingests base-data + common code, runs research/training (GBDT + PatchTST families), and produces models published to renquant-artifacts",
+        "status": "active"
+      },
+      "match": true
+    },
+    "renquant-orchestrator": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-orchestrator",
+        "branch": "main",
+        "commit": "fb3b69ffad7b05258065c968e2669a97c5134fe0",
+        "role": "pinned-subrepo daily orchestration + run bundles (wires factory output into daily/sim/backtest)",
+        "status": "active"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-orchestrator",
+        "branch": "main",
+        "commit": "fb3b69ffad7b05258065c968e2669a97c5134fe0",
+        "role": "pinned-subrepo daily orchestration + run bundles (wires factory output into daily/sim/backtest)",
+        "status": "active"
+      },
+      "match": true
+    },
+    "renquant-pipeline": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-pipeline",
+        "branch": "main",
+        "commit": "289b919908fcda3a38523fbc8447d40e6431e176",
+        "role": "runtime inference/decision pipeline; shares regime/config code with trainers",
+        "status": "bootstrapped"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-pipeline",
+        "branch": "main",
+        "commit": "289b919908fcda3a38523fbc8447d40e6431e176",
+        "role": "runtime inference/decision pipeline; shares regime/config code with trainers",
+        "status": "bootstrapped"
+      },
+      "match": true
+    },
+    "renquant-strategy-104": {
+      "left": {
+        "remote": "https://github.com/hallovorld/renquant-strategy-104",
+        "branch": "main",
+        "commit": "f01c02598b176a45a21ac04e6ca22b16f7392c02",
+        "role": "active 104 strategy config; CONSUMES models from renquant-artifacts",
+        "status": "bootstrapped"
+      },
+      "right": {
+        "remote": "https://github.com/hallovorld/renquant-strategy-104",
+        "branch": "main",
+        "commit": "f01c02598b176a45a21ac04e6ca22b16f7392c02",
+        "role": "active 104 strategy config; CONSUMES models from renquant-artifacts",
+        "status": "bootstrapped"
+      },
+      "match": true
+    }
+  },
+  "runtime_inventory_paths": {
+    "renquant-artifacts": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-artifacts",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-artifacts",
+      "match": true
+    },
+    "renquant-backtesting": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-backtesting",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-backtesting",
+      "match": true
+    },
+    "renquant-base-data": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-base-data",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-base-data",
+      "match": true
+    },
+    "renquant-common": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-common",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-common",
+      "match": true
+    },
+    "renquant-execution": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-execution",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-execution",
+      "match": true
+    },
+    "renquant-model": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-model",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-model",
+      "match": true
+    },
+    "renquant-orchestrator": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-orchestrator",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-orchestrator",
+      "match": true
+    },
+    "renquant-pipeline": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-pipeline",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-pipeline",
+      "match": true
+    },
+    "renquant-strategy-104": {
+      "left": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-strategy-104",
+      "right": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-strategy-104",
+      "match": true
+    }
+  },
+  "host_match": true,
+  "diff_count": 0,
+  "diffs": [],
+  "verdict": "no_drift_detected",
+  "evidentiary_meaning": "This proves that, as of the LATER gen-2 capture-dry-run observation (2026-07-11T19:48:06Z), the specific fields listed above were still identical to the values recorded in gen-1's hash-attested input snapshots (captured 2026-07-11T17:42:15Z). It is evidence of NO DRIFT between gen-1 time and the gen-2 observation for these fields. It is NOT proof that gen-1's original capture-and-write was itself correct at gen-1 capture time: gen-1's own deployment-manifest.json output is not committed in this bundle (only its sha256, attestation.json.manifest_gen1_sha256, is recorded), so this comparison uses gen-1's INPUT snapshots as the left side, not a re-run of gen-1's own manifest-generation output. A later recapture agreeing with earlier inputs is not the same claim as a later recapture reproducing the earlier host state."
+}

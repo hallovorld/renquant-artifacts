@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "source_repo": {
+    "name": "RenQuant",
+    "role": "permanent umbrella/orchestrator and rollback source",
+    "local_path": "/Users/renhao/git/github/RenQuant",
+    "remote": "https://github.com/hallovorld/RenQuant",
+    "never_delete": true
+  },
+  "subrepos": [
+    {
+      "name": "renquant-common",
+      "role": "shared primitives + contracts + shared TRAINING/EVAL utilities (Task/Job/Pipeline, purged_cv, walk_forward_splits, hmm_regime_labels, config_consistency) \u2014 imported by the model factory & pipeline",
+      "local_path": "/Users/renhao/git/github/renquant-common",
+      "remote": "https://github.com/hallovorld/renquant-common",
+      "branch": "main",
+      "commit": "f5cb6ab2cf4eca6d726d23bfbd4da10db5be1a4c",
+      "test_command": "make test",
+      "status": "bootstrapped"
+    },
+    {
+      "name": "renquant-strategy-104",
+      "role": "active 104 strategy config; CONSUMES models from renquant-artifacts",
+      "local_path": "/Users/renhao/git/github/renquant-strategy-104",
+      "remote": "https://github.com/hallovorld/renquant-strategy-104",
+      "branch": "main",
+      "commit": "f01c02598b176a45a21ac04e6ca22b16f7392c02",
+      "test_command": "make test",
+      "status": "bootstrapped"
+    },
+    {
+      "name": "renquant-model",
+      "role": "MODEL FACTORY \u2014 ingests base-data + common code, runs research/training (GBDT + PatchTST families), and produces models published to renquant-artifacts",
+      "local_path": "/Users/renhao/git/github/renquant-model",
+      "remote": "https://github.com/hallovorld/renquant-model",
+      "branch": "main",
+      "commit": "84a3c1864f195bc0c71c3fad2c15544a0a89b0bc",
+      "test_command": "make test",
+      "status": "active"
+    },
+    {
+      "name": "renquant-pipeline",
+      "role": "runtime inference/decision pipeline; shares regime/config code with trainers",
+      "local_path": "/Users/renhao/git/github/renquant-pipeline",
+      "remote": "https://github.com/hallovorld/renquant-pipeline",
+      "branch": "main",
+      "commit": "289b919908fcda3a38523fbc8447d40e6431e176",
+      "test_command": "make test",
+      "status": "bootstrapped"
+    },
+    {
+      "name": "renquant-execution",
+      "role": "broker execution and order-audit pipeline",
+      "local_path": "/Users/renhao/git/github/renquant-execution",
+      "remote": "https://github.com/hallovorld/renquant-execution",
+      "branch": "main",
+      "commit": "42e5d7d722513f16d8d17508303b2b93c64aaa55",
+      "test_command": "make test",
+      "status": "bootstrapped"
+    },
+    {
+      "name": "renquant-backtesting",
+      "role": "backtesting, LEAN assembly, simulation, forensics; CONSUMES models from renquant-artifacts",
+      "local_path": "/Users/renhao/git/github/renquant-backtesting",
+      "remote": "https://github.com/hallovorld/renquant-backtesting",
+      "branch": "main",
+      "commit": "8f6700ab35589d7ada518305ea8cd5aaa598af47",
+      "test_command": "make test",
+      "status": "bootstrapped"
+    },
+    {
+      "name": "renquant-base-data",
+      "role": "base-data manifests + the training-data INPUT consumed by the model factory",
+      "local_path": "/Users/renhao/git/github/renquant-base-data",
+      "remote": "https://github.com/hallovorld/renquant-base-data",
+      "branch": "main",
+      "commit": "1bdfeb6fc601432f9614b4b6167a2ff9fb09ed73",
+      "test_command": "make test",
+      "status": "active"
+    },
+    {
+      "name": "renquant-artifacts",
+      "role": "artifact registry \u2014 RECEIVES trained models from the factory; consumed by sim/backtest/strategy-104",
+      "local_path": "/Users/renhao/git/github/renquant-artifacts",
+      "remote": "https://github.com/hallovorld/renquant-artifacts",
+      "branch": "main",
+      "commit": "c71edf7fa6e723c9a4475782f54914b71b694043",
+      "test_command": "make test",
+      "status": "bootstrapped"
+    },
+    {
+      "name": "renquant-orchestrator",
+      "role": "pinned-subrepo daily orchestration + run bundles (wires factory output into daily/sim/backtest)",
+      "local_path": "/Users/renhao/git/github/renquant-orchestrator",
+      "remote": "https://github.com/hallovorld/renquant-orchestrator",
+      "branch": "main",
+      "commit": "fb3b69ffad7b05258065c968e2669a97c5134fe0",
+      "test_command": "make test",
+      "status": "active"
+    }
+  ],
+  "pending_subrepos": [],
+  "archived_subrepos": []
+}

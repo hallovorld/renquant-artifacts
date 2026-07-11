@@ -1,0 +1,136 @@
+{
+  "manifest": {
+    "artifact_store": {
+      "path": "",
+      "repo": "renquant-artifacts"
+    },
+    "deployment": {
+      "deployed_at": "2026-07-11T19:48:06Z",
+      "deployed_by": "operator",
+      "state": "captured",
+      "supersedes_sha256": "e302ee0bbaa8086fb6d68230f7f780a931246e20f73f82909ff0120e411c847f",
+      "verify": {
+        "args": {
+          "min_admits": 1
+        },
+        "evidence_ref": null,
+        "exit": 0,
+        "profile": "readonly-e2e"
+      }
+    },
+    "generated_at": "2026-07-11T19:48:06Z",
+    "generation": 2,
+    "kind": "deployment-manifest",
+    "repos": {
+      "renquant-artifacts": {
+        "branch": "main",
+        "commit": "c71edf7fa6e723c9a4475782f54914b71b694043",
+        "remote": "https://github.com/hallovorld/renquant-artifacts",
+        "role": "artifact registry \u2014 RECEIVES trained models from the factory; consumed by sim/backtest/strategy-104",
+        "status": "bootstrapped"
+      },
+      "renquant-backtesting": {
+        "branch": "main",
+        "commit": "8f6700ab35589d7ada518305ea8cd5aaa598af47",
+        "remote": "https://github.com/hallovorld/renquant-backtesting",
+        "role": "backtesting, LEAN assembly, simulation, forensics; CONSUMES models from renquant-artifacts",
+        "status": "bootstrapped"
+      },
+      "renquant-base-data": {
+        "branch": "main",
+        "commit": "1bdfeb6fc601432f9614b4b6167a2ff9fb09ed73",
+        "remote": "https://github.com/hallovorld/renquant-base-data",
+        "role": "base-data manifests + the training-data INPUT consumed by the model factory",
+        "status": "active"
+      },
+      "renquant-common": {
+        "branch": "main",
+        "commit": "f5cb6ab2cf4eca6d726d23bfbd4da10db5be1a4c",
+        "remote": "https://github.com/hallovorld/renquant-common",
+        "role": "shared primitives + contracts + shared TRAINING/EVAL utilities (Task/Job/Pipeline, purged_cv, walk_forward_splits, hmm_regime_labels, config_consistency) \u2014 imported by the model factory & pipeline",
+        "status": "bootstrapped"
+      },
+      "renquant-execution": {
+        "branch": "main",
+        "commit": "42e5d7d722513f16d8d17508303b2b93c64aaa55",
+        "remote": "https://github.com/hallovorld/renquant-execution",
+        "role": "broker execution and order-audit pipeline",
+        "status": "bootstrapped"
+      },
+      "renquant-model": {
+        "branch": "main",
+        "commit": "84a3c1864f195bc0c71c3fad2c15544a0a89b0bc",
+        "remote": "https://github.com/hallovorld/renquant-model",
+        "role": "MODEL FACTORY \u2014 ingests base-data + common code, runs research/training (GBDT + PatchTST families), and produces models published to renquant-artifacts",
+        "status": "active"
+      },
+      "renquant-orchestrator": {
+        "branch": "main",
+        "commit": "fb3b69ffad7b05258065c968e2669a97c5134fe0",
+        "remote": "https://github.com/hallovorld/renquant-orchestrator",
+        "role": "pinned-subrepo daily orchestration + run bundles (wires factory output into daily/sim/backtest)",
+        "status": "active"
+      },
+      "renquant-pipeline": {
+        "branch": "main",
+        "commit": "289b919908fcda3a38523fbc8447d40e6431e176",
+        "remote": "https://github.com/hallovorld/renquant-pipeline",
+        "role": "runtime inference/decision pipeline; shares regime/config code with trainers",
+        "status": "bootstrapped"
+      },
+      "renquant-strategy-104": {
+        "branch": "main",
+        "commit": "f01c02598b176a45a21ac04e6ca22b16f7392c02",
+        "remote": "https://github.com/hallovorld/renquant-strategy-104",
+        "role": "active 104 strategy config; CONSUMES models from renquant-artifacts",
+        "status": "bootstrapped"
+      }
+    },
+    "schema_version": 1
+  },
+  "manifest_sha256": "108b1a0659866ec5dc99d6f88833ba88a263dee0cfd7ba17f4dae9d71ab68c53",
+  "mode": "dry-run",
+  "runtime_inventory": {
+    "generated_at": "2026-07-11T19:48:06Z",
+    "host": "Angels-MacBook-Pro.local",
+    "kind": "runtime-inventory",
+    "repos": {
+      "renquant-artifacts": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-artifacts"
+      },
+      "renquant-backtesting": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-backtesting"
+      },
+      "renquant-base-data": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-base-data"
+      },
+      "renquant-common": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-common"
+      },
+      "renquant-execution": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-execution"
+      },
+      "renquant-model": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-model"
+      },
+      "renquant-orchestrator": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-orchestrator"
+      },
+      "renquant-pipeline": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-pipeline"
+      },
+      "renquant-strategy-104": {
+        "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-strategy-104"
+      }
+    },
+    "schema_version": 1
+  },
+  "state_root": "/Users/renhao/.renquant/deploy",
+  "would_write": [
+    "/Users/renhao/.renquant/deploy/deployment-manifest.json",
+    "/Users/renhao/.renquant/deploy/runtime-inventory.json",
+    "/Users/renhao/.renquant/deploy/expected-generation.json",
+    "/Users/renhao/.renquant/deploy/receipts/"
+  ],
+  "written": []
+}

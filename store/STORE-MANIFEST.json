@@ -1,4 +1,11 @@
 {
+ "deploy-records/gen1-20260711/attestation.json": "b01d41f43c38e33362f0500e6fc0dcc7391d6764c39ea12d1c2a4ac82dc4a62a",
+ "deploy-records/gen1-20260711/build_field_agreement.py": "1e5b3dc7c278846aae2a7c7ddc0a41d13bb7549d56fcab4c3c00cd3801b94970",
+ "deploy-records/gen1-20260711/capture-verify-output.json": "bf8dd4e46c9005a74630ffcc5d552137757c0f0d6e607edbc884592ba4f29ec3",
+ "deploy-records/gen1-20260711/field-agreement-check.json": "2f3e498cf4e668b820417363437fbed3dbe76884416aefdff7db767330a2f870",
+ "deploy-records/gen1-20260711/runtime-inventory.snapshot.json": "d7521b300d728ef6ceac917554a21ad2fdf54e7aeeb4ae5a6dc48613d4151a4a",
+ "deploy-records/gen1-20260711/source-lock-role-disclaimer.json": "13bc8f073cf2d9fa18d9e3cb7136964ae9b76b9605dd3e264505cb09ab0391b2",
+ "deploy-records/gen1-20260711/source-lock.snapshot.json": "ca31e11ce2846cce1b81968e57351286f0f3e97bcf964e85be37ca12c0b3fb36",
  "experiments/deploy-pin-verify-seal-20260711/RUN-LOCK.json": "01b0da52264cb52c3d53c55d4389af711de7aa5a55c11f3ea7331e39163944d3",
  "experiments/enablement-floor-replay-20260711/RUN-LOCK.json": "db81fa15ed05f1a05144d00bc3ca2a422f7f5ea5b44fcbc8ce07277156bdc498",
  "experiments/meta-no-buy-forensics-20260711/RUN-LOCK.json": "b9cc2ecc33357452be9c1568c5c0023f82e10d5bde6c8f9100064805e2c0ea9b",
