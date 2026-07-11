@@ -1,8 +1,5 @@
 {
- "patchtst_shadow/pt07_strict_trainfit_embargo60_20260522/seed_44/hf_patchtst_all_seed44_model.pt": "07046963994dbb8da29bfc66f99d21399e39d6d2dbd842c180299bce67c07571",
- "patchtst_shadow/pt07_strict_trainfit_embargo60_20260522/seed_44/hf_patchtst_all_seed44_model.pt.metadata.json": "447b7efa5fa3f64f88d4f1a7f0c15eac32bc6b4eca88f5a85e10b3d24ba21e89",
- "patchtst_shadow/pt07_strict_trainfit_embargo60_20260522/seed_44/hf_patchtst_all_seed44_summary.json": "c6be61d24a1829da874f078c3fe8703039c414e001a92d270896f9296bb0f571",
- "shadow/panel-rank-calibration.hf_patchtst_seed44_trainfit_20230103_20240409.json": "bc3b8a8f803e46853fe04e74ed661171a11a00fbe2d8d8143880d37faaba2ee7",
+ "experiments/enablement-floor-replay-20260711/RUN-LOCK.json": "afbe91db01018f46a4c7320649c85c36a597fc3818e2341296be1ff16bfaf14e",
  "experiments/xstock-pilot-20260711/RUN-LOCK.json": "86b06dec1c2dec3a04a37eb278bf995b52bd31a17a0fc445b921b107b21fd01d",
  "experiments/xstock-pilot-20260711/base_s44/hf_patchtst_all_seed44_model.pt.metadata.json": "ef6334a0ec464297a1da482670b6fa8829e9f6e39c3ee1a7a0d5b8d7fee61637",
  "experiments/xstock-pilot-20260711/base_s44/hf_patchtst_all_seed44_summary.json": "df195e99a7a64e446b0f7e0a837b1880e741c9b4c93e05fbb4fbe5be38a3628e",
@@ -22,5 +19,9 @@
  "experiments/xstock-pilot-20260711/xstock_s45/hf_patchtst_all_seed45_model.pt.metadata.json": "36a9d031b1508b4754b36e9692c9882ac32ffe76358e402321f0671170a1d23a",
  "experiments/xstock-pilot-20260711/xstock_s45/hf_patchtst_all_seed45_summary.json": "98e1ca38a21fc069367fed5da280f9b7ae878cc77613dd812707ce6cbffb00c7",
  "experiments/xstock-pilot-20260711/xstock_s45/hf_patchtst_all_seed45_val_preds.parquet": "6f7b2ed211a59697efddaaae18d6a291077b04032ba711711974d68c425206b8",
- "experiments/xstock-pilot-20260711/xstock_s45/train.cleaned.log": "75efb593ffae054a98a226c27569620a1ddb879413c3a707c857f8f7304e9342"
+ "experiments/xstock-pilot-20260711/xstock_s45/train.cleaned.log": "75efb593ffae054a98a226c27569620a1ddb879413c3a707c857f8f7304e9342",
+ "patchtst_shadow/pt07_strict_trainfit_embargo60_20260522/seed_44/hf_patchtst_all_seed44_model.pt": "07046963994dbb8da29bfc66f99d21399e39d6d2dbd842c180299bce67c07571",
+ "patchtst_shadow/pt07_strict_trainfit_embargo60_20260522/seed_44/hf_patchtst_all_seed44_model.pt.metadata.json": "447b7efa5fa3f64f88d4f1a7f0c15eac32bc6b4eca88f5a85e10b3d24ba21e89",
+ "patchtst_shadow/pt07_strict_trainfit_embargo60_20260522/seed_44/hf_patchtst_all_seed44_summary.json": "c6be61d24a1829da874f078c3fe8703039c414e001a92d270896f9296bb0f571",
+ "shadow/panel-rank-calibration.hf_patchtst_seed44_trainfit_20230103_20240409.json": "bc3b8a8f803e46853fe04e74ed661171a11a00fbe2d8d8143880d37faaba2ee7"
 }

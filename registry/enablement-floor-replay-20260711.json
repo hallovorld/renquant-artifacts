@@ -1,0 +1,13 @@
+{
+ "artifact_id": "enablement-floor-replay-20260711",
+ "model_family": "decision-ledger-replay",
+ "strategy": "renquant_104",
+ "fingerprint": "sha256:afbe91db01018f46a4c7320649c85c36a597fc3818e2341296be1ff16bfaf14e",
+ "uri": "store://experiments/enablement-floor-replay-20260711/RUN-LOCK.json",
+ "promotion_status": "diagnostic",
+ "metrics": {
+  "accepted": false,
+  "note": "Sealed, content-addressed replay of the RS-2 one-share-floor rescue mechanism over the production decision ledger (orchestrator #471, r2 after Codex flagged r1's outcome-selected representative-run picking and denominator mismatch). Canonical run per date is now a structural, outcome-blind rule (unique n_candidates>0 row) with fail-closed exclusion on ambiguity. Corrected: 6/11 unambiguous canonical dates rescued, delta range $392.13-$1356.18/session, mean $911.13. This is evidence for the RS-2 gate-instrument decision only; it does not itself authorize enabling the floor."
+ },
+ "retention_class": "experiment-pinned"
+}
