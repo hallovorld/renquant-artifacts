@@ -1,0 +1,20 @@
+{
+ "attested_at": "2026-07-11T19:48:06.165942+00:00",
+ "attests_generation": 1,
+ "capture_tool": {
+  "command": "renquant-orchestrator deploy-pin capture --lock /Users/renhao/git/github/RenQuant/subrepos.lock.json --runtime-root /Users/renhao/git/github/RenQuant/.subrepo_runtime/repos --write",
+  "commit": "90a6e8bb9e3df7865c713c0366779c01b35691ae",
+  "repo": "renquant-orchestrator"
+ },
+ "captured_at": "2026-07-11T17:42:15Z",
+ "kind": "deploy-capture-attestation",
+ "manifest_gen1_sha256": "e302ee0bbaa8086fb6d68230f7f780a931246e20f73f82909ff0120e411c847f",
+ "runtime_inventory_sha256": "d7521b300d728ef6ceac917554a21ad2fdf54e7aeeb4ae5a6dc48613d4151a4a",
+ "schema_version": 1,
+ "source_lock_sha256": "ca31e11ce2846cce1b81968e57351286f0f3e97bcf964e85be37ca12c0b3fb36",
+ "verification": {
+  "kind": "capture-dry-run-agreement",
+  "note": "dry-run re-capture agrees with the written gen-1 manifest; fail-closed capture passed on first run at capture time",
+  "output_sha256": "bf8dd4e46c9005a74630ffcc5d552137757c0f0d6e607edbc884592ba4f29ec3"
+ }
+}

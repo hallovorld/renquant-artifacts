@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-07-11T17:42:15Z",
+  "host": "Angels-MacBook-Pro.local",
+  "kind": "runtime-inventory",
+  "repos": {
+    "renquant-artifacts": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-artifacts"
+    },
+    "renquant-backtesting": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-backtesting"
+    },
+    "renquant-base-data": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-base-data"
+    },
+    "renquant-common": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-common"
+    },
+    "renquant-execution": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-execution"
+    },
+    "renquant-model": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-model"
+    },
+    "renquant-orchestrator": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-orchestrator"
+    },
+    "renquant-pipeline": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-pipeline"
+    },
+    "renquant-strategy-104": {
+      "path": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-strategy-104"
+    }
+  },
+  "schema_version": 1
+}
