@@ -1,0 +1,15 @@
+{
+ "artifact_id": "std60-rule-provenance-20260711",
+ "fingerprint": "sha256:71005f1f757a370f1c76e7624566092e25c384310cec9b6f21f8a055c4cf087d",
+ "metrics": {
+  "accepted": false,
+  "codex_review": "CHANGES_REQUESTED on orchestrator#476, 2026-07-11; 4 findings (reproducibility, OOS-underpowered, post-hoc-selection/data-snooping, mechanism-not-established via PDP/SHAP)",
+  "note": "Sealed evidence for orchestrator#476 (STD60 low-vol-bearish rule provenance research doc), sealed in response to Codex CHANGES_REQUESTED. Splits what was INDEPENDENTLY RE-VERIFIED in this 2026-07-11 sealing session directly from the live artifact/OHLCV/corpus files (model identity: trained_date 2026-07-06, train_run_id 240f9b27, panel_shape rows=722775/tickers=292/dates=2580; the full wf_gate_metadata record incl. wf_reason FAIL, sanity_regime_ic FAIL in BULL_CALM, trade_monotonicity FAIL, manual_override=true; the 07-05 candidate's non-overridden FAIL; and the META STD60 numerator/denominator/returns-vol mechanical decomposition recomputed from OHLCV) from what is sealed AS-REPORTED ONLY, not independently reproduced this session (the H1 quintile/subset tables, H2 per-year/per-regime IC tables and post-training OOS figures, and H3 FTNT/cross-sectional claims -- these were produced by uncommitted scratch scripts from the original research session that are not available to re-run). This bundle does NOT satisfy Codex's points 3 (preregistered selection-adjusted inference plan) or 4 (conditional ALE/SHAP mechanism evidence); those remain open, described as the 'Required next artifact' in the orchestrator research doc.",
+  "reproduction_status": "partial -- see registry.metrics.note and RUN-LOCK.json reproduction_gap_note"
+ },
+ "model_family": "training-corpus-provenance",
+ "promotion_status": "diagnostic",
+ "retention_class": "experiment-pinned",
+ "strategy": "renquant_104",
+ "uri": "store://experiments/std60-rule-provenance-20260711/RUN-LOCK.json"
+}
