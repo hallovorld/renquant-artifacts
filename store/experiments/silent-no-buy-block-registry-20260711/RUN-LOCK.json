@@ -1,0 +1,4162 @@
+{
+  "artifact_id": "silent-no-buy-block-registry-20260711",
+  "classifier_rubric": {
+    "assignment_method": "Manual, per-session, cited to specific log lines / DB rows during the 2026-07-11 sweep (doc/research/2026-07-11-silent-no-buy-block-registry.md \u00a72-3). This bundle's per_session block re-derives the underlying raw signals (decision-notification presence, buy-scan counters, preflight fail tokens, wash-sale drop lines, sell-only/terminated flags) via the deterministic regex extraction in this repo's sealed script hash below, so the C1-C8 assignments are independently checkable against raw evidence rather than only against narrative description.",
+    "classes": {
+      "C1": "Admission/tournament staleness collapse -- n_tournament or admitted-universe count drops sharply (>30% d/d) or a stale_*:live_train_end skip claim exceeds the true retrain cutoff.",
+      "C2": "Wash-sale mis-stamping / trade-ledger gaps -- last_sell_dates[t] does not match a broker-truth sell fill (\u00b11 trading day), or a broker fill has no corresponding trades-table row.",
+      "C3": "Config/calibrator fingerprint fail-close -- a fingerprint-parity contract check raises mid-pipeline (not pre-market), forcing a sell-only fallback.",
+      "C4": "Fundamentals freshness -- serving-axis max feature date lags the session date beyond the model's staleness assumption, silently (no decision-level signal) or via a structurally unsatisfiable freshness gate.",
+      "C5": "Promote/WF-gate stuck -- a hard preflight fail (P-WF-GATE / P-REGIME-IC / P-RUN-ID / P-CONFIG-FP / P-PANEL-CONTRACT) aborts the full run or forces sell-only fallback.",
+      "C6": "Threshold-vs-score-scale mismatch -- an active bar (tier threshold, qp_delta_below_min_dw, top_n) sits above the maximum achievable value for every surviving candidate simultaneously.",
+      "C7": "Whole-funnel single-gate kill -- one gate (veto/regime-admission/sign-launder/panel/vol) kills 100% of candidates that reached it.",
+      "C8": "Run crash/kill -- the scheduled process terminates (SIGTERM/exception) before reaching the decision-emission phase; no decision notification is produced."
+    },
+    "note": "Descriptive retrospective taxonomy, hand-derived per session from log/DB citations during the 2026-07-11 sweep -- NOT a validated online detector. See doc \u00a75 (descriptive-vs-validated framing) for why the observed 27/56, 67%, 63/22/15% splits must not be read as detector precision/recall.",
+    "version": "silent-no-buy-classifier-v1"
+  },
+  "db_cross_check_by_date": {
+    "2026-04-22": {
+      "n_runs_that_date": 10,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-04-23": {
+      "n_runs_that_date": 24,
+      "sum_n_buys": 2,
+      "sum_n_candidates": 12,
+      "sum_n_exits": 0
+    },
+    "2026-04-24": {
+      "n_runs_that_date": 17,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 13,
+      "sum_n_exits": 0
+    },
+    "2026-04-25": {
+      "n_runs_that_date": 6,
+      "sum_n_buys": 6,
+      "sum_n_candidates": 43,
+      "sum_n_exits": 1
+    },
+    "2026-04-26": {
+      "n_runs_that_date": 7,
+      "sum_n_buys": 6,
+      "sum_n_candidates": 54,
+      "sum_n_exits": 13
+    },
+    "2026-04-27": {
+      "n_runs_that_date": 17,
+      "sum_n_buys": 14,
+      "sum_n_candidates": 14,
+      "sum_n_exits": 6
+    },
+    "2026-04-28": {
+      "n_runs_that_date": 14,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 2
+    },
+    "2026-04-29": {
+      "n_runs_that_date": 18,
+      "sum_n_buys": 4,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-04-30": {
+      "n_runs_that_date": 23,
+      "sum_n_buys": 2,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 1
+    },
+    "2026-05-01": {
+      "n_runs_that_date": 18,
+      "sum_n_buys": 1,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 2
+    },
+    "2026-05-03": {
+      "n_runs_that_date": 2,
+      "sum_n_buys": 8,
+      "sum_n_candidates": 7,
+      "sum_n_exits": 2
+    },
+    "2026-05-04": {
+      "n_runs_that_date": 31,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 1
+    },
+    "2026-05-05": {
+      "n_runs_that_date": 14,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-05-06": {
+      "n_runs_that_date": 29,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-05-07": {
+      "n_runs_that_date": 28,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-05-08": {
+      "n_runs_that_date": 32,
+      "sum_n_buys": 10,
+      "sum_n_candidates": 111,
+      "sum_n_exits": 0
+    },
+    "2026-05-09": {
+      "n_runs_that_date": 7,
+      "sum_n_buys": 10,
+      "sum_n_candidates": 247,
+      "sum_n_exits": 1
+    },
+    "2026-05-12": {
+      "n_runs_that_date": 28,
+      "sum_n_buys": 3,
+      "sum_n_candidates": 38,
+      "sum_n_exits": 0
+    },
+    "2026-05-13": {
+      "n_runs_that_date": 33,
+      "sum_n_buys": 1,
+      "sum_n_candidates": 35,
+      "sum_n_exits": 0
+    },
+    "2026-05-14": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 1,
+      "sum_n_candidates": 34,
+      "sum_n_exits": 0
+    },
+    "2026-05-15": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 1,
+      "sum_n_candidates": 33,
+      "sum_n_exits": 1
+    },
+    "2026-05-17": {
+      "n_runs_that_date": 3,
+      "sum_n_buys": 3,
+      "sum_n_candidates": 81,
+      "sum_n_exits": 0
+    },
+    "2026-05-18": {
+      "n_runs_that_date": 31,
+      "sum_n_buys": 3,
+      "sum_n_candidates": 205,
+      "sum_n_exits": 4
+    },
+    "2026-05-19": {
+      "n_runs_that_date": 37,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 204,
+      "sum_n_exits": 0
+    },
+    "2026-05-20": {
+      "n_runs_that_date": 39,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 280,
+      "sum_n_exits": 1
+    },
+    "2026-05-21": {
+      "n_runs_that_date": 31,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 69,
+      "sum_n_exits": 0
+    },
+    "2026-05-22": {
+      "n_runs_that_date": 4,
+      "sum_n_buys": 3,
+      "sum_n_candidates": 11,
+      "sum_n_exits": 0
+    },
+    "2026-05-26": {
+      "n_runs_that_date": 34,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-05-27": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-05-28": {
+      "n_runs_that_date": 36,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-05-29": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-05-30": {
+      "n_runs_that_date": 10,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 60,
+      "sum_n_exits": 0
+    },
+    "2026-06-01": {
+      "n_runs_that_date": 42,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-02": {
+      "n_runs_that_date": 32,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-03": {
+      "n_runs_that_date": 25,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-04": {
+      "n_runs_that_date": 34,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-05": {
+      "n_runs_that_date": 31,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-08": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-09": {
+      "n_runs_that_date": 37,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 24,
+      "sum_n_exits": 0
+    },
+    "2026-06-10": {
+      "n_runs_that_date": 29,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 12,
+      "sum_n_exits": 0
+    },
+    "2026-06-11": {
+      "n_runs_that_date": 32,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 12,
+      "sum_n_exits": 0
+    },
+    "2026-06-12": {
+      "n_runs_that_date": 20,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-15": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-16": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-17": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-18": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-22": {
+      "n_runs_that_date": 36,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 9,
+      "sum_n_exits": 0
+    },
+    "2026-06-23": {
+      "n_runs_that_date": 36,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 13,
+      "sum_n_exits": 0
+    },
+    "2026-06-24": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 4,
+      "sum_n_exits": 0
+    },
+    "2026-06-25": {
+      "n_runs_that_date": 34,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-06-26": {
+      "n_runs_that_date": 17,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 1,
+      "sum_n_exits": 0
+    },
+    "2026-06-29": {
+      "n_runs_that_date": 17,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 7,
+      "sum_n_exits": 0
+    },
+    "2026-06-30": {
+      "n_runs_that_date": 36,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 14,
+      "sum_n_exits": 0
+    },
+    "2026-07-01": {
+      "n_runs_that_date": 36,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 14,
+      "sum_n_exits": 0
+    },
+    "2026-07-02": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 17,
+      "sum_n_exits": 0
+    },
+    "2026-07-06": {
+      "n_runs_that_date": 36,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 6,
+      "sum_n_exits": 0
+    },
+    "2026-07-07": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 3,
+      "sum_n_exits": 0
+    },
+    "2026-07-08": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-07-09": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 0,
+      "sum_n_exits": 0
+    },
+    "2026-07-10": {
+      "n_runs_that_date": 35,
+      "sum_n_buys": 0,
+      "sum_n_candidates": 7,
+      "sum_n_exits": 0
+    }
+  },
+  "description": "Sealed evidence for the whole-56-session silent no-buy block registry (orchestrator#474): the predeclared population/denominator rule and its verification, the full per-date disposition table (61 cron-fired dates: 56 REAL_SESSION + 5 MARKET_CLOSED, 0 MISSING_LOG), per-session raw signals for all 56 real sessions (decision-notification presence, buy-scan counters, preflight-fail tokens, wash-sale drop lines, sell-only/terminated flags, each with its source log's sha256), the C1-C8 classifier rubric (versioned, descriptive not validated), the per-invariant (I1-I10) online-identifiability assessment, and fresh broker-truth evidence for the GE/HON/EQIX wash-sale mis-stamp correction.",
+  "extraction_method": "Deterministic Python regex/SQL extraction (sha256 of the extraction script itself is recorded below for reproducibility) against logs/daily_104/*.log (bare-filename canonical logs only; suffixed manual/shadow/experiment logs excluded) and data/runs.alpaca.db (opened immutable=1, read-only) in the live umbrella tree, plus a fresh read-only Alpaca TradingClient query for GE/HON/EQIX. No production path written; no order touched; no git operation in the live umbrella tree.",
+  "extraction_script_sha256": "23885642b60d6cbb3f060a5f242a5097274edcbaf2258823b40a99d01e60a898",
+  "ge_hon_eqix_broker_evidence": {
+    "account_number": "212830627",
+    "account_number_verified": true,
+    "query_method": "Direct read-only TradingClient.get_orders(GetOrdersRequest(status=QueryOrderStatus.ALL, symbols=[...], limit=500)), filtered to status=filled AND side=sell specifically (lesson from the GE 05-18-vs-06-01 canceled-order mistake caught during the live-state correction).",
+    "query_timestamp_utc": "2026-07-11T15:29Z",
+    "results": {
+      "EQIX": {
+        "broker_truth_last_sell_fill": "2026-06-17",
+        "corrected_in_live_state": true,
+        "filled_sells_seen": 1,
+        "prior_wrong_stamp": "2026-06-26",
+        "total_orders_seen": 2
+      },
+      "GE": {
+        "broker_truth_last_sell_fill": "2026-06-01",
+        "corrected_in_live_state": true,
+        "filled_sells_seen": 1,
+        "prior_wrong_stamp": "2026-06-26",
+        "total_orders_seen": 3
+      },
+      "HON": {
+        "broker_truth_last_sell_fill": "2026-06-03",
+        "corrected_in_live_state": true,
+        "filled_sells_seen": 1,
+        "prior_wrong_stamp": "2026-06-26",
+        "total_orders_seen": 5
+      }
+    },
+    "supersedes_note": "The original doc (pre-fix) and this bundle's earlier draft cited GE's broker-truth last sell as 2026-05-18; that was a CANCELED order, never filled. The correct value, confirmed twice (2026-07-11 live-state-correction session and this fresh re-query), is 2026-06-01."
+  },
+  "market_closed_log_dates": [
+    "2026-04-25",
+    "2026-05-25",
+    "2026-06-07",
+    "2026-06-19",
+    "2026-07-03"
+  ],
+  "online_identifiability_i1_i10": {
+    "I1": {
+      "class": "C1",
+      "note": "n_admitted/n_universe and n_tournament d/d delta are both computable pre-decision, same session, no hindsight.",
+      "online_identifiable": "yes"
+    },
+    "I10": {
+      "class": "all",
+      "note": "Composite of I1-I9; online-identifiable to the extent each component is, EXCEPT it inherits I9's caveat: if the run never starts or never finishes, no in-pipeline capability bill can be emitted -- the outer watchdog is a structural prerequisite for I10 to ever be assigned on a C8 session, not an optional enhancement.",
+      "online_identifiable": "yes-composite"
+    },
+    "I2": {
+      "class": "C2",
+      "note": "Requires a same-day broker fill-date fetch (already implemented as an STATE-EXT-SELL side lookup) compared against the stamp -- computable at stamp-write time.",
+      "online_identifiable": "yes"
+    },
+    "I3": {
+      "class": "C2",
+      "note": "Needs the trades ledger write to happen synchronously with the broker fill event; the 05-26->06-05 ledger gap shows this durability is not currently guaranteed, so the invariant can only assert on ledger rows that exist -- a ledger-write failure is itself unobservable to this check without an independent broker reconciliation pass.",
+      "online_identifiable": "partial"
+    },
+    "I4": {
+      "class": "C3",
+      "note": "Fingerprint parity (scorer/calibrator/config hash) is a pure function of already-loaded artifacts; assertable as a preflight before the pipeline runs, not just detectable after a mid-run raise.",
+      "online_identifiable": "yes"
+    },
+    "I5": {
+      "class": "C4",
+      "note": "Serving-axis max date is known at feature-load time; the derivative (day-over-day staleness growth) needs one prior session's value persisted, which the funnel-integrity task's own state carries -- online with a 1-session memory, not hindsight.",
+      "online_identifiable": "yes"
+    },
+    "I6": {
+      "class": "C5",
+      "note": "A consecutive-dead-session counter is a running online statistic by construction (each session only needs to know its own capability state plus the prior count).",
+      "online_identifiable": "yes"
+    },
+    "I7": {
+      "class": "C6",
+      "note": "Max-achievable mu/er/qp_delta across candidates vs. the active bar is computable from the same-session candidate set before the decision is emitted.",
+      "online_identifiable": "yes"
+    },
+    "I8": {
+      "class": "C7",
+      "note": "Kill-rate per gate is computable from the same-session funnel counters; the 3-session 80% variant needs a short rolling window (already-available prior sessions), not future information.",
+      "online_identifiable": "yes"
+    },
+    "I9": {
+      "class": "C8",
+      "note": "A heartbeat (exactly one completed run + notification per NYSE session) is checkable by an external watchdog independent of the run's own internal state -- the C8 case (2026-06-05) is precisely the scenario where the run itself cannot self-report, so this must be an EXTERNAL cron/watchdog check, not a check embedded inside the pipeline.",
+      "online_identifiable": "yes"
+    }
+  },
+  "per_session_raw": {
+    "2026-04-21": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [],
+      "disposition": "MISSING_DECISION_NO_NOTIFICATION",
+      "flight_failed_seen": false,
+      "has_decision_notification": false,
+      "loaded_models_last": [
+        "17",
+        "38"
+      ],
+      "log_sha256": "fcd0e81f0606ca8c398bb93730456f09c21e8f244d39e9db78ba24557cc0dd2b",
+      "n_lines": 4046,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-04-22": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [],
+      "disposition": "MISSING_DECISION_NO_NOTIFICATION",
+      "flight_failed_seen": false,
+      "has_decision_notification": false,
+      "loaded_models_last": [
+        "22",
+        "38"
+      ],
+      "log_sha256": "513c65f3459a8c1ef51c7b82c8e9113500c267f3c94ffcc6c1ffa52ff35bfb3f",
+      "n_lines": 422,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-04-23": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "4",
+          "25"
+        ],
+        [
+          "3",
+          "23"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-04-23 21:22:35,311 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY TSM x6 @ $382.66 | regime=BULL_CALM conf=0.00 held=5 eq=$10,088",
+        "2026-04-23 23:10:11,851 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (defensives_filtered(1)) | regime=BULL_CALM conf=0.00 held=5 eq=$10,093"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "28",
+        "43"
+      ],
+      "log_sha256": "c09775f5ab39612d7ff825e64f03a9b016e70ae40c134cb26c751df495288bc3",
+      "n_lines": 14388,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-04-24": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "2",
+          "23"
+        ],
+        [
+          "5",
+          "22"
+        ],
+        [
+          "6",
+          "44"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-04-24 12:05:09,394 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (defensives_filtered(1)) | regime=BULL_CALM conf=0.00 held=5 eq=$10,200",
+        "2026-04-24 13:56:10,907 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (defensives_filtered(1)) | regime=BULL_CALM conf=0.00 held=5 eq=$10,182",
+        "2026-04-24 20:26:25,307 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (defensives_filtered(1)) | regime=BULL_CALM conf=0.00 held=5 eq=$10,179"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "49",
+        "99"
+      ],
+      "log_sha256": "09349707441f7f307e4a9d2182eeb041e332495ce9677ade6cb452f77b5b15be",
+      "n_lines": 692,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-04-27": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "10",
+          "41"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-04-27 14:05:08,411 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | EXIT TSM (qp_sell) | regime=BULL_CALM conf=0.54 held=5 eq=$10,199"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "46",
+        "103"
+      ],
+      "log_sha256": "67c8d638ea57a60b776d841513668dba04972a1650324fc59ed5651a76a9e6f9",
+      "n_lines": 435,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-04-28": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [],
+      "disposition": "MISSING_DECISION_NO_NOTIFICATION",
+      "flight_failed_seen": false,
+      "has_decision_notification": false,
+      "loaded_models_last": null,
+      "log_sha256": "90663c9b15cd38dd04a28a80c2cb79262101805e60e1f4d93d45a3c328b745b9",
+      "n_lines": 781,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-04-29": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "33",
+          "44"
+        ],
+        [
+          "33",
+          "44"
+        ],
+        [
+          "33",
+          "44"
+        ],
+        [
+          "56",
+          "82"
+        ],
+        [
+          "56",
+          "82"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-04-29 15:00:31,397 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.61 held=5 eq=$10,000",
+        "2026-04-29 15:27:46,615 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.61 held=5 eq=$10,007",
+        "2026-04-29 15:43:41,802 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY FTNT x1 @ $85.52 | BUY NVDA x1 @ $210.89 | regime=BULL_CALM conf=0.61 held=5 eq=$10,009"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "87",
+        "103"
+      ],
+      "log_sha256": "2935e2344d84596573d2011edc31d4218cdc3cad9c7d2bcc0659a15ae30af676",
+      "n_lines": 1755,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-04-30": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "55",
+          "78"
+        ],
+        [
+          "55",
+          "78"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-04-30 16:05:16,790 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY BA x2 @ $228.85 | regime=BULL_CALM conf=0.64 held=4 eq=$10,034",
+        "2026-05-01 08:16:41,684 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY BA x2 @ $222.43 | regime=BULL_CALM conf=0.64 held=4 eq=$10,032"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "de3d4d68b3e8d086624792e541193423e2d7c65f903f8150b248cc28ee5abb08",
+      "n_lines": 3962,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-05-01": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "54",
+          "79"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-01 15:36:12,620 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY FTNT x1 @ $86.29 | FAILED-EXIT BA (qp_sell: {\"code\":40310100,\"message\":\"trade denied due to pattern day ) | regime=BULL_CALM conf=0.64 held=3 eq=$10,076"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "e8686786ab8037f95b2e7aef3faebdeb0130a725df68c8d25fda2873103f3d2d",
+      "n_lines": 582,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-05-04": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "56",
+          "79"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-04 14:07:09,517 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.63 held=3 eq=$10,112"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "d6c20a4a845f72c9d5bd22de72cf674a2723cb5186acf4033daecec587ca4919",
+      "n_lines": 310,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-05-05": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [],
+      "disposition": "MISSING_DECISION_NO_NOTIFICATION",
+      "flight_failed_seen": false,
+      "has_decision_notification": false,
+      "loaded_models_last": null,
+      "log_sha256": "c59086bbd0ba7df3171e77945a74780e966b9fc28ea87344d23bdca570457ac4",
+      "n_lines": 1664,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-05-06": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "58",
+          "79"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-06 14:06:11,197 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.65 held=3 eq=$10,376"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "8db2e59e0c1aedf40e6eb06ea680ba207f4483826b7c29797b5cad06b1435d9a",
+      "n_lines": 328,
+      "preflight_fails": [
+        "P-RUN-ID"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-05-07": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [],
+      "disposition": "MISSING_DECISION_NO_NOTIFICATION",
+      "flight_failed_seen": false,
+      "has_decision_notification": false,
+      "loaded_models_last": null,
+      "log_sha256": "e2ae72baa06e201e98e116c6b627442e76184cf5d4ef52b1c4bb1605ca95b10e",
+      "n_lines": 1546,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-05-08": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "59",
+          "79"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-08 14:10:11,720 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY ABBV x5 @ $202.71 | BUY SOFI x63 @ $16.00 | regime=BULL_CALM conf=0.64 held=3 eq=$10,579"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "070f83b6b013dd6732642176a3fbe35437801893e6c58f1ec109e2e603139e87",
+      "n_lines": 335,
+      "preflight_fails": [
+        "P-RUN-ID"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-05-11": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "64",
+          "82"
+        ],
+        [
+          "64",
+          "82"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-11 13:19:52,389 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY MCD x35 @ $275.75 | BUY PANW x42 @ $207.88 | BUY TSLA x22 @ $428.35 | regime=BULL_CALM conf=0.65 held=0 eq=$100,000",
+        "2026-05-11 14:08:32,314 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY MCD x35 @ $275.75 | BUY PANW x42 @ $207.88 | BUY TSLA x22 @ $428.35 | regime=BULL_CALM conf=0.65 held=0 eq=$100,000"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "e366e6409c5dbb628c45754be9947e4042e6218aae7fe6af207ec440c9341438",
+      "n_lines": 943,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 0,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "DOCU"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "IBM"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "META"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "MPWR"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "MU"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "NVDA"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "NVTS"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "PLTR"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "DOCU"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "IBM"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "META"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "MPWR"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "MU"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "NVDA"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "NVTS"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "PLTR"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-05-12": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "55",
+          "79"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-12 14:08:46,758 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY DOCU x23 @ $45.49 | BUY MCD x3 @ $274.60 | BUY VRT x2 @ $367.92 | regime=BULL_CALM conf=0.67 held=3 eq=$10,613"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "5931c93c29b2c656b36abb16085a3f9244a1e19f61c289c89e175df94569b005",
+      "n_lines": 479,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 4,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "GTLB"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "LITE"
+        }
+      ]
+    },
+    "2026-05-13": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "52",
+          "76"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-13 14:06:49,334 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY GE x3 @ $297.45 | regime=BULL_CALM conf=0.64 held=6 eq=$10,686"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "96699dd86095fe16b513d5b9c0d0a6b112b2d053a1f3a424ee8f1f10e5294a9b",
+      "n_lines": 477,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 5,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "GTLB"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 4,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 1,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "LITE"
+        }
+      ]
+    },
+    "2026-05-14": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "51",
+          "75"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-14 14:10:03,828 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY TXN x3 @ $306.34 | regime=BULL_CALM conf=0.64 held=7 eq=$10,676"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "88243db40d24ebc8bc71ca473f6639a283859c71c32ca53f0f76e9ba29ffb561",
+      "n_lines": 478,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 6,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "GTLB"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "LITE"
+        }
+      ]
+    },
+    "2026-05-15": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "50",
+          "75"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-15 14:11:04,935 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | BUY META x1 @ $618.43 | regime=BULL_CALM conf=0.68 hurst=0.77 hurst_reg=MOM held=7 eq=$10,615"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "82",
+        "103"
+      ],
+      "log_sha256": "223f6046929bc3fa67bfdb7cc065a7cee51ba2c2dea1a647c38a56b1dea4d21b",
+      "n_lines": 479,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 7,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "GTLB"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "LITE"
+        }
+      ]
+    },
+    "2026-05-18": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "79",
+          "105"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-18 14:12:10,524 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] TRADE | EXIT GE (qp_sell) P/L=$-9.79 (-3.31%) | regime=BULL_CALM conf=0.63 hurst=0.74 hurst_reg=MOM held=7 eq=$10,596"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "687078e4d2652b98c39fba795d339e22d6c314487d7b76bfd7af66d25d0a451a",
+      "n_lines": 570,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 10,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 15,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 15,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 15,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-05-19": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "80",
+          "107"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-19 14:13:26,173 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (tier_threshold) | regime=BULL_CALM conf=0.58 hurst=0.71 hurst_reg=MOM held=7 eq=$10,609"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "9bbfda504761d33e8ee7dd96712aa6770c68af3e3aa6a0eed1fee7b52a7c6ca0",
+      "n_lines": 403,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 11,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 1,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 15,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-05-20": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "81",
+          "108"
+        ],
+        [
+          "81",
+          "108"
+        ],
+        [
+          "81",
+          "108"
+        ],
+        [
+          "81",
+          "108"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-20 14:17:37,705 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (tier_threshold) | regime=BULL_CALM conf=0.58 hurst=0.71 hurst_reg=MOM held=6 eq=$10,716 | SHADOW[hf_patchtst_canonical_seed44] top3=GM/AFRM/FDX top10\u2229prim=2/10 \u03c1=+0.17 n=70",
+        "2026-05-20 15:34:07,031 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (tier_threshold) | regime=BULL_CALM conf=0.58 hurst=0.71 hurst_reg=MOM held=6 eq=$10,700 | SHADOW[hf_patchtst_canonical_seed44] top3=GM/AFRM/FDX top10\u2229prim=2/10 \u03c1=+0.17 n=70",
+        "2026-05-20 20:41:27,991 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (buy_blocked) | regime=BULL_CALM conf=0.58 hurst=0.71 hurst_reg=MOM held=6 eq=$10,741 | SHADOW[hf_patchtst_canonical_seed44] top3=GM/AFRM/FDX top10\u2229prim=2/10 \u03c1=+0.17 n=70"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "b37de87fdc14e79a1021999e2aabdc487163154884b97ddead47cad57e2b6733",
+      "n_lines": 2299,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 12,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 2,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 11,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-05-21": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "81",
+          "108"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-05-21 14:20:06,148 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (qp_delta_below_min_dw(66)) | regime=BULL_CALM conf=0.59 hurst=0.71 hurst_reg=MOM held=6 eq=$10,785 | SHADOW[hf_patchtst_canonical_seed44] top3=GM/AFRM/FDX top10\u2229prim=2/10 \u03c1=+0.18 n=69"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "6b3e7d6379e6fc794ddd8db4f780c7c21e359665d4b9a1557921a8339e0203a1",
+      "n_lines": 922,
+      "preflight_fails": [
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 13,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 18,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 13,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 18,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 18,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 13,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "ORCL"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 13,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 12,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-05-22": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-05-22 17:49:04,611 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.60 hurst=0.72 hurst_reg=MOM held=6 eq=$10,820",
+        "2026-05-22 18:01:51,808 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.60 hurst=0.72 hurst_reg=MOM held=6 eq=$10,820",
+        "2026-05-22 18:43:43,295 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.60 hurst=0.72 hurst_reg=MOM held=6 eq=$10,820"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "12bb31e2c01e0583628a63350952a5bb5937a606fb5931a66889dcd0f93030d2",
+      "n_lines": 2482,
+      "preflight_fails": [
+        "P-CONFIG-FP",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-05-26": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-05-26 13:55:44,816 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.56 hurst=0.69 hurst_reg=MOM held=6 eq=$11,001"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "8cb68338b542b7cc8f517ddd3ff2be93ff1f023548c3370ed6020981e5680ee4",
+      "n_lines": 555,
+      "preflight_fails": [
+        "P-CONFIG-FP",
+        "P-PANEL-CONTRACT",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-05-27": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-05-27 13:55:43,187 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.56 hurst=0.69 hurst_reg=MOM held=5 eq=$11,015"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "b4525cdd2db7d01ec15875043ebb0efce8821a88123080b5b028ae4fb42a9988",
+      "n_lines": 554,
+      "preflight_fails": [
+        "P-PANEL-CONTRACT",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-05-28": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-05-28 13:40:06,838 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.59 hurst=0.71 hurst_reg=MOM held=5 eq=$11,022"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "5b43855145560a2aa660b654e0703e26a74fb18076ebadda61d7d9e72549aab4",
+      "n_lines": 1111,
+      "preflight_fails": [
+        "P-PANEL-CONTRACT",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-05-29": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-05-29 13:55:52,966 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.59 hurst=0.72 hurst_reg=MOM held=5 eq=$11,071"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "4ad0a336056d9ce1f881e0c01dfee3bda6adef53ebb877b0693e8794fd629726",
+      "n_lines": 556,
+      "preflight_fails": [
+        "P-PANEL-CONTRACT",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-01": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "82",
+          "108"
+        ],
+        [
+          "82",
+          "108"
+        ],
+        [
+          "82",
+          "108"
+        ],
+        [
+          "82",
+          "108"
+        ],
+        [
+          "82",
+          "108"
+        ],
+        [
+          "82",
+          "108"
+        ],
+        [
+          "82",
+          "108"
+        ],
+        [
+          "82",
+          "108"
+        ],
+        [
+          "82",
+          "108"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-01 13:56:16,152 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (panel_scoring_fail_closed(72)) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=6 eq=$11,197",
+        "2026-06-01 15:38:26,756 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (risk_gate_vol_dropped(10)) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=6 eq=$11,165 | SHADOW[hf_patchtst_pt07_strict_seed44] top3=GM/IBM/AMAT top10\u2229prim=2/10 \u03c1=+0.23 n=72",
+        "2026-06-01 17:20:56,819 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (regime_admission_blocked(72)) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=6 eq=$11,162 | SHADOW[hf_patchtst_pt07_strict_seed44] top3=GM/IBM/AMAT top10\u2229prim=2/10 \u03c1=+0.23 n=72"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "fd58336745cd54322278ebac614ee6adfc976c17c7332445886365979885b043",
+      "n_lines": 4189,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "LITE"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NET"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "NFLX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 20,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-06-02": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "86",
+          "110"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-02 14:10:28,244 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (regime_admission_blocked(74)) | regime=BULL_CALM conf=0.63 hurst=0.74 hurst_reg=MOM held=4 eq=$11,227 | SHADOW[hf_patchtst_pt07_strict_seed44] top3=GM/IBM/AMAT top10\u2229prim=1/10 \u03c1=+0.18 n=74"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "def2718c4e14d2434b9f85106b94e423dd54a7be0734802cab6fff8cf5f157a4",
+      "n_lines": 448,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 25,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 21,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 15,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "WMT"
+        },
+        {
+          "days_ago": 21,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-06-03": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "88",
+          "111"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-03 14:10:45,102 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (regime_admission_blocked(76)) | regime=BULL_CALM conf=0.62 hurst=0.74 hurst_reg=MOM held=3 eq=$10,998 | SHADOW[hf_patchtst_pt07_strict_seed44] top3=HON/GM/IBM top10\u2229prim=2/10 \u03c1=+0.16 n=76"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "bb62e17371e7367b42e654cc47a32d22122c8b419d933cce81b24bb8213301c1",
+      "n_lines": 468,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 26,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 22,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 22,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-06-04": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "89",
+          "111"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-04 14:10:21,486 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (regime_admission_blocked(77)) | regime=BULL_CALM conf=0.64 hurst=0.75 hurst_reg=MOM held=3 eq=$11,050 | SHADOW[hf_patchtst_pt07_strict_seed44] top3=HON/GM/IBM top10\u2229prim=2/10 \u03c1=+0.16 n=77"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "0549f5215e694e170013b282e224ec38e724d1539feb2de499425042a505d0d3",
+      "n_lines": 477,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 27,
+          "ticker": "ABBV"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "CVX"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 17,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "GS"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "HD"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "LLY"
+        },
+        {
+          "days_ago": 27,
+          "ticker": "LMT"
+        },
+        {
+          "days_ago": 27,
+          "ticker": "ON"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "PANW"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "RTX"
+        },
+        {
+          "days_ago": 27,
+          "ticker": "SOFI"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "SPOT"
+        },
+        {
+          "days_ago": 26,
+          "ticker": "TSLA"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 23,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-06-05": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [],
+      "disposition": "MISSING_DECISION_NO_NOTIFICATION",
+      "flight_failed_seen": false,
+      "has_decision_notification": false,
+      "loaded_models_last": null,
+      "log_sha256": "7051f717ae3f4ca517e4bbe23dafd4db2467454ac30a4eeffac97e6f88b4de3c",
+      "n_lines": 202,
+      "preflight_fails": [],
+      "process_terminated_seen": true,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-06-08": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-06-08 13:53:57,957 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.68 hurst=0.77 hurst_reg=MOM held=3 eq=$10,751"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "604e0186f432bf3b0878a3c8b19a5d37f6dc57e2fb6dd0ba641d0b0064c2027a",
+      "n_lines": 586,
+      "preflight_fails": [
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-09": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "100",
+          "111"
+        ],
+        [
+          "100",
+          "111"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-09 13:55:46,347 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.69 hurst=0.78 hurst_reg=MOM held=3 eq=$10,691",
+        "2026-06-09 21:39:59,234 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (risk_gate_vol_dropped(16)) | regime=BULL_CALM conf=0.69 hurst=0.78 hurst_reg=MOM held=3 eq=$10,614",
+        "2026-06-09 21:58:12,300 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] PENDING | PENDING-BUY SPOT x1 (accepted 71015d8a-0d89-44fa-b3a5-bd5588202d92) | PENDING-BUY HON x4 (accepted c5c6a3d5-d9a2-4f9a-bdf5-77cebb8771bf) | PENDING-BUY LLY x2 (accepted 746b1a34-df45-41db-b48c-b968d6c6a7e0) | PENDING-BUY GM x10 (accepted e16eeccb-37f6-4865-9fd2-3ed9f1b6f027) | PENDING-BUY IBM x1 (accepted ada1811c-b117-49e7-8887-b24410bfecee) | regime=BULL_CALM conf=0.69 hurst=0.78 hurst_reg=MOM held=3 eq=$10,616"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "12c8b3e1a5f0092c173fcb21b966f951ebbd5ac5b0179439ffd5b3dc0d97a730",
+      "n_lines": 1749,
+      "preflight_fails": [
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": [
+        {
+          "days_ago": 25,
+          "ticker": "BA"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 22,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 13,
+          "ticker": "FTNT"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "XOM"
+        },
+        {
+          "days_ago": 25,
+          "ticker": "BA"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "CSCO"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 22,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 13,
+          "ticker": "FTNT"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "XOM"
+        }
+      ]
+    },
+    "2026-06-10": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-06-10 13:55:46,068 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] PENDING | PENDING-EXIT ORCL x10.0 (stop_loss; accepted 160cf022-5c45-4d46-9280-5fa2468ee234) | regime=BULL_CALM conf=0.69 hurst=0.78 hurst_reg=MOM held=3 eq=$10,436"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "de9a66ae087c3b8e47195c29458528a6d6b36f4ef520340dcddf0edb241e6784",
+      "n_lines": 588,
+      "preflight_fails": [
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-11": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "102",
+          "112"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-11 14:18:03,200 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (transition_window) | regime=BEAR conf=0.50 transition=T hard_bear=T hurst=0.78 hurst_reg=MOM held=2 eq=$10,418",
+        "2026-06-11 16:21:43,874 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] PENDING | PENDING-EXIT MU x1.0 (max_hold; accepted c6c626be-f6d6-4fb5-ba60-5282b5b26bc8) | regime=CHOPPY conf=0.50 transition=T hurst=0.78 hurst_reg=MOM held=2 eq=$10,427"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "88434a5eb486f30c5827e3b6b88e5042640be5fe71bb74261e925b644d2cdf45",
+      "n_lines": 1277,
+      "preflight_fails": [
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": [
+        {
+          "days_ago": 27,
+          "ticker": "BA"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 24,
+          "ticker": "DUK"
+        },
+        {
+          "days_ago": 15,
+          "ticker": "FTNT"
+        },
+        {
+          "days_ago": 16,
+          "ticker": "WFC"
+        }
+      ]
+    },
+    "2026-06-12": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-06-12 13:55:59,303 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (transition_window) | regime=BULL_CALM conf=0.50 transition=T hurst=0.80 hurst_reg=MOM held=2 eq=$10,432"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "e01878b542a6cfdf190983aac7e9b0f7566a892f57e50f450a4315074304b9ae",
+      "n_lines": 612,
+      "preflight_fails": [
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": true,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-15": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-06-15 13:55:52,579 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.73 hurst=0.81 hurst_reg=MOM held=2 eq=$10,537"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "e95ea291a01f63f41bbc1909da5cf2752491d1627bc778dc646d8044f9f4e622",
+      "n_lines": 596,
+      "preflight_fails": [
+        "P-MODEL-STALENESS",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-16": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-06-16 13:55:51,708 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (transition_window) | regime=CHOPPY conf=0.50 transition=T hurst=0.81 hurst_reg=MOM held=2 eq=$10,515"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "f3c91bf8f5f9db5064d18c70da60c5c4f825e8fe7815fd2c7155b00829a6435d",
+      "n_lines": 598,
+      "preflight_fails": [
+        "P-MODEL-STALENESS",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-17": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-06-17 13:55:56,721 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (transition_window) | regime=BULL_CALM conf=0.50 transition=T hurst=0.79 hurst_reg=MOM held=1 eq=$10,551"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "0e45582872c0e194609598f049b460ad30510c7014ab1a2d2de7917baca7b1a7",
+      "n_lines": 597,
+      "preflight_fails": [
+        "P-MODEL-STALENESS",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-18": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-06-18 13:55:50,898 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.71 hurst=0.79 hurst_reg=MOM held=1 eq=$10,633"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "114",
+        "142"
+      ],
+      "log_sha256": "8825e0cb0de235e480bfea9d8855de13d33914452f0934b04436d56a8a03819f",
+      "n_lines": 597,
+      "preflight_fails": [
+        "P-MODEL-STALENESS",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-22": {
+      "buy_scan_candidates_from_tickers": [],
+      "decision_lines_raw": [
+        "2026-06-22 13:55:52,607 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.67 hurst=0.77 hurst_reg=MOM held=1 eq=$10,729"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": true,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "113",
+        "142"
+      ],
+      "log_sha256": "8dca707d74c0d69f907b72a1e6fefc39619a7abbac8f3bab73662a9687127800",
+      "n_lines": 606,
+      "preflight_fails": [
+        "P-MODEL-STALENESS",
+        "P-REGIME-IC",
+        "P-WF-GATE"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-06-23": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "104",
+          "112"
+        ],
+        [
+          "100",
+          "108"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-23 14:07:21,815 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] PENDING | PENDING-BUY PANW x3 (accepted 9ce7702a-7b3f-4ee7-9960-9bcfcb4ee313) | PENDING-BUY CSCO x5 (accepted efd2bc93-3020-4bd0-976f-101da502522b) | PENDING-BUY AVGO x1 (accepted 9b04fec9-58f9-4eec-8de2-c40cb71391c6) | PENDING-BUY AMZN x1 (accepted 160831fe-8540-43fd-b21f-cbdbe7c4653d) | PENDING-BUY NFLX x3 (accepted d65311f8-0c97-455d-bc72-96b4a59185f4) | PENDING-BUY ZM x2 (accepted 61be4acf-d752-47ce-b55a-d3ca68377d53) | regime=BULL_CALM conf=0.71 hurst=0.79 hurst_reg=MOM held=1 eq=$10,551 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=IBM/PLTR/SOFI top10\u2229prim=3/10 \u03c1=+0.32 n=81",
+        "2026-06-23 22:23:09,049 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] PENDING | PENDING-BUY CRWD x1 (accepted d28dd999-ece2-4723-b98f-52ed497eb0ed) | PENDING-BUY SPG x1 (accepted 2982df3a-bfe6-40d4-9745-a554ea07b130) | PENDING-BUY NFLX x3 (accepted 708e5217-3330-491a-b9b3-dcdff88cbb32) | PENDING-BUY ZM x2 (accepted 6d11eb45-72bb-47f0-844d-702151f5f669) | regime=BULL_CALM conf=0.71 hurst=0.79 hurst_reg=MOM held=1 eq=$10,589 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=IBM/PLTR/SOFI top10\u2229prim=3/10 \u03c1=+0.28 n=77"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "113",
+        "145"
+      ],
+      "log_sha256": "6579f8d1f7808587c31713df25006f103657081e46ef0381daee0023af16a789",
+      "n_lines": 1045,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 28,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 27,
+          "ticker": "FTNT"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "HON"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "META"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WFC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 27,
+          "ticker": "FTNT"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "HON"
+        },
+        {
+          "days_ago": 8,
+          "ticker": "META"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "WFC"
+        }
+      ]
+    },
+    "2026-06-24": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "95",
+          "104"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-24 14:07:22,422 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] PENDING | PENDING-BUY CME x1 (accepted 879077ef-7ab3-4383-bb01-80932b9492f8) | PENDING-BUY AMZN x2 (accepted fb991ce0-41b2-4110-a4e6-eb99a4803099) | PENDING-BUY NFLX x9 (accepted 94ece0e0-3fee-4161-a70c-ceb0f23427fd) | regime=BULL_CALM conf=0.68 hurst=0.78 hurst_reg=MOM held=6 eq=$10,655 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=ZM/IBM/MMM top10\u2229prim=4/10 \u03c1=+0.25 n=73"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "110",
+        "145"
+      ],
+      "log_sha256": "584b22a804f704b98986fb7406b61a094da16fc9d7b06523874ed7066a8566d7",
+      "n_lines": 546,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 29,
+          "ticker": "BAC"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "D"
+        },
+        {
+          "days_ago": 7,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 28,
+          "ticker": "FTNT"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "HON"
+        },
+        {
+          "days_ago": 9,
+          "ticker": "META"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "WFC"
+        }
+      ]
+    },
+    "2026-06-25": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "97",
+          "105"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-25 14:07:11,061 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (risk_gate_vol_dropped(21)) | regime=BULL_CALM conf=0.68 hurst=0.78 hurst_reg=MOM held=5 eq=$10,677 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=MMM/ZM/NEM top10\u2229prim=2/10 \u03c1=+0.29 n=76"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "110",
+        "145"
+      ],
+      "log_sha256": "dfe96deea452b48df7a288c79167034d3998fbb91fe353564f7c945f275496a7",
+      "n_lines": 502,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 8,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 29,
+          "ticker": "FTNT"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "HON"
+        },
+        {
+          "days_ago": 10,
+          "ticker": "META"
+        }
+      ]
+    },
+    "2026-06-26": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "101",
+          "105"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-26 14:07:24,348 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (risk_gate_vol_dropped(22)) | regime=BULL_CALM conf=0.66 hurst=0.76 hurst_reg=MOM held=5 eq=$10,631 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=MS/CME/IBM top10\u2229prim=4/10 \u03c1=+0.16 n=79"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "110",
+        "145"
+      ],
+      "log_sha256": "a15b3ab70b0d62e1f402c15e2763b84779b283d1d55a1f507c0e17f118f7305d",
+      "n_lines": 502,
+      "preflight_fails": [],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 0,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "HON"
+        },
+        {
+          "days_ago": 0,
+          "ticker": "META"
+        }
+      ]
+    },
+    "2026-06-29": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "65",
+          "69"
+        ],
+        [
+          "65",
+          "69"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-29 11:08:02,401 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (risk_gate_vol_dropped(22)) | regime=BULL_CALM conf=0.66 hurst=0.76 hurst_reg=MOM held=5 eq=$10,798 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=IBM/XOM/FTNT top10\u2229prim=3/10 \u03c1=+0.03 n=43",
+        "2026-06-29 14:07:15,057 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (risk_gate_vol_dropped(22)) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=5 eq=$10,814 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=IBM/PLTR/SOFI top10\u2229prim=5/10 \u03c1=+0.26 n=43"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "74",
+        "145"
+      ],
+      "log_sha256": "49cc69a4c15fb73e5a51c5c9f72d848c42245ab346b33828e3d453491f3f0ac6",
+      "n_lines": 967,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 3,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "HON"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "META"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "HON"
+        },
+        {
+          "days_ago": 3,
+          "ticker": "META"
+        }
+      ]
+    },
+    "2026-06-30": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "0",
+          "0"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-06-30 14:06:15,989 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.59 hurst=0.71 hurst_reg=MOM held=7 eq=$10,856"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "7",
+        "145"
+      ],
+      "log_sha256": "ee9dc3bfee49521f6ffadaf0770e28ee6f511763034680f7a65689badbd0575d",
+      "n_lines": 480,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-07-01": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "114",
+          "119"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-07-01 14:07:46,427 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=6 eq=$10,806"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "125",
+        "145"
+      ],
+      "log_sha256": "7b1f33a1849d5f8ee97a34bdf16a5a3c3f80b9dc212c5c53eff83c8e0bd8e23b",
+      "n_lines": 707,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": [
+        {
+          "days_ago": 5,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "HON"
+        },
+        {
+          "days_ago": 5,
+          "ticker": "META"
+        }
+      ]
+    },
+    "2026-07-02": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "115",
+          "120"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-07-02 14:07:28,550 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] PENDING | PENDING-BUY GRMN x1 (accepted b584ad29-8de4-4705-b7d2-df4e7078e5e1) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=5 eq=$10,709 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=META/IBM/ABBV top10\u2229prim=2/10 \u03c1=+0.17 n=83"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "125",
+        "145"
+      ],
+      "log_sha256": "332f8ee73d9820fd8e4112e07d5591a3fa9e72c8273e5f6c17fada0e5d476979",
+      "n_lines": 533,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 6,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "GE"
+        },
+        {
+          "days_ago": 6,
+          "ticker": "HON"
+        }
+      ]
+    },
+    "2026-07-06": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "52",
+          "53"
+        ],
+        [
+          "52",
+          "53"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-07-06 16:49:05,668 [INFO] live.runner: ntfy sent: RENQUANT-104 [sell-only] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=6 eq=$10,754",
+        "2026-07-06 17:23:34,572 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] PENDING | PENDING-BUY AVGO x1 (accepted e6d9951b-bc93-4c59-b3a2-89d42b93e6e3) | PENDING-BUY MCHP x3 (accepted cc32a515-cf5f-4c3c-a2a6-d183dfd6c262) | PENDING-EXIT SOFI x26.0 (model_protection; accepted 20e1468c-604e-4dac-ab25-a0117aa76617) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=6 eq=$10,758 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=NFLX/MCHP/AVGO top10\u2229prim=5/10 \u03c1=+0.67 n=35"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "58",
+        "145"
+      ],
+      "log_sha256": "dbb16097c61dde818e9b7882d510149211ead660a5e113808f4840d7bdea9c6a",
+      "n_lines": 1227,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": true,
+      "wash_sale_drops": []
+    },
+    "2026-07-07": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "51",
+          "52"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-07-07 14:36:24,494 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] PENDING | PENDING-BUY ZM x2 (accepted a3cb4d2b-718f-456a-a5e1-04418f591726) | regime=BULL_CALM conf=0.61 hurst=0.73 hurst_reg=MOM held=7 eq=$10,666 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=SPOT/NFLX/ZM top10\u2229prim=6/10 \u03c1=+0.59 n=33"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "58",
+        "145"
+      ],
+      "log_sha256": "39cac4d165c1af669ec0ed55d6a4396818520e23cbb1b9ca8950aa5dec5f6f53",
+      "n_lines": 565,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-07-08": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "0",
+          "0"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-07-08 14:06:55,358 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.61 hurst=0.72 hurst_reg=MOM held=5 eq=$10,627"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "4",
+        "145"
+      ],
+      "log_sha256": "3d1d6557367720b7af3f4d36764eb2707a9c78b4b34bb0988813e7b916efecaa",
+      "n_lines": 484,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-07-09": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "0",
+          "0"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-07-09 14:06:29,691 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] DECISION | no trade (no_candidates) | regime=BULL_CALM conf=0.56 hurst=0.69 hurst_reg=MOM held=5 eq=$10,768"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "4",
+        "145"
+      ],
+      "log_sha256": "3bee17da46265dc500cc390871901908889ee20e986bba3dda2fd0e8c765f48b",
+      "n_lines": 483,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": []
+    },
+    "2026-07-10": {
+      "buy_scan_candidates_from_tickers": [
+        [
+          "116",
+          "122"
+        ]
+      ],
+      "decision_lines_raw": [
+        "2026-07-10 14:07:34,199 [INFO] live.runner: ntfy sent: RENQUANT-104 [full] PENDING | PENDING-BUY FTNT x2 (accepted c7063b8b-67d9-4854-8b42-708448258d2e) | PENDING-BUY APH x1 (accepted e080578e-3192-4f83-afdb-b27f79d35455) | PENDING-BUY ZM x2 (accepted ffd0e007-6110-47bf-922d-06b86828538c) | PENDING-BUY NFLX x2 (accepted a35a4956-69aa-492b-a73c-b13c95cf1b0d) | regime=BULL_CALM conf=0.54 hurst=0.68 hurst_reg=MOM held=3 eq=$10,753 | SHADOW[hf_patchtst_pt07_strict_seed44_previous_primary] top3=CMG/IBM/NEM top10\u2229prim=4/10 \u03c1=+0.38 n=85"
+      ],
+      "disposition": "SCORED",
+      "flight_failed_seen": false,
+      "has_decision_notification": true,
+      "loaded_models_last": [
+        "125",
+        "145"
+      ],
+      "log_sha256": "da006ae9c13025112649a051d29840d8b75e764889a42d62ae647b3f7a02f22e",
+      "n_lines": 549,
+      "preflight_fails": [
+        "P-MODEL-STALENESS"
+      ],
+      "process_terminated_seen": false,
+      "sellonly_fallback_seen": false,
+      "wash_sale_drops": [
+        {
+          "days_ago": 14,
+          "ticker": "EQIX"
+        },
+        {
+          "days_ago": 14,
+          "ticker": "GE"
+        }
+      ]
+    }
+  },
+  "population_and_denominator": {
+    "cross_check": "weekday_minus_holiday_count (56) == real_session_count (56) == len(doc's 56-row per-session table). All three independently agree; no session was silently dropped from the denominator.",
+    "known_holidays_excluded": [
+      "2026-05-25",
+      "2026-06-19",
+      "2026-07-03"
+    ],
+    "market_closed_dates": [
+      "2026-04-25",
+      "2026-05-25",
+      "2026-06-07",
+      "2026-06-19",
+      "2026-07-03"
+    ],
+    "missing_sessions_no_log_at_all": [],
+    "real_session_count": 56,
+    "rule": "Every calendar date in [start,end] for which logs/daily_104/<date>.log (bare filename) exists is cron-fired. MARKET_CLOSED = log body is the self-declared 'NYSE closed today ... skipping run' skip-stub (<=6 lines). REAL_SESSION = all other cron-fired dates. Any weekday-minus-federal-holiday date with no log file at all is MISSING_LOG (none found in this window).",
+    "weekday_minus_holiday_count": 56,
+    "window": {
+      "end": "2026-07-10",
+      "start": "2026-04-21"
+    }
+  },
+  "sessions_with_no_decision_notification": {
+    "dates": [
+      "2026-04-21",
+      "2026-04-22",
+      "2026-04-28",
+      "2026-05-05",
+      "2026-05-07",
+      "2026-06-05"
+    ],
+    "disposition": "MISSING_DECISION_NO_NOTIFICATION -- explicitly NOT counted as an economic no-trade",
+    "manual_confirmation": {
+      "2026-04-21": "Pipeline completed twice (0 orders both times, drawdown circuit breaker halt=90%>=35%) but never emitted an ntfy line of any kind -- first live session, notification-on-zero-orders was apparently not wired yet. Buys=0 is a genuine circuit-breaker halt, not a silent process death, but it was NEVER communicated externally.",
+      "2026-04-22": "Log truncates mid-run at line 421 (last line: LoadInsiderTradesTask fetching missing tickers) -- the run never reached the decision-emission phase. This is a genuinely incomplete/crashed run, previously only implicitly covered by the doc's 'degraded-inputs' label; this bundle makes the truncation explicit.",
+      "2026-04-28": "Training pipeline FAILED (calibrator refresh guard); log ends immediately at the FAILED line -- same-day decision phase never reached.",
+      "2026-05-05": "Training pipeline FAILED; log ends at the FAILED line.",
+      "2026-05-07": "Training pipeline FAILED (RuntimeError: Panel calibrator refresh failed -- aborting retrain to prevent CAL-7 stale-calibrator incident); log ends at the FAILED line.",
+      "2026-06-05": "Process Terminated (SIGTERM) mid-run during the news-sentiment-refresh step; matches the doc's C8 classification exactly."
+    }
+  }
+}

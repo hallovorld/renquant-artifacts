@@ -1,0 +1,17 @@
+{
+ "artifact_id": "silent-no-buy-block-registry-20260711",
+ "fingerprint": "sha256:624be9ade4dc54c1923a0efa0bc7a74fc1da5bea69750371b4dfae3f537e8d94",
+ "metrics": {
+  "market_closed_sessions": 5,
+  "missing_log_sessions": 0,
+  "note": "Sealed forensic evidence for the whole-56-session silent no-buy block registry (orchestrator #474). Confirms the predeclared population rule (56 REAL_SESSION dates == weekday-minus-federal-holiday count == the doc's per-session table row count, all three independently agreeing), identifies 6 sessions with zero decision-notification of any kind (explicit MISSING_DECISION disposition, never counted as economic no-trade), and carries fresh broker-truth re-verification for the GE/HON/EQIX wash-sale mis-stamp correction (GE=2026-06-01, HON=2026-06-03, EQIX=2026-06-17, corrected in live_state.alpaca.json). This bundle exists specifically so the doc's 27/56, 67%, and flagged-at-time percentages do not rely on mutable live-tree paths (DB, logs, state file) as their durable citation, and so the C1-C8 taxonomy is labeled descriptive/retrospective rather than a validated detector performance estimate.",
+  "real_sessions": 56,
+  "sessions_covered": 61,
+  "sessions_missing_decision_notification": 6
+ },
+ "model_family": "decision-ledger-forensics",
+ "promotion_status": "diagnostic",
+ "retention_class": "experiment-pinned",
+ "strategy": "renquant_104",
+ "uri": "store://experiments/silent-no-buy-block-registry-20260711/RUN-LOCK.json"
+}
