@@ -1,0 +1,1564 @@
+2026-07-10 22:28:12,613 [INFO] preprocessing: CSRankNorm + train-fit Winsorize(±0.5%) applied bounds=[-2.624736, +4.006111]
+2026-07-10 22:28:12,633 [INFO] panel 342330 rows | cut=all | train=298594 val=35642 test=0 | n_feat=172
+2026-07-10 22:28:31,981 [INFO] PerDayDataset[val]: skipped 3408 cross-split lookback window(s) for split-pure PatchTST tensors
+2026-07-10 22:28:32,066 [INFO] days train=2183 val=227
+2026-07-10 22:28:32,072 [INFO] HFPatchTSTRanker n_params=0.07M kind=hf_patchtst dist_head=True film=False cross_stock=False
+2026-07-10 22:28:32,072 [INFO] PerRegimeICCallback wired | n_labels=2643
+2026-07-10 22:28:32,072 [INFO] EarlyStoppingCallback wired (patience=2)
+
+  0%|          | 0/10915 [00:00<?, ?it/s]/Users/renhao/git/github/RenQuant/.venv/lib/python3.10/site-packages/torch/utils/data/dataloader.py:775: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                   
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+ 20%|██        | 2183/10915 [05:08<20:08,  7.23it/s]{'loss': '0.77', 'grad_norm': '0.2224', 'learning_rate': '1.824e-05', 'epoch': '0.09162'}
+{'loss': '0.7624', 'grad_norm': '0.08333', 'learning_rate': '3.657e-05', 'epoch': '0.1832'}
+{'loss': '0.7584', 'grad_norm': '0.1076', 'learning_rate': '5.49e-05', 'epoch': '0.2749'}
+{'loss': '0.7695', 'grad_norm': '0.2225', 'learning_rate': '7.324e-05', 'epoch': '0.3665'}
+{'loss': '0.7731', 'grad_norm': '0.084', 'learning_rate': '9.157e-05', 'epoch': '0.4581'}
+{'loss': '0.76', 'grad_norm': '0.03222', 'learning_rate': '9.997e-05', 'epoch': '0.5497'}
+{'loss': '0.7604', 'grad_norm': '0.1101', 'learning_rate': '9.976e-05', 'epoch': '0.6413'}
+{'loss': '0.749', 'grad_norm': '0.4135', 'learning_rate': '9.934e-05', 'epoch': '0.7329'}
+{'loss': '0.7503', 'grad_norm': '0.3953', 'learning_rate': '9.872e-05', 'epoch': '0.8246'}
+{'loss': '0.7529', 'grad_norm': '0.5043', 'learning_rate': '9.791e-05', 'epoch': '0.9162'}
+
+
+  0%|          | 0/227 [00:00<?, ?it/s][A
+
+  2%|▏         | 4/227 [00:00<00:06, 33.72it/s][A
+
+  4%|▎         | 8/227 [00:00<00:07, 28.42it/s][A
+
+  5%|▍         | 11/227 [00:00<00:07, 27.21it/s][A
+
+  6%|▌         | 14/227 [00:00<00:08, 26.57it/s][A
+
+  7%|▋         | 17/227 [00:00<00:08, 26.19it/s][A
+
+  9%|▉         | 20/227 [00:00<00:07, 25.96it/s][A
+
+ 10%|█         | 23/227 [00:00<00:07, 25.84it/s][A
+
+ 11%|█▏        | 26/227 [00:00<00:07, 25.77it/s][A
+
+ 13%|█▎        | 29/227 [00:01<00:07, 25.72it/s][A
+
+ 14%|█▍        | 32/227 [00:01<00:07, 25.66it/s][A
+
+ 15%|█▌        | 35/227 [00:01<00:07, 25.60it/s][A
+
+ 17%|█▋        | 38/227 [00:01<00:07, 25.57it/s][A
+
+ 18%|█▊        | 41/227 [00:01<00:07, 25.50it/s][A
+
+ 19%|█▉        | 44/227 [00:01<00:07, 25.50it/s][A
+
+ 21%|██        | 47/227 [00:01<00:07, 25.51it/s][A
+
+ 22%|██▏       | 50/227 [00:01<00:06, 25.52it/s][A
+
+ 23%|██▎       | 53/227 [00:02<00:06, 25.49it/s][A
+
+ 25%|██▍       | 56/227 [00:02<00:06, 25.40it/s][A
+
+ 26%|██▌       | 59/227 [00:02<00:06, 25.30it/s][A
+
+ 27%|██▋       | 62/227 [00:02<00:06, 25.29it/s][A
+
+ 29%|██▊       | 65/227 [00:02<00:06, 25.27it/s][A
+
+ 30%|██▉       | 68/227 [00:02<00:06, 25.38it/s][A
+
+ 31%|███▏      | 71/227 [00:02<00:06, 25.32it/s][A
+
+ 33%|███▎      | 74/227 [00:02<00:06, 25.30it/s][A
+
+ 34%|███▍      | 77/227 [00:02<00:05, 25.29it/s][A
+
+ 35%|███▌      | 80/227 [00:03<00:05, 25.27it/s][A
+
+ 37%|███▋      | 83/227 [00:03<00:05, 25.26it/s][A
+
+ 38%|███▊      | 86/227 [00:03<00:05, 25.26it/s][A
+
+ 39%|███▉      | 89/227 [00:03<00:05, 25.30it/s][A
+
+ 41%|████      | 92/227 [00:03<00:05, 25.33it/s][A
+
+ 42%|████▏     | 95/227 [00:03<00:05, 25.34it/s][A
+
+ 43%|████▎     | 98/227 [00:03<00:05, 25.33it/s][A
+
+ 44%|████▍     | 101/227 [00:03<00:04, 25.34it/s][A
+
+ 46%|████▌     | 104/227 [00:04<00:04, 25.32it/s][A
+
+ 47%|████▋     | 107/227 [00:04<00:04, 25.40it/s][A
+
+ 48%|████▊     | 110/227 [00:04<00:04, 25.41it/s][A
+
+ 50%|████▉     | 113/227 [00:04<00:04, 25.35it/s][A
+
+ 51%|█████     | 116/227 [00:04<00:04, 25.41it/s][A
+
+ 52%|█████▏    | 119/227 [00:04<00:04, 25.48it/s][A
+
+ 54%|█████▎    | 122/227 [00:04<00:04, 25.51it/s][A
+
+ 55%|█████▌    | 125/227 [00:04<00:03, 25.54it/s][A
+
+ 56%|█████▋    | 128/227 [00:04<00:03, 25.54it/s][A
+
+ 58%|█████▊    | 131/227 [00:05<00:03, 25.54it/s][A
+
+ 59%|█████▉    | 134/227 [00:05<00:03, 25.45it/s][A
+
+ 60%|██████    | 137/227 [00:05<00:03, 25.44it/s][A
+
+ 62%|██████▏   | 140/227 [00:05<00:03, 25.49it/s][A
+
+ 63%|██████▎   | 143/227 [00:05<00:03, 25.48it/s][A
+
+ 64%|██████▍   | 146/227 [00:05<00:03, 25.42it/s][A
+
+ 66%|██████▌   | 149/227 [00:05<00:03, 25.49it/s][A
+
+ 67%|██████▋   | 152/227 [00:05<00:02, 25.57it/s][A
+
+ 68%|██████▊   | 155/227 [00:06<00:02, 25.55it/s][A
+
+ 70%|██████▉   | 158/227 [00:06<00:02, 25.59it/s][A
+
+ 71%|███████   | 161/227 [00:06<00:02, 25.61it/s][A
+
+ 72%|███████▏  | 164/227 [00:06<00:02, 25.66it/s][A
+
+ 74%|███████▎  | 167/227 [00:06<00:02, 25.65it/s][A
+
+ 75%|███████▍  | 170/227 [00:06<00:02, 25.65it/s][A
+
+ 76%|███████▌  | 173/227 [00:06<00:02, 25.59it/s][A
+
+ 78%|███████▊  | 176/227 [00:06<00:01, 25.54it/s][A
+
+ 79%|███████▉  | 179/227 [00:06<00:01, 25.51it/s][A
+
+ 80%|████████  | 182/227 [00:07<00:01, 25.55it/s][A
+
+ 81%|████████▏ | 185/227 [00:07<00:01, 25.40it/s][A
+
+ 83%|████████▎ | 188/227 [00:07<00:01, 25.28it/s][A
+
+ 84%|████████▍ | 191/227 [00:07<00:01, 25.29it/s][A
+
+ 85%|████████▌ | 194/227 [00:07<00:01, 25.42it/s][A
+
+ 87%|████████▋ | 197/227 [00:07<00:01, 25.51it/s][A
+
+ 88%|████████▊ | 200/227 [00:07<00:01, 25.58it/s][A
+
+ 89%|████████▉ | 203/227 [00:07<00:00, 25.58it/s][A
+
+ 91%|█████████ | 206/227 [00:08<00:00, 25.60it/s][A
+
+ 92%|█████████▏| 209/227 [00:08<00:00, 25.65it/s][A
+
+ 93%|█████████▎| 212/227 [00:08<00:00, 25.20it/s][A
+
+ 95%|█████████▍| 215/227 [00:08<00:00, 25.04it/s][A
+
+ 96%|█████████▌| 218/227 [00:08<00:00, 24.87it/s][A
+
+ 97%|█████████▋| 221/227 [00:08<00:00, 24.89it/s][A
+
+ 99%|█████████▊| 224/227 [00:08<00:00, 25.02it/s][A
+
+100%|██████████| 227/227 [00:08<00:00, 25.21it/s][A
+                                                    
+
+                                                 
+[A
+
+100%|██████████| 227/227 [00:08<00:00, 25.21it/s][A2026-07-10 22:33:57,987 [INFO] per-regime IC: {'BULL_CALM': '+0.0420', 'BULL_VOLATILE': '+0.0820', 'BEAR': '+0.1379', 'CHOPPY': '+0.0546'} | min=+0.0420
+
+
+                                                 [A/Users/renhao/git/github/RenQuant/.venv/lib/python3.10/site-packages/torch/utils/data/dataloader.py:775: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+ 40%|████      | 4366/10915 [10:27<15:08,  7.21it/s]{'eval_loss': '0.7962', 'eval_runtime': '9.009', 'eval_samples_per_second': '25.2', 'eval_steps_per_second': '25.2', 'epoch': '1'}
+{'loss': '0.7447', 'grad_norm': '0.3279', 'learning_rate': '9.689e-05', 'epoch': '1.008'}
+{'loss': '0.7528', 'grad_norm': '0.7187', 'learning_rate': '9.569e-05', 'epoch': '1.099'}
+{'loss': '0.7354', 'grad_norm': '0.4924', 'learning_rate': '9.43e-05', 'epoch': '1.191'}
+{'loss': '0.7389', 'grad_norm': '0.5573', 'learning_rate': '9.273e-05', 'epoch': '1.283'}
+{'loss': '0.7396', 'grad_norm': '0.7583', 'learning_rate': '9.098e-05', 'epoch': '1.374'}
+{'loss': '0.7369', 'grad_norm': '0.6396', 'learning_rate': '8.906e-05', 'epoch': '1.466'}
+{'loss': '0.7418', 'grad_norm': '0.8988', 'learning_rate': '8.699e-05', 'epoch': '1.557'}
+{'loss': '0.7409', 'grad_norm': '0.3997', 'learning_rate': '8.476e-05', 'epoch': '1.649'}
+{'loss': '0.7369', 'grad_norm': '0.8562', 'learning_rate': '8.239e-05', 'epoch': '1.741'}
+{'loss': '0.7467', 'grad_norm': '0.6349', 'learning_rate': '7.989e-05', 'epoch': '1.832'}
+{'loss': '0.7368', 'grad_norm': '0.8832', 'learning_rate': '7.727e-05', 'epoch': '1.924'}
+
+
+  0%|          | 0/227 [00:00<?, ?it/s][A
+
+  2%|▏         | 4/227 [00:00<00:06, 34.05it/s][A
+
+  4%|▎         | 8/227 [00:00<00:07, 28.41it/s][A
+
+  5%|▍         | 11/227 [00:00<00:07, 27.16it/s][A
+
+  6%|▌         | 14/227 [00:00<00:08, 26.50it/s][A
+
+  7%|▋         | 17/227 [00:00<00:08, 26.15it/s][A
+
+  9%|▉         | 20/227 [00:00<00:07, 25.89it/s][A
+
+ 10%|█         | 23/227 [00:00<00:07, 25.73it/s][A
+
+ 11%|█▏        | 26/227 [00:00<00:07, 25.65it/s][A
+
+ 13%|█▎        | 29/227 [00:01<00:07, 25.59it/s][A
+
+ 14%|█▍        | 32/227 [00:01<00:07, 25.54it/s][A
+
+ 15%|█▌        | 35/227 [00:01<00:07, 25.50it/s][A
+
+ 17%|█▋        | 38/227 [00:01<00:07, 25.48it/s][A
+
+ 18%|█▊        | 41/227 [00:01<00:07, 25.54it/s][A
+
+ 19%|█▉        | 44/227 [00:01<00:07, 25.60it/s][A
+
+ 21%|██        | 47/227 [00:01<00:07, 25.54it/s][A
+
+ 22%|██▏       | 50/227 [00:01<00:06, 25.40it/s][A
+
+ 23%|██▎       | 53/227 [00:02<00:06, 25.34it/s][A
+
+ 25%|██▍       | 56/227 [00:02<00:06, 25.35it/s][A
+
+ 26%|██▌       | 59/227 [00:02<00:06, 25.28it/s][A
+
+ 27%|██▋       | 62/227 [00:02<00:06, 25.27it/s][A
+
+ 29%|██▊       | 65/227 [00:02<00:06, 25.30it/s][A
+
+ 30%|██▉       | 68/227 [00:02<00:06, 25.34it/s][A
+
+ 31%|███▏      | 71/227 [00:02<00:06, 25.35it/s][A
+
+ 33%|███▎      | 74/227 [00:02<00:06, 25.36it/s][A
+
+ 34%|███▍      | 77/227 [00:02<00:05, 25.36it/s][A
+
+ 35%|███▌      | 80/227 [00:03<00:05, 25.40it/s][A
+
+ 37%|███▋      | 83/227 [00:03<00:05, 25.45it/s][A
+
+ 38%|███▊      | 86/227 [00:03<00:05, 25.40it/s][A
+
+ 39%|███▉      | 89/227 [00:03<00:05, 25.39it/s][A
+
+ 41%|████      | 92/227 [00:03<00:05, 25.38it/s][A
+
+ 42%|████▏     | 95/227 [00:03<00:05, 25.43it/s][A
+
+ 43%|████▎     | 98/227 [00:03<00:05, 25.40it/s][A
+
+ 44%|████▍     | 101/227 [00:03<00:04, 25.43it/s][A
+
+ 46%|████▌     | 104/227 [00:04<00:04, 25.42it/s][A
+
+ 47%|████▋     | 107/227 [00:04<00:04, 25.42it/s][A
+
+ 48%|████▊     | 110/227 [00:04<00:04, 25.41it/s][A
+
+ 50%|████▉     | 113/227 [00:04<00:04, 25.39it/s][A
+
+ 51%|█████     | 116/227 [00:04<00:04, 25.36it/s][A
+
+ 52%|█████▏    | 119/227 [00:04<00:04, 25.35it/s][A
+
+ 54%|█████▎    | 122/227 [00:04<00:04, 25.35it/s][A
+
+ 55%|█████▌    | 125/227 [00:04<00:04, 25.36it/s][A
+
+ 56%|█████▋    | 128/227 [00:05<00:03, 25.37it/s][A
+
+ 58%|█████▊    | 131/227 [00:05<00:03, 25.42it/s][A
+
+ 59%|█████▉    | 134/227 [00:05<00:03, 25.45it/s][A
+
+ 60%|██████    | 137/227 [00:05<00:03, 25.49it/s][A
+
+ 62%|██████▏   | 140/227 [00:05<00:03, 25.50it/s][A
+
+ 63%|██████▎   | 143/227 [00:05<00:03, 25.49it/s][A
+
+ 64%|██████▍   | 146/227 [00:05<00:03, 25.47it/s][A
+
+ 66%|██████▌   | 149/227 [00:05<00:03, 25.45it/s][A
+
+ 67%|██████▋   | 152/227 [00:05<00:02, 25.46it/s][A
+
+ 68%|██████▊   | 155/227 [00:06<00:02, 25.45it/s][A
+
+ 70%|██████▉   | 158/227 [00:06<00:02, 25.45it/s][A
+
+ 71%|███████   | 161/227 [00:06<00:02, 25.44it/s][A
+
+ 72%|███████▏  | 164/227 [00:06<00:02, 25.43it/s][A
+
+ 74%|███████▎  | 167/227 [00:06<00:02, 25.42it/s][A
+
+ 75%|███████▍  | 170/227 [00:06<00:02, 25.42it/s][A
+
+ 76%|███████▌  | 173/227 [00:06<00:02, 25.41it/s][A
+
+ 78%|███████▊  | 176/227 [00:06<00:02, 25.42it/s][A
+
+ 79%|███████▉  | 179/227 [00:07<00:01, 25.43it/s][A
+
+ 80%|████████  | 182/227 [00:07<00:01, 25.48it/s][A
+
+ 81%|████████▏ | 185/227 [00:07<00:01, 25.44it/s][A
+
+ 83%|████████▎ | 188/227 [00:07<00:01, 25.43it/s][A
+
+ 84%|████████▍ | 191/227 [00:07<00:01, 25.41it/s][A
+
+ 85%|████████▌ | 194/227 [00:07<00:01, 25.43it/s][A
+
+ 87%|████████▋ | 197/227 [00:07<00:01, 25.40it/s][A
+
+ 88%|████████▊ | 200/227 [00:07<00:01, 25.39it/s][A
+
+ 89%|████████▉ | 203/227 [00:07<00:00, 25.38it/s][A
+
+ 91%|█████████ | 206/227 [00:08<00:00, 25.37it/s][A
+
+ 92%|█████████▏| 209/227 [00:08<00:00, 25.27it/s][A
+
+ 93%|█████████▎| 212/227 [00:08<00:00, 25.20it/s][A
+
+ 95%|█████████▍| 215/227 [00:08<00:00, 25.24it/s][A
+
+ 96%|█████████▌| 218/227 [00:08<00:00, 25.28it/s][A
+
+ 97%|█████████▋| 221/227 [00:08<00:00, 25.31it/s][A
+
+ 99%|█████████▊| 224/227 [00:08<00:00, 25.32it/s][A
+
+100%|██████████| 227/227 [00:08<00:00, 25.36it/s][A
+                                                    
+
+                                                 
+[A
+
+100%|██████████| 227/227 [00:08<00:00, 25.36it/s][A2026-07-10 22:39:17,192 [INFO] per-regime IC: {'BULL_CALM': '+0.0317', 'BULL_VOLATILE': '+0.0820', 'BEAR': '+0.1726', 'CHOPPY': '+0.0126'} | min=+0.0126
+
+
+                                                 [A/Users/renhao/git/github/RenQuant/.venv/lib/python3.10/site-packages/torch/utils/data/dataloader.py:775: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+                                                    
+
+ 60%|██████    | 6549/10915 [15:46<10:01,  7.26it/s]{'eval_loss': '0.804', 'eval_runtime': '8.939', 'eval_samples_per_second': '25.39', 'eval_steps_per_second': '25.39', 'epoch': '2'}
+{'loss': '0.7372', 'grad_norm': '0.8499', 'learning_rate': '7.454e-05', 'epoch': '2.016'}
+{'loss': '0.7394', 'grad_norm': '0.6047', 'learning_rate': '7.17e-05', 'epoch': '2.107'}
+{'loss': '0.7332', 'grad_norm': '0.4619', 'learning_rate': '6.878e-05', 'epoch': '2.199'}
+{'loss': '0.7326', 'grad_norm': '0.6745', 'learning_rate': '6.578e-05', 'epoch': '2.29'}
+{'loss': '0.7365', 'grad_norm': '0.7597', 'learning_rate': '6.271e-05', 'epoch': '2.382'}
+{'loss': '0.7379', 'grad_norm': '0.8629', 'learning_rate': '5.96e-05', 'epoch': '2.474'}
+{'loss': '0.7418', 'grad_norm': '0.6798', 'learning_rate': '5.644e-05', 'epoch': '2.565'}
+{'loss': '0.7339', 'grad_norm': '1.093', 'learning_rate': '5.326e-05', 'epoch': '2.657'}
+{'loss': '0.7356', 'grad_norm': '1.051', 'learning_rate': '5.006e-05', 'epoch': '2.749'}
+{'loss': '0.7425', 'grad_norm': '0.5215', 'learning_rate': '4.687e-05', 'epoch': '2.84'}
+{'loss': '0.7361', 'grad_norm': '0.6258', 'learning_rate': '4.369e-05', 'epoch': '2.932'}
+
+
+  0%|          | 0/227 [00:00<?, ?it/s][A
+
+  2%|▏         | 4/227 [00:00<00:06, 34.11it/s][A
+
+  4%|▎         | 8/227 [00:00<00:07, 28.28it/s][A
+
+  5%|▍         | 11/227 [00:00<00:07, 27.15it/s][A
+
+  6%|▌         | 14/227 [00:00<00:08, 26.60it/s][A
+
+  7%|▋         | 17/227 [00:00<00:07, 26.27it/s][A
+
+  9%|▉         | 20/227 [00:00<00:07, 26.08it/s][A
+
+ 10%|█         | 23/227 [00:00<00:07, 25.93it/s][A
+
+ 11%|█▏        | 26/227 [00:00<00:07, 25.82it/s][A
+
+ 13%|█▎        | 29/227 [00:01<00:07, 25.74it/s][A
+
+ 14%|█▍        | 32/227 [00:01<00:07, 25.74it/s][A
+
+ 15%|█▌        | 35/227 [00:01<00:07, 25.68it/s][A
+
+ 17%|█▋        | 38/227 [00:01<00:07, 25.63it/s][A
+
+ 18%|█▊        | 41/227 [00:01<00:07, 25.61it/s][A
+
+ 19%|█▉        | 44/227 [00:01<00:07, 25.60it/s][A
+
+ 21%|██        | 47/227 [00:01<00:07, 25.57it/s][A
+
+ 22%|██▏       | 50/227 [00:01<00:06, 25.56it/s][A
+
+ 23%|██▎       | 53/227 [00:02<00:06, 25.60it/s][A
+
+ 25%|██▍       | 56/227 [00:02<00:06, 25.59it/s][A
+
+ 26%|██▌       | 59/227 [00:02<00:06, 25.56it/s][A
+
+ 27%|██▋       | 62/227 [00:02<00:06, 25.55it/s][A
+
+ 29%|██▊       | 65/227 [00:02<00:06, 25.56it/s][A
+
+ 30%|██▉       | 68/227 [00:02<00:06, 25.56it/s][A
+
+ 31%|███▏      | 71/227 [00:02<00:06, 25.63it/s][A
+
+ 33%|███▎      | 74/227 [00:02<00:05, 25.65it/s][A
+
+ 34%|███▍      | 77/227 [00:02<00:05, 25.64it/s][A
+
+ 35%|███▌      | 80/227 [00:03<00:05, 25.63it/s][A
+
+ 37%|███▋      | 83/227 [00:03<00:05, 25.61it/s][A
+
+ 38%|███▊      | 86/227 [00:03<00:05, 25.56it/s][A
+
+ 39%|███▉      | 89/227 [00:03<00:05, 25.57it/s][A
+
+ 41%|████      | 92/227 [00:03<00:05, 25.49it/s][A
+
+ 42%|████▏     | 95/227 [00:03<00:05, 25.38it/s][A
+
+ 43%|████▎     | 98/227 [00:03<00:05, 25.35it/s][A
+
+ 44%|████▍     | 101/227 [00:03<00:04, 25.38it/s][A
+
+ 46%|████▌     | 104/227 [00:04<00:04, 25.33it/s][A
+
+ 47%|████▋     | 107/227 [00:04<00:04, 25.37it/s][A
+
+ 48%|████▊     | 110/227 [00:04<00:04, 25.41it/s][A
+
+ 50%|████▉     | 113/227 [00:04<00:04, 25.42it/s][A
+
+ 51%|█████     | 116/227 [00:04<00:04, 25.42it/s][A
+
+ 52%|█████▏    | 119/227 [00:04<00:04, 25.43it/s][A
+
+ 54%|█████▎    | 122/227 [00:04<00:04, 25.50it/s][A
+
+ 55%|█████▌    | 125/227 [00:04<00:03, 25.52it/s][A
+
+ 56%|█████▋    | 128/227 [00:04<00:03, 25.54it/s][A
+
+ 58%|█████▊    | 131/227 [00:05<00:03, 25.51it/s][A
+
+ 59%|█████▉    | 134/227 [00:05<00:03, 25.56it/s][A
+
+ 60%|██████    | 137/227 [00:05<00:03, 25.54it/s][A
+
+ 62%|██████▏   | 140/227 [00:05<00:03, 25.50it/s][A
+
+ 63%|██████▎   | 143/227 [00:05<00:03, 25.49it/s][A
+
+ 64%|██████▍   | 146/227 [00:05<00:03, 25.51it/s][A
+
+ 66%|██████▌   | 149/227 [00:05<00:03, 25.51it/s][A
+
+ 67%|██████▋   | 152/227 [00:05<00:02, 25.50it/s][A
+
+ 68%|██████▊   | 155/227 [00:06<00:02, 25.55it/s][A
+
+ 70%|██████▉   | 158/227 [00:06<00:02, 25.54it/s][A
+
+ 71%|███████   | 161/227 [00:06<00:02, 25.51it/s][A
+
+ 72%|███████▏  | 164/227 [00:06<00:02, 25.31it/s][A
+
+ 74%|███████▎  | 167/227 [00:06<00:02, 25.17it/s][A
+
+ 75%|███████▍  | 170/227 [00:06<00:02, 25.31it/s][A
+
+ 76%|███████▌  | 173/227 [00:06<00:02, 25.35it/s][A
+
+ 78%|███████▊  | 176/227 [00:06<00:02, 25.39it/s][A
+
+ 79%|███████▉  | 179/227 [00:06<00:01, 25.46it/s][A
+
+ 80%|████████  | 182/227 [00:07<00:01, 25.50it/s][A
+
+ 81%|████████▏ | 185/227 [00:07<00:01, 25.51it/s][A
+
+ 83%|████████▎ | 188/227 [00:07<00:01, 25.52it/s][A
+
+ 84%|████████▍ | 191/227 [00:07<00:01, 25.52it/s][A
+
+ 85%|████████▌ | 194/227 [00:07<00:01, 25.52it/s][A
+
+ 87%|████████▋ | 197/227 [00:07<00:01, 25.56it/s][A
+
+ 88%|████████▊ | 200/227 [00:07<00:01, 25.55it/s][A
+
+ 89%|████████▉ | 203/227 [00:07<00:00, 25.57it/s][A
+
+ 91%|█████████ | 206/227 [00:08<00:00, 25.63it/s][A
+
+ 92%|█████████▏| 209/227 [00:08<00:00, 25.63it/s][A
+
+ 93%|█████████▎| 212/227 [00:08<00:00, 25.59it/s][A
+
+ 95%|█████████▍| 215/227 [00:08<00:00, 25.60it/s][A
+
+ 96%|█████████▌| 218/227 [00:08<00:00, 25.53it/s][A
+
+ 97%|█████████▋| 221/227 [00:08<00:00, 25.48it/s][A
+
+ 99%|█████████▊| 224/227 [00:08<00:00, 25.50it/s][A
+
+100%|██████████| 227/227 [00:08<00:00, 25.55it/s][A
+                                                    
+
+                                                 
+[A
+
+100%|██████████| 227/227 [00:08<00:00, 25.55it/s][A2026-07-10 22:44:36,034 [INFO] per-regime IC: {'BULL_CALM': '+0.0438', 'BULL_VOLATILE': '+0.0882', 'BEAR': '+0.1891', 'CHOPPY': '+0.0255'} | min=+0.0255
+
+
+                                                 [A
+                                                    
+
+/Users/renhao/git/github/RenQuant/.venv/lib/python3.10/site-packages/torch/utils/data/dataloader.py:775: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  super().__init__(loader)
+{'eval_loss': '0.7962', 'eval_runtime': '8.898', 'eval_samples_per_second': '25.51', 'eval_steps_per_second': '25.51', 'epoch': '3'}
+{'train_runtime': '963.9', 'train_samples_per_second': '11.32', 'train_steps_per_second': '11.32', 'train_loss': '0.7455', 'epoch': '3'}
+
+100%|██████████| 227/227 [00:08<00:00, 25.44it/s]2026-07-10 22:44:53,646 [INFO] per-regime IC: {'BULL_CALM': '+0.0420', 'BULL_VOLATILE': '+0.0820', 'BEAR': '+0.1379', 'CHOPPY': '+0.0546'} | min=+0.0420
+
+2026-07-10 22:44:53,646 [INFO] FINAL eval {'eval_loss': '+0.7962', 'eval_runtime': '+8.8890', 'eval_samples_per_second': '+25.5370', 'eval_steps_per_second': '+25.5370', 'epoch': '+3.0000', 'eval_min_regime_ic': '+0.0420', 'eval_ic_BULL_CALM': '+0.0420', 'eval_ic_BULL_VOLATILE': '+0.0820', 'eval_ic_BEAR': '+0.1379', 'eval_ic_CHOPPY': '+0.0546'}
+2026-07-10 22:45:13,538 [INFO] preds dumped: hf_patchtst_all_seed44_val_preds.parquet (32234 rows)
+2026-07-10 22:45:13,549 [INFO] model saved: /private/tmp/claude-502/-Users-renhao-git-github-renquant-orchestrator/2244bd05-9699-4a07-8836-2b6d9e43ca5f/scratchpad/xstock_pilot/base_s44/hf_patchtst_all_seed44_model.pt
+{
+  "arch": "hf_patchtst",
+  "kind": "hf_patchtst",
+  "cut": "all",
+  "seed": 44,
+  "best_val_ic": 0.04204822678178456,
+  "n_params": 67908,
+  "feature_cols": [
+    "KMID",
+    "KLEN",
+    "KMID2",
+    "KUP",
+    "KUP2",
+    "KLOW",
+    "KLOW2",
+    "KSFT",
+    "KSFT2",
+    "OPEN0",
+    "HIGH0",
+    "LOW0",
+    "VWAP0",
+    "ROC5",
+    "MA5",
+    "STD5",
+    "BETA5",
+    "RSQR5",
+    "RESI5",
+    "MAX5",
+    "MIN5",
+    "QTLU5",
+    "QTLD5",
+    "RANK5",
+    "RSV5",
+    "IMAX5",
+    "IMIN5",
+    "IMXD5",
+    "CORR5",
+    "CORD5",
+    "CNTP5",
+    "CNTN5",
+    "CNTD5",
+    "SUMP5",
+    "SUMN5",
+    "SUMD5",
+    "VMA5",
+    "VSTD5",
+    "WVMA5",
+    "VSUMP5",
+    "VSUMN5",
+    "VSUMD5",
+    "ROC10",
+    "MA10",
+    "STD10",
+    "BETA10",
+    "RSQR10",
+    "RESI10",
+    "MAX10",
+    "MIN10",
+    "QTLU10",
+    "QTLD10",
+    "RANK10",
+    "RSV10",
+    "IMAX10",
+    "IMIN10",
+    "IMXD10",
+    "CORR10",
+    "CORD10",
+    "CNTP10",
+    "CNTN10",
+    "CNTD10",
+    "SUMP10",
+    "SUMN10",
+    "SUMD10",
+    "VMA10",
+    "VSTD10",
+    "WVMA10",
+    "VSUMP10",
+    "VSUMN10",
+    "VSUMD10",
+    "ROC20",
+    "MA20",
+    "STD20",
+    "BETA20",
+    "RSQR20",
+    "RESI20",
+    "MAX20",
+    "MIN20",
+    "QTLU20",
+    "QTLD20",
+    "RANK20",
+    "RSV20",
+    "IMAX20",
+    "IMIN20",
+    "IMXD20",
+    "CORR20",
+    "CORD20",
+    "CNTP20",
+    "CNTN20",
+    "CNTD20",
+    "SUMP20",
+    "SUMN20",
+    "SUMD20",
+    "VMA20",
+    "VSTD20",
+    "WVMA20",
+    "VSUMP20",
+    "VSUMN20",
+    "VSUMD20",
+    "ROC30",
+    "MA30",
+    "STD30",
+    "BETA30",
+    "RSQR30",
+    "RESI30",
+    "MAX30",
+    "MIN30",
+    "QTLU30",
+    "QTLD30",
+    "RANK30",
+    "RSV30",
+    "IMAX30",
+    "IMIN30",
+    "IMXD30",
+    "CORR30",
+    "CORD30",
+    "CNTP30",
+    "CNTN30",
+    "CNTD30",
+    "SUMP30",
+    "SUMN30",
+    "SUMD30",
+    "VMA30",
+    "VSTD30",
+    "WVMA30",
+    "VSUMP30",
+    "VSUMN30",
+    "VSUMD30",
+    "ROC60",
+    "MA60",
+    "STD60",
+    "BETA60",
+    "RSQR60",
+    "RESI60",
+    "MAX60",
+    "MIN60",
+    "QTLU60",
+    "QTLD60",
+    "RANK60",
+    "RSV60",
+    "IMAX60",
+    "IMIN60",
+    "IMXD60",
+    "CORR60",
+    "CORD60",
+    "CNTP60",
+    "CNTN60",
+    "CNTD60",
+    "SUMP60",
+    "SUMN60",
+    "SUMD60",
+    "VMA60",
+    "VSTD60",
+    "WVMA60",
+    "VSUMP60",
+    "VSUMN60",
+    "VSUMD60",
+    "earnings_yield",
+    "book_to_price",
+    "gross_profitability",
+    "roe",
+    "asset_growth",
+    "days_since_earnings",
+    "pead_signal",
+    "pead_quintile_rank",
+    "sue_signal",
+    "surprise_momentum",
+    "surprise_streak",
+    "sentiment_pos_share",
+    "mean_sentiment",
+    "n_articles_log"
+  ],
+  "label_col": "fwd_60d_excess",
+  "lookahead_days": 60,
+  "params": {
+    "seq_len": 24,
+    "patch_length": 4,
+    "d_model": 64,
+    "n_heads": 4,
+    "n_layers": 2,
+    "epochs": 5,
+    "lr": 0.0001,
+    "weight_decay": 0.3,
+    "lr_scheduler": "cosine",
+    "warmup_ratio": 0.1,
+    "warmup_steps": 1091,
+    "total_steps": 10915,
+    "early_stopping_patience": 2,
+    "embargo_days": 60,
+    "nll_loss_weight": 0.5,
+    "ranking_margin": 0.1,
+    "distributional_head": true,
+    "film_regime_cond": false,
+    "cross_stock_attn": false,
+    "device": "mps",
+    "shuffle_labels": false,
+    "label_shift_days": 0,
+    "detector_version": "v2026-05-31"
+  },
+  "n_features": 172,
+  "uses_distributional_head": true,
+  "uses_film_regime": false,
+  "uses_cross_stock_attn": false,
+  "config_fingerprint": "sha256:f8fb2259b2bf1537",
+  "config_fingerprint_fields": {
+    "watchlist": [
+      "AAPL",
+      "ABBV",
+      "ADBE",
+      "ADI",
+      "AEP",
+      "AFRM",
+      "AMAT",
+      "AMD",
+      "AMZN",
+      "ANET",
+      "APH",
+      "APP",
+      "ASML",
+      "ATI",
+      "AVGO",
+      "AXP",
+      "BA",
+      "BAC",
+      "BLK",
+      "BMY",
+      "BWXT",
+      "C",
+      "CAT",
+      "CME",
+      "CMG",
+      "COHR",
+      "COIN",
+      "COST",
+      "CRM",
+      "CRWD",
+      "CRWV",
+      "CSCO",
+      "CVS",
+      "CVX",
+      "D",
+      "DDOG",
+      "DE",
+      "DELL",
+      "DLR",
+      "DUK",
+      "EME",
+      "EMR",
+      "EOG",
+      "EQIX",
+      "ETN",
+      "FDX",
+      "FTNT",
+      "GE",
+      "GILD",
+      "GLD",
+      "GLW",
+      "GM",
+      "GOOG",
+      "GRMN",
+      "GS",
+      "HD",
+      "HLT",
+      "HON",
+      "HPE",
+      "IBM",
+      "INTC",
+      "INTU",
+      "JNJ",
+      "JPM",
+      "KLAC",
+      "KMI",
+      "KO",
+      "LHX",
+      "LITE",
+      "LLY",
+      "LMT",
+      "LOW",
+      "LRCX",
+      "MA",
+      "MCD",
+      "MCHP",
+      "MDB",
+      "MDT",
+      "META",
+      "MMM",
+      "MO",
+      "MPWR",
+      "MRK",
+      "MRVL",
+      "MS",
+      "MSFT",
+      "MU",
+      "NEE",
+      "NEM",
+      "NET",
+      "NFLX",
+      "NOW",
+      "NVDA",
+      "ON",
+      "ORCL",
+      "OXY",
+      "PANW",
+      "PG",
+      "PH",
+      "PLTR",
+      "PM",
+      "PNC",
+      "PYPL",
+      "QCOM",
+      "RBLX",
+      "RKLB",
+      "ROST",
+      "RTX",
+      "SCHW",
+      "SMCI",
+      "SNOW",
+      "SO",
+      "SOFI",
+      "SPCX",
+      "SPG",
+      "SPOT",
+      "SPY",
+      "T",
+      "TEAM",
+      "TJX",
+      "TMO",
+      "TSLA",
+      "TSM",
+      "TXN",
+      "UNH",
+      "UNP",
+      "V",
+      "VLO",
+      "VRT",
+      "VTR",
+      "WDAY",
+      "WDC",
+      "WELL",
+      "WFC",
+      "WMB",
+      "WMT",
+      "XLE",
+      "XLF",
+      "XLI",
+      "XLK",
+      "XLU",
+      "XLY",
+      "XOM",
+      "ZM",
+      "ZS"
+    ],
+    "lookahead_days": 60,
+    "objective": "rank:pairwise",
+    "asset_embeddings": false,
+    "training_resolution": "daily",
+    "hourly_enabled": false,
+    "minute_enabled": false,
+    "sector_map": {
+      "AAPL": "giant_tech",
+      "ABBV": "healthcare",
+      "ADBE": "software",
+      "ADI": "ai_chip",
+      "AEP": "utility",
+      "AFRM": "finance",
+      "AMAT": "ai_chip",
+      "AMD": "ai_chip",
+      "AMZN": "giant_tech",
+      "ANET": "datacenter_hw",
+      "APH": "industrial",
+      "APP": "software",
+      "ASML": "ai_chip",
+      "ATI": "industrial",
+      "AVGO": "ai_chip",
+      "AXP": "finance",
+      "BA": "industrial",
+      "BAC": "finance",
+      "BLK": "finance",
+      "BMY": "healthcare",
+      "BWXT": "industrial",
+      "C": "finance",
+      "CAT": "industrial",
+      "CME": "finance",
+      "CMG": "consumer",
+      "COHR": "datacenter_hw",
+      "COIN": "finance",
+      "COST": "consumer",
+      "CRM": "software",
+      "CRWD": "software",
+      "CRWV": "datacenter_hw",
+      "CSCO": "datacenter_hw",
+      "CVS": "healthcare",
+      "CVX": "energy",
+      "D": "utility",
+      "DDOG": "software",
+      "DE": "industrial",
+      "DELL": "datacenter_hw",
+      "DLR": "datacenter_hw",
+      "DUK": "utility",
+      "EME": "industrial",
+      "EMR": "industrial",
+      "EOG": "energy",
+      "EQIX": "datacenter_hw",
+      "ETN": "industrial",
+      "FDX": "industrial",
+      "FTNT": "software",
+      "GE": "industrial",
+      "GILD": "healthcare",
+      "GLD": "commodity",
+      "GLW": "datacenter_hw",
+      "GM": "consumer",
+      "GOOG": "giant_tech",
+      "GRMN": "consumer",
+      "GS": "finance",
+      "HD": "consumer",
+      "HLT": "consumer",
+      "HON": "industrial",
+      "HPE": "datacenter_hw",
+      "IBM": "datacenter_hw",
+      "INTC": "ai_chip",
+      "INTU": "software",
+      "JNJ": "healthcare",
+      "JPM": "finance",
+      "KLAC": "ai_chip",
+      "KMI": "energy",
+      "KO": "consumer",
+      "LHX": "industrial",
+      "LITE": "datacenter_hw",
+      "LLY": "healthcare",
+      "LMT": "industrial",
+      "LOW": "consumer",
+      "LRCX": "ai_chip",
+      "MA": "finance",
+      "MCD": "consumer",
+      "MCHP": "ai_chip",
+      "MDB": "software",
+      "MDT": "healthcare",
+      "META": "giant_tech",
+      "MMM": "industrial",
+      "MO": "consumer",
+      "MPWR": "ai_chip",
+      "MRK": "healthcare",
+      "MRVL": "ai_chip",
+      "MS": "finance",
+      "MSFT": "giant_tech",
+      "MU": "ai_chip",
+      "NEE": "utility",
+      "NEM": "commodity",
+      "NET": "software",
+      "NFLX": "giant_tech",
+      "NOW": "software",
+      "NVDA": "ai_chip",
+      "ON": "ai_chip",
+      "ORCL": "giant_tech",
+      "OXY": "energy",
+      "PANW": "software",
+      "PG": "consumer",
+      "PH": "industrial",
+      "PLTR": "software",
+      "PM": "consumer",
+      "PNC": "finance",
+      "PYPL": "finance",
+      "QCOM": "ai_chip",
+      "RBLX": "software",
+      "RKLB": "industrial",
+      "ROST": "consumer",
+      "RTX": "industrial",
+      "SCHW": "finance",
+      "SMCI": "datacenter_hw",
+      "SNOW": "software",
+      "SO": "utility",
+      "SOFI": "finance",
+      "SPCX": "industrial",
+      "SPG": "real_estate",
+      "SPOT": "software",
+      "T": "telecom",
+      "TEAM": "software",
+      "TJX": "consumer",
+      "TMO": "healthcare",
+      "TSLA": "giant_tech",
+      "TSM": "ai_chip",
+      "TXN": "ai_chip",
+      "UNH": "healthcare",
+      "UNP": "industrial",
+      "V": "finance",
+      "VLO": "energy",
+      "VRT": "datacenter_hw",
+      "VTR": "real_estate",
+      "WDAY": "software",
+      "WDC": "datacenter_hw",
+      "WELL": "real_estate",
+      "WFC": "finance",
+      "WMB": "energy",
+      "WMT": "consumer",
+      "XLE": "energy",
+      "XLF": "finance",
+      "XLI": "industrial",
+      "XLK": "giant_tech",
+      "XLU": "utility",
+      "XLY": "consumer",
+      "XOM": "energy",
+      "ZM": "software",
+      "ZS": "software"
+    },
+    "sector_etf_map": {
+      "ai_chip": "XLK",
+      "commodity": "GLD",
+      "consumer": "XLY",
+      "datacenter_hw": "XLK",
+      "energy": "XLE",
+      "finance": "XLF",
+      "giant_tech": "XLK",
+      "healthcare": "XLV",
+      "industrial": "XLI",
+      "real_estate": "XLRE",
+      "software": "XLK",
+      "telecom": "XLC",
+      "utility": "XLU"
+    }
+  },
+  "config_path": "/Users/renhao/git/github/renquant-strategy-104/configs/strategy_config.shadow.json",
+  "trained_watchlist_n": 145,
+  "training_contract": {
+    "contract_version": 1,
+    "trained_date": "2026-07-10",
+    "git_head": "84a3c1864f195bc0c71c3fad2c15544a0a89b0bc",
+    "dataset": "/Users/renhao/git/github/RenQuant/data/transformer_v4_wl200_clean.parquet",
+    "cut": "all",
+    "train_cutoff_date": "2026-03-30",
+    "data_window_end_exclusive": "2026-01-05",
+    "label_col": "fwd_60d_excess",
+    "lookahead_days": 60,
+    "seed": 44,
+    "n_features": 172,
+    "n_params": 67908,
+    "split_counts": {
+      "train": 298594,
+      "val": 35642,
+      "embargo": 8094
+    },
+    "split_days": {
+      "embargo": 57,
+      "train": 2207,
+      "val": 251
+    },
+    "split_date_ranges": {
+      "embargo": {
+        "start": "2024-10-10",
+        "end": "2024-12-31"
+      },
+      "train": {
+        "start": "2016-01-04",
+        "end": "2024-10-09"
+      },
+      "val": {
+        "start": "2025-01-02",
+        "end": "2026-01-02"
+      }
+    },
+    "effective_train_cutoff_date": "2026-01-02",
+    "selection_fit_splits": [
+      "train",
+      "val"
+    ],
+    "preprocessing": {
+      "csrank_norm_per_day": true,
+      "label_winsor": {
+        "enabled": true,
+        "fit_split": "train",
+        "pct": 0.005,
+        "lower": -2.62473611161957,
+        "upper": 4.006111187726815
+      }
+    },
+    "hyperparameters": {
+      "seq_len": 24,
+      "patch_length": 4,
+      "d_model": 64,
+      "n_heads": 4,
+      "n_layers": 2,
+      "epochs": 5,
+      "lr": 0.0001,
+      "weight_decay": 0.3,
+      "lr_scheduler": "cosine",
+      "warmup_ratio": 0.1,
+      "warmup_steps": 1091,
+      "total_steps": 10915,
+      "early_stopping_patience": 2,
+      "embargo_days": 60,
+      "nll_loss_weight": 0.5,
+      "ranking_margin": 0.1,
+      "distributional_head": true,
+      "film_regime_cond": false,
+      "cross_stock_attn": false,
+      "device": "mps",
+      "shuffle_labels": false,
+      "label_shift_days": 0,
+      "detector_version": "v2026-05-31"
+    },
+    "selection": {
+      "metric_for_best_model": "eval_min_regime_ic",
+      "best_val_ic": 0.04204822678178456,
+      "final_metrics": {
+        "eval_loss": 0.7962384819984436,
+        "eval_runtime": 8.889,
+        "eval_samples_per_second": 25.537,
+        "eval_steps_per_second": 25.537,
+        "epoch": 3.0,
+        "eval_min_regime_ic": 0.04204822678178456,
+        "eval_ic_BULL_CALM": 0.04204822678178456,
+        "eval_ic_BULL_VOLATILE": 0.08199199294863094,
+        "eval_ic_BEAR": 0.1378839891519324,
+        "eval_ic_CHOPPY": 0.05463468055267177
+      }
+    },
+    "config_contract": {
+      "config_path": "/Users/renhao/git/github/renquant-strategy-104/configs/strategy_config.shadow.json",
+      "config_fingerprint": "sha256:f8fb2259b2bf1537",
+      "config_fingerprint_fields": {
+        "watchlist": [
+          "AAPL",
+          "ABBV",
+          "ADBE",
+          "ADI",
+          "AEP",
+          "AFRM",
+          "AMAT",
+          "AMD",
+          "AMZN",
+          "ANET",
+          "APH",
+          "APP",
+          "ASML",
+          "ATI",
+          "AVGO",
+          "AXP",
+          "BA",
+          "BAC",
+          "BLK",
+          "BMY",
+          "BWXT",
+          "C",
+          "CAT",
+          "CME",
+          "CMG",
+          "COHR",
+          "COIN",
+          "COST",
+          "CRM",
+          "CRWD",
+          "CRWV",
+          "CSCO",
+          "CVS",
+          "CVX",
+          "D",
+          "DDOG",
+          "DE",
+          "DELL",
+          "DLR",
+          "DUK",
+          "EME",
+          "EMR",
+          "EOG",
+          "EQIX",
+          "ETN",
+          "FDX",
+          "FTNT",
+          "GE",
+          "GILD",
+          "GLD",
+          "GLW",
+          "GM",
+          "GOOG",
+          "GRMN",
+          "GS",
+          "HD",
+          "HLT",
+          "HON",
+          "HPE",
+          "IBM",
+          "INTC",
+          "INTU",
+          "JNJ",
+          "JPM",
+          "KLAC",
+          "KMI",
+          "KO",
+          "LHX",
+          "LITE",
+          "LLY",
+          "LMT",
+          "LOW",
+          "LRCX",
+          "MA",
+          "MCD",
+          "MCHP",
+          "MDB",
+          "MDT",
+          "META",
+          "MMM",
+          "MO",
+          "MPWR",
+          "MRK",
+          "MRVL",
+          "MS",
+          "MSFT",
+          "MU",
+          "NEE",
+          "NEM",
+          "NET",
+          "NFLX",
+          "NOW",
+          "NVDA",
+          "ON",
+          "ORCL",
+          "OXY",
+          "PANW",
+          "PG",
+          "PH",
+          "PLTR",
+          "PM",
+          "PNC",
+          "PYPL",
+          "QCOM",
+          "RBLX",
+          "RKLB",
+          "ROST",
+          "RTX",
+          "SCHW",
+          "SMCI",
+          "SNOW",
+          "SO",
+          "SOFI",
+          "SPCX",
+          "SPG",
+          "SPOT",
+          "SPY",
+          "T",
+          "TEAM",
+          "TJX",
+          "TMO",
+          "TSLA",
+          "TSM",
+          "TXN",
+          "UNH",
+          "UNP",
+          "V",
+          "VLO",
+          "VRT",
+          "VTR",
+          "WDAY",
+          "WDC",
+          "WELL",
+          "WFC",
+          "WMB",
+          "WMT",
+          "XLE",
+          "XLF",
+          "XLI",
+          "XLK",
+          "XLU",
+          "XLY",
+          "XOM",
+          "ZM",
+          "ZS"
+        ],
+        "lookahead_days": 60,
+        "objective": "rank:pairwise",
+        "asset_embeddings": false,
+        "training_resolution": "daily",
+        "hourly_enabled": false,
+        "minute_enabled": false,
+        "sector_map": {
+          "AAPL": "giant_tech",
+          "ABBV": "healthcare",
+          "ADBE": "software",
+          "ADI": "ai_chip",
+          "AEP": "utility",
+          "AFRM": "finance",
+          "AMAT": "ai_chip",
+          "AMD": "ai_chip",
+          "AMZN": "giant_tech",
+          "ANET": "datacenter_hw",
+          "APH": "industrial",
+          "APP": "software",
+          "ASML": "ai_chip",
+          "ATI": "industrial",
+          "AVGO": "ai_chip",
+          "AXP": "finance",
+          "BA": "industrial",
+          "BAC": "finance",
+          "BLK": "finance",
+          "BMY": "healthcare",
+          "BWXT": "industrial",
+          "C": "finance",
+          "CAT": "industrial",
+          "CME": "finance",
+          "CMG": "consumer",
+          "COHR": "datacenter_hw",
+          "COIN": "finance",
+          "COST": "consumer",
+          "CRM": "software",
+          "CRWD": "software",
+          "CRWV": "datacenter_hw",
+          "CSCO": "datacenter_hw",
+          "CVS": "healthcare",
+          "CVX": "energy",
+          "D": "utility",
+          "DDOG": "software",
+          "DE": "industrial",
+          "DELL": "datacenter_hw",
+          "DLR": "datacenter_hw",
+          "DUK": "utility",
+          "EME": "industrial",
+          "EMR": "industrial",
+          "EOG": "energy",
+          "EQIX": "datacenter_hw",
+          "ETN": "industrial",
+          "FDX": "industrial",
+          "FTNT": "software",
+          "GE": "industrial",
+          "GILD": "healthcare",
+          "GLD": "commodity",
+          "GLW": "datacenter_hw",
+          "GM": "consumer",
+          "GOOG": "giant_tech",
+          "GRMN": "consumer",
+          "GS": "finance",
+          "HD": "consumer",
+          "HLT": "consumer",
+          "HON": "industrial",
+          "HPE": "datacenter_hw",
+          "IBM": "datacenter_hw",
+          "INTC": "ai_chip",
+          "INTU": "software",
+          "JNJ": "healthcare",
+          "JPM": "finance",
+          "KLAC": "ai_chip",
+          "KMI": "energy",
+          "KO": "consumer",
+          "LHX": "industrial",
+          "LITE": "datacenter_hw",
+          "LLY": "healthcare",
+          "LMT": "industrial",
+          "LOW": "consumer",
+          "LRCX": "ai_chip",
+          "MA": "finance",
+          "MCD": "consumer",
+          "MCHP": "ai_chip",
+          "MDB": "software",
+          "MDT": "healthcare",
+          "META": "giant_tech",
+          "MMM": "industrial",
+          "MO": "consumer",
+          "MPWR": "ai_chip",
+          "MRK": "healthcare",
+          "MRVL": "ai_chip",
+          "MS": "finance",
+          "MSFT": "giant_tech",
+          "MU": "ai_chip",
+          "NEE": "utility",
+          "NEM": "commodity",
+          "NET": "software",
+          "NFLX": "giant_tech",
+          "NOW": "software",
+          "NVDA": "ai_chip",
+          "ON": "ai_chip",
+          "ORCL": "giant_tech",
+          "OXY": "energy",
+          "PANW": "software",
+          "PG": "consumer",
+          "PH": "industrial",
+          "PLTR": "software",
+          "PM": "consumer",
+          "PNC": "finance",
+          "PYPL": "finance",
+          "QCOM": "ai_chip",
+          "RBLX": "software",
+          "RKLB": "industrial",
+          "ROST": "consumer",
+          "RTX": "industrial",
+          "SCHW": "finance",
+          "SMCI": "datacenter_hw",
+          "SNOW": "software",
+          "SO": "utility",
+          "SOFI": "finance",
+          "SPCX": "industrial",
+          "SPG": "real_estate",
+          "SPOT": "software",
+          "T": "telecom",
+          "TEAM": "software",
+          "TJX": "consumer",
+          "TMO": "healthcare",
+          "TSLA": "giant_tech",
+          "TSM": "ai_chip",
+          "TXN": "ai_chip",
+          "UNH": "healthcare",
+          "UNP": "industrial",
+          "V": "finance",
+          "VLO": "energy",
+          "VRT": "datacenter_hw",
+          "VTR": "real_estate",
+          "WDAY": "software",
+          "WDC": "datacenter_hw",
+          "WELL": "real_estate",
+          "WFC": "finance",
+          "WMB": "energy",
+          "WMT": "consumer",
+          "XLE": "energy",
+          "XLF": "finance",
+          "XLI": "industrial",
+          "XLK": "giant_tech",
+          "XLU": "utility",
+          "XLY": "consumer",
+          "XOM": "energy",
+          "ZM": "software",
+          "ZS": "software"
+        },
+        "sector_etf_map": {
+          "ai_chip": "XLK",
+          "commodity": "GLD",
+          "consumer": "XLY",
+          "datacenter_hw": "XLK",
+          "energy": "XLE",
+          "finance": "XLF",
+          "giant_tech": "XLK",
+          "healthcare": "XLV",
+          "industrial": "XLI",
+          "real_estate": "XLRE",
+          "software": "XLK",
+          "telecom": "XLC",
+          "utility": "XLU"
+        }
+      },
+      "trained_watchlist_n": 145
+    }
+  },
+  "per_regime_ic": {
+    "BULL_CALM": 0.04204822678178456,
+    "BULL_VOLATILE": 0.08199199294863094,
+    "BEAR": 0.1378839891519324,
+    "CHOPPY": 0.05463468055267177
+  }
+}
