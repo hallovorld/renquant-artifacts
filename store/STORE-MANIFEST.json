@@ -1,8 +1,10 @@
 {
- "deploy-records/gen1-20260711/attestation.json": "2a7cc7f3a218e971e99e290ad5f774408874847e4927493e5fd2830a3c8f6dd5",
+ "deploy-records/gen1-20260711/attestation.json": "cf78a47402167a19fc665b28dd5ef6fab12000bbe82751834cdd90f333f512d6",
+ "deploy-records/gen1-20260711/build_field_agreement.py": "205e1a58a651de95cc3894ed20c31446e14c84c8a238b35189e112224992d070",
  "deploy-records/gen1-20260711/capture-verify-output.json": "bf8dd4e46c9005a74630ffcc5d552137757c0f0d6e607edbc884592ba4f29ec3",
+ "deploy-records/gen1-20260711/field-agreement-check.json": "15406750f72942d6304948b270b2791f09b40edc448656b20a76a0c8d58847d9",
  "deploy-records/gen1-20260711/runtime-inventory.snapshot.json": "d7521b300d728ef6ceac917554a21ad2fdf54e7aeeb4ae5a6dc48613d4151a4a",
- "deploy-records/gen1-20260711/source-lock.snapshot.json": "ca31e11ce2846cce1b81968e57351286f0f3e97bcf964e85be37ca12c0b3fb36",
+ "deploy-records/gen1-20260711/source-lock.snapshot.json": "209dc8f812a8271f5bddfcb965214a7daf9a0026fbd21007163d78975c9458da",
  "experiments/deploy-pin-verify-seal-20260711/RUN-LOCK.json": "01b0da52264cb52c3d53c55d4389af711de7aa5a55c11f3ea7331e39163944d3",
  "experiments/enablement-floor-replay-20260711/RUN-LOCK.json": "db81fa15ed05f1a05144d00bc3ca2a422f7f5ea5b44fcbc8ce07277156bdc498",
  "experiments/meta-no-buy-forensics-20260711/RUN-LOCK.json": "b9cc2ecc33357452be9c1568c5c0023f82e10d5bde6c8f9100064805e2c0ea9b",
