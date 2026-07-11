@@ -1,5 +1,6 @@
 {
  "experiments/enablement-floor-replay-20260711/RUN-LOCK.json": "db81fa15ed05f1a05144d00bc3ca2a422f7f5ea5b44fcbc8ce07277156bdc498",
+ "experiments/meta-no-buy-forensics-20260711/RUN-LOCK.json": "b9cc2ecc33357452be9c1568c5c0023f82e10d5bde6c8f9100064805e2c0ea9b",
  "experiments/xstock-pilot-20260711/RUN-LOCK.json": "86b06dec1c2dec3a04a37eb278bf995b52bd31a17a0fc445b921b107b21fd01d",
  "experiments/xstock-pilot-20260711/base_s44/hf_patchtst_all_seed44_model.pt.metadata.json": "ef6334a0ec464297a1da482670b6fa8829e9f6e39c3ee1a7a0d5b8d7fee61637",
  "experiments/xstock-pilot-20260711/base_s44/hf_patchtst_all_seed44_summary.json": "df195e99a7a64e446b0f7e0a837b1880e741c9b4c93e05fbb4fbe5be38a3628e",
