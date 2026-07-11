@@ -1,0 +1,15 @@
+{
+ "artifact_id": "meta-no-buy-forensics-20260711",
+ "fingerprint": "sha256:b9cc2ecc33357452be9c1568c5c0023f82e10d5bde6c8f9100064805e2c0ea9b",
+ "metrics": {
+  "sessions_covered": 5,
+  "sessions_scored": 3,
+  "sessions_outage": 2,
+  "note": "Sealed forensic evidence for the META no-buy week 2026-07-06..10 (orchestrator #473). Confirms via direct read-only decision-ledger query: META was scored and rejected (veto:rank_score_below_floor) on 07-06/07/10, and was NOT scored at all on 07-08/09 (buy scan collapsed to 0 candidates from 0 tickers, admission-staleness outage). This bundle exists specifically so the doc's mixed-result framing (model rejection on observed sessions; counterfactual UNKNOWN on the outage sessions) does not rely on mutable live-tree paths (DB, logs, state file) as its durable citation."
+ },
+ "model_family": "decision-ledger-forensics",
+ "promotion_status": "diagnostic",
+ "retention_class": "experiment-pinned",
+ "strategy": "renquant_104",
+ "uri": "store://experiments/meta-no-buy-forensics-20260711/RUN-LOCK.json"
+}

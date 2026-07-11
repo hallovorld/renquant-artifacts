@@ -1,0 +1,113 @@
+{
+  "artifact_id": "meta-no-buy-forensics-20260711",
+  "description": "Sealed evidence for the META no-buy week 2026-07-06..10 forensics (orchestrator #473): the 5 canonical daily-full run rows, META's candidate_scores rows on the 3 scored sessions plus explicit confirmation of absence on the 2 outage sessions, raw log excerpts for the 07-08/09 admission-staleness outage, and the current (post-recovery) META policy-metadata snapshot.",
+  "extraction_method": "Direct read-only SQLite query (mode=ro) against the live decision ledger (pipeline_runs, candidate_scores tables) and read-only file access to logs/daily_104/*.log and the current META policy-metadata.json. No production path written; no order touched; no git operation in the live umbrella tree.",
+  "log_evidence": {
+    "2026-07-06": {
+      "loaded_models_line": "2026-07-06 16:35:42,926 [INFO] live.runner: Loaded models for 58/145 symbols: [...includes META...]",
+      "meta_freshness_note": "META parquet updated 2026-07-06 13:00, zip from 2026-07-02 13:55 (+5706m behind) \u2014 model available and scored",
+      "meta_loaded": true
+    },
+    "2026-07-07": {
+      "meta_freshness_note": "META parquet updated 2026-07-07 13:04, zip from 2026-07-06 16:35 (+1229m behind) \u2014 model available and scored",
+      "meta_loaded": true
+    },
+    "2026-07-08": {
+      "buy_scan_line": "2026-07-08 14:06:53,056 [INFO] kernel.pipeline: Phase 2b (buy scan): 0 candidates from 0 tickers",
+      "loaded_models_line": "2026-07-08 13:55:25,932 [INFO] live.runner: Loaded models for 4/145 symbols: ['AVGO', 'CSCO', 'MU', 'PANW']",
+      "meta_loaded": false,
+      "meta_staleness_line": "2026-07-08 13:55:25,932 [WARNING] live.runner: META stale_76d_limit_60:live_train_end, skipping"
+    },
+    "2026-07-09": {
+      "buy_scan_line": "2026-07-09 14:06:27,612 [INFO] kernel.pipeline: Phase 2b (buy scan): 0 candidates from 0 tickers",
+      "loaded_models_line": "2026-07-09 13:55:23,892 [INFO] live.runner: Loaded models for 4/145 symbols: ['AVGO', 'CSCO', 'MU', 'PANW']",
+      "meta_loaded": false,
+      "meta_staleness_line": "2026-07-09 13:55:23,891 [WARNING] live.runner: META stale_77d_limit_60:live_train_end, skipping"
+    },
+    "2026-07-10": {
+      "meta_loaded": true,
+      "note": "post-07-09-retrain: 125/145 loaded, META among them (scored, rejected via veto:rank_score_below_floor)"
+    }
+  },
+  "log_source_sha256": {
+    "2026-07-06": "dbb16097c61dde818e9b7882d510149211ead660a5e113808f4840d7bdea9c6a",
+    "2026-07-07": "39cac4d165c1af669ec0ed55d6a4396818520e23cbb1b9ca8950aa5dec5f6f53",
+    "2026-07-08": "3d1d6557367720b7af3f4d36764eb2707a9c78b4b34bb0988813e7b916efecaa",
+    "2026-07-09": "3bee17da46265dc500cc390871901908889ee20e986bba3dda2fd0e8c765f48b",
+    "2026-07-10": "da006ae9c13025112649a051d29840d8b75e764889a42d62ae647b3f7a02f22e"
+  },
+  "meta_policy_metadata_current": {
+    "live_train_end": "2026-06-23",
+    "source": "backtesting/renquant_104/models/META/META-policy-metadata.json (current, post-recovery, read 2026-07-11)",
+    "trained_date": "2026-07-09"
+  },
+  "regression_window_provenance_note": "The exact live_train_end value carried DURING the 07-08/09 regression window is NOT independently reconstructable from any durable source found: git history on META-policy-metadata.json shows no commit in the relevant window (the live-tree copy is not incrementally committed per retrain), and no other snapshot mechanism exists. The '~2026-04-23' figure in the original forensics doc is an INFERENCE from the log's own stated staleness distance ('stale_76d_limit_60' as of 2026-07-08 implies a cutoff ~76 calendar days prior), not a directly observed metadata snapshot. This inference is reported as such, not as a verified fact.",
+  "runs": {
+    "2026-07-06-live-ebb9c2ca": {
+      "cash": 8403.46,
+      "meta_candidate_row": {
+        "blocked_by": "veto:rank_score_below_floor",
+        "mu": 0.01920793679336714,
+        "rank_score": 0.5412791327053135,
+        "role": "candidate",
+        "sigma": null,
+        "ticker": "META"
+      },
+      "n_buys": 0,
+      "n_candidates": 6,
+      "portfolio_value": 10757.58,
+      "run_date": "2026-07-06",
+      "run_type": "live"
+    },
+    "2026-07-07-live-dc2a3247": {
+      "cash": 8514.82,
+      "meta_candidate_row": {
+        "blocked_by": "veto:rank_score_below_floor",
+        "mu": 0.017876214599311744,
+        "rank_score": 0.5375247753653744,
+        "role": "candidate",
+        "sigma": null,
+        "ticker": "META"
+      },
+      "n_buys": 0,
+      "n_candidates": 3,
+      "portfolio_value": 10651.33,
+      "run_date": "2026-07-07",
+      "run_type": "live"
+    },
+    "2026-07-08-live-369734c3": {
+      "cash": 8593.46,
+      "meta_candidate_row": null,
+      "n_buys": 0,
+      "n_candidates": 0,
+      "portfolio_value": 10635.4,
+      "run_date": "2026-07-08",
+      "run_type": "live"
+    },
+    "2026-07-09-live-40e2dbd0": {
+      "cash": 9149.83,
+      "meta_candidate_row": null,
+      "n_buys": 0,
+      "n_candidates": 0,
+      "portfolio_value": 10773.15,
+      "run_date": "2026-07-09",
+      "run_type": "live"
+    },
+    "2026-07-10-live-6f9d5284": {
+      "cash": 8739.37,
+      "meta_candidate_row": {
+        "blocked_by": "veto:rank_score_below_floor",
+        "mu": 0.006425426119493605,
+        "rank_score": 0.5052626770561504,
+        "role": "candidate",
+        "sigma": null,
+        "ticker": "META"
+      },
+      "n_buys": 0,
+      "n_candidates": 7,
+      "portfolio_value": 10752.55,
+      "run_date": "2026-07-10",
+      "run_type": "live"
+    }
+  }
+}
