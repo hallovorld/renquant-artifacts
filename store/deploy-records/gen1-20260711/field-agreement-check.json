@@ -1,13 +1,13 @@
 {
   "kind": "gen1-input-vs-gen2-observation-field-agreement",
   "schema_version": 1,
-  "generated_at": "2026-07-11T20:08:10Z",
+  "generated_at": "2026-07-11T20:27:30Z",
   "compares": {
     "left": {
       "description": "gen-1's hash-attested INPUT snapshots committed in this bundle: source-lock.snapshot.json (subrepos[*].{remote,branch,commit,role,status}) and runtime-inventory.snapshot.json (host, repos[*].path).",
       "captured_at": "2026-07-11T17:42:15Z",
-      "source_lock_snapshot_sha256": "209dc8f812a8271f5bddfcb965214a7daf9a0026fbd21007163d78975c9458da",
-      "source_lock_snapshot_sha256_note": "Hash of the file as currently committed (includes an added, additive source_repo.role_provenance_note; the compared subrepos[*] fields are unchanged from gen-1 capture). See attestation.json.source_lock_provenance_note for the original pre-annotation hash and its git provenance.",
+      "source_lock_snapshot_sha256": "ca31e11ce2846cce1b81968e57351286f0f3e97bcf964e85be37ca12c0b3fb36",
+      "source_lock_snapshot_sha256_note": "Hash of the raw, byte-verbatim gen-1-capture-time file (unmodified since capture; matches attestation.json.source_lock_sha256). A caveat about source_repo.role's authority scope is recorded separately in source-lock-role-disclaimer.json (referenced from attestation.json.source_lock_role_disclaimer_ref) and does not affect this hash.",
       "runtime_inventory_snapshot_sha256": "d7521b300d728ef6ceac917554a21ad2fdf54e7aeeb4ae5a6dc48613d4151a4a",
       "runtime_inventory_snapshot_sha256_matches_attestation": true
     },

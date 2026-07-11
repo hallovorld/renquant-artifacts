@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "kind": "source-lock-role-authority-disclaimer",
+  "generated_at": "2026-07-11T21:30:00Z",
+  "context": "Codex CHANGES_REQUESTED (round 2) on PR #22, point 1: an earlier round appended a source_repo.role_provenance_note annotation directly into source-lock.snapshot.json to caveat its captured 'role' string. Codex correctly flagged that this broke the bundle's byte-verbatim evidence guarantee -- attestation.json.source_lock_sha256 ended up binding an annotated derivative, not the raw captured file. This sidecar restores that guarantee: source-lock.snapshot.json is back to its original byte-verbatim content (sha256 below), and the caveat lives here instead, out of band from the raw evidence.",
+  "subject_file": {
+    "path": "store/deploy-records/gen1-20260711/source-lock.snapshot.json",
+    "sha256": "ca31e11ce2846cce1b81968e57351286f0f3e97bcf964e85be37ca12c0b3fb36",
+    "note": "This is the ORIGINAL, byte-verbatim gen-1 capture of source-lock.snapshot.json, unmodified since commit b165bb46132c57d72931bfa4824aeedd0c3406bc. This sidecar caveats a field within it without altering it."
+  },
+  "subject_field": {
+    "json_pointer": "/source_repo/role",
+    "captured_value": "permanent umbrella/orchestrator and rollback source"
+  },
+  "disclaimer": "The subject_field.captured_value string above is preserved byte-verbatim from RenQuant's actual subrepos.lock.json as it read at capture time (2026-07-11T17:42:15Z, per this record's attestation.captured_at). It is historical lock-file provenance, not repo-authored description, and this sidecar does NOT alter it. It does NOT reflect the currently adopted multi-repo operating model. Under that model (https://github.com/hallovorld/RenQuant/blob/main/doc/arch/subrepo-operating-model.md; see also this repo's README.md and CLAUDE.md, which both cite the same operating-model document), RenQuant (the umbrella) remains preserved as a reference/rollback source but is NOT a runtime, deployment, schedule, artifact, or orchestration authority -- renquant-orchestrator owns orchestration.",
+  "supersedes": {
+    "description": "This sidecar replaces the in-place source_repo.role_provenance_note annotation that a prior round of this PR added directly into source-lock.snapshot.json. That annotated file's sha256 was 209dc8f812a8271f5bddfcb965214a7daf9a0026fbd21007163d78975c9458da and remains available via this repo's git history (the commit that added it, prior to this round's revert), but is no longer the committed content of source-lock.snapshot.json and is no longer attested as the gen-1 source lock."
+  }
+}

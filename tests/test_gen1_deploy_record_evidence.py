@@ -3,17 +3,35 @@
 
 These pin down the fixes made in response to Codex CHANGES_REQUESTED on PR #22:
 
+Round 1:
+
 1. attestation.json must not claim capture-verify-output.json (a later,
    separate gen-2 capture-dry-run observation) is a re-verification of gen-1's
    own manifest. It must be labeled as such, and any agreement claim must be
    backed by a real, machine-checkable field diff (field-agreement-check.json).
 2. source-lock.snapshot.json's byte-verbatim captured `source_repo.role`
-   string must remain untouched, but must carry an added caveat that it does
-   not reflect the currently adopted multi-repo operating model.
+   string must remain untouched, and carry a caveat that it does not reflect
+   the currently adopted multi-repo operating model.
 
-If either regresses (e.g. someone reverts to the old "dry-run re-capture
-agrees with the written gen-1 manifest" framing, or silently rewrites the
-captured role string), these tests fail.
+Round 2 (Codex flagged that round 1's caveat, appended in place as
+source_repo.role_provenance_note, changed source-lock.snapshot.json's bytes --
+so attestation.json.source_lock_sha256 ended up binding an annotated
+derivative rather than the raw captured file, defeating the point of an
+immutable evidence snapshot):
+
+3. source-lock.snapshot.json must be restored to its ORIGINAL byte-verbatim
+   gen-1 capture content (sha256 ca31e11c...), with no annotation of any kind.
+4. The role-authority caveat now lives in a separate sidecar file,
+   source-lock-role-disclaimer.json, which references the raw file's hash and
+   the specific field (source_repo.role) it caveats, without altering it.
+5. attestation.json.source_lock_sha256 must equal the raw file's hash, and
+   attestation.json must point to the sidecar via
+   source_lock_role_disclaimer_ref rather than describing an in-place edit.
+
+If any of these regress (e.g. someone reverts to the old "dry-run re-capture
+agrees with the written gen-1 manifest" framing, silently rewrites the
+captured role string, or re-annotates source-lock.snapshot.json in place),
+these tests fail.
 """
 
 from __future__ import annotations
@@ -114,7 +132,7 @@ def test_field_agreement_check_declares_artifact_store_out_of_scope() -> None:
 
 
 def test_source_repo_role_string_is_untouched_verbatim() -> None:
-    """Codex point 2: do not rewrite the captured lock-file bytes."""
+    """Codex point 2 (round 1): do not rewrite the captured lock-file bytes."""
     source_lock = _load("source-lock.snapshot.json")
     assert (
         source_lock["source_repo"]["role"]
@@ -122,15 +140,68 @@ def test_source_repo_role_string_is_untouched_verbatim() -> None:
     )
 
 
-def test_source_repo_role_has_authority_caveat() -> None:
-    """Codex point 2: an added annotation must state the role string is
-    historical and that RenQuant is not a runtime/deployment/schedule/
-    artifact/orchestration authority under the adopted multi-repo model."""
+def test_source_lock_snapshot_has_no_in_place_annotation() -> None:
+    """Codex P0 (round 2): source-lock.snapshot.json must be the RAW gen-1
+    capture with no added fields of any kind -- an in-place annotation (even
+    a well-intentioned caveat) changes the file's bytes and breaks the
+    byte-verbatim evidence guarantee. The caveat belongs in a sidecar
+    instead (see test_source_lock_role_disclaimer_sidecar_* below)."""
     source_lock = _load("source-lock.snapshot.json")
-    note = source_lock["source_repo"].get("role_provenance_note", "")
-    assert note, "source_repo.role_provenance_note must be present"
-    lowered = note.lower()
+    assert "role_provenance_note" not in source_lock["source_repo"]
+    assert set(source_lock["source_repo"].keys()) == {
+        "name",
+        "role",
+        "local_path",
+        "remote",
+        "never_delete",
+    }
+
+
+def test_source_lock_snapshot_hash_matches_attested_gen1_value() -> None:
+    """Codex's exact round-2 ask: recompute source-lock.snapshot.json's actual
+    sha256 and assert it equals the value attested as the gen-1 source lock.
+    This is the regression guard proving the raw evidence file can never
+    silently drift from what attestation.json claims it is again."""
+    attestation = _load("attestation.json")
+    actual = _sha256(RECORD_DIR / "source-lock.snapshot.json")
+    assert actual == "ca31e11ce2846cce1b81968e57351286f0f3e97bcf964e85be37ca12c0b3fb36"
+    assert attestation["source_lock_sha256"] == actual
+
+
+def test_source_lock_role_disclaimer_sidecar_references_raw_file_and_field() -> None:
+    """The role-authority caveat must live in a separate sidecar that
+    provably refers to the specific raw file (by hash) and specific field
+    (source_repo.role) it caveats, rather than being appended in place."""
+    sidecar = _load("source-lock-role-disclaimer.json")
+    raw_sha = _sha256(RECORD_DIR / "source-lock.snapshot.json")
+
+    assert sidecar["subject_file"]["path"].endswith("source-lock.snapshot.json")
+    assert sidecar["subject_file"]["sha256"] == raw_sha
+    assert sidecar["subject_field"]["json_pointer"] == "/source_repo/role"
+
+
+def test_source_lock_role_disclaimer_states_authority_caveat() -> None:
+    """Codex point 2 substance, preserved: the sidecar must state the role
+    string is historical lock-file provenance and that RenQuant is not a
+    runtime/deployment/schedule/artifact/orchestration authority under the
+    adopted multi-repo model."""
+    sidecar = _load("source-lock-role-disclaimer.json")
+    disclaimer = sidecar["disclaimer"]
+    lowered = disclaimer.lower()
     for term in ("runtime", "deployment", "schedule", "artifact", "orchestration"):
         assert term in lowered, f"caveat missing '{term}' authority disclaimer"
-    assert "subrepo-operating-model.md" in note
+    assert "subrepo-operating-model.md" in disclaimer
     assert "renquant-orchestrator" in lowered
+
+
+def test_attestation_points_to_sidecar_not_an_in_place_note() -> None:
+    """attestation.json must reference the sidecar (so a reader can find the
+    caveat) and must NOT carry a stale source_lock_provenance_note describing
+    a hash change that, after this fix, no longer exists."""
+    attestation = _load("attestation.json")
+    assert "source_lock_provenance_note" not in attestation
+
+    ref = attestation["source_lock_role_disclaimer_ref"]
+    sidecar_path = RECORD_DIR / "source-lock-role-disclaimer.json"
+    assert ref["path"].endswith("source-lock-role-disclaimer.json")
+    assert ref["sha256"] == _sha256(sidecar_path)

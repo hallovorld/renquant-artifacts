@@ -3,7 +3,6 @@
   "source_repo": {
     "name": "RenQuant",
     "role": "permanent umbrella/orchestrator and rollback source",
-    "role_provenance_note": "The \"role\" string above is preserved byte-verbatim from RenQuant's actual subrepos.lock.json as it read at capture time (2026-07-11T17:42:15Z); it is historical lock-file provenance, not repo-authored description, and is NOT altered here. It does NOT reflect the currently adopted multi-repo operating model. Under that model (https://github.com/hallovorld/RenQuant/blob/main/doc/arch/subrepo-operating-model.md; see also this repo's README.md and CLAUDE.md), RenQuant (the umbrella) remains preserved as a reference/rollback source but is NOT a runtime, deployment, schedule, artifact, or orchestration authority -- renquant-orchestrator owns orchestration. This note is an added annotation, appended after capture, and is not part of the original snapshotted lock-file content.",
     "local_path": "/Users/renhao/git/github/RenQuant",
     "remote": "https://github.com/hallovorld/RenQuant",
     "never_delete": true

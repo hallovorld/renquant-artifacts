@@ -47,12 +47,16 @@ def main() -> None:
     source_lock_sha = _sha256(HERE / "source-lock.snapshot.json")
     runtime_inv_sha = _sha256(HERE / "runtime-inventory.snapshot.json")
 
-    # Left side: gen-1's hash-attested INPUT snapshots. runtime_inventory_sha256
-    # is unchanged since gen-1 capture (no edits to that file). source_lock_sha256
-    # is NOT the gen-1-capture-time hash (that file gained an added, additive
-    # role_provenance_note after capture -- see source-lock.snapshot.json and
-    # attestation.json.source_lock_provenance_note); the subrepos list itself
-    # (the fields actually compared below) is untouched from capture time.
+    # Left side: gen-1's hash-attested INPUT snapshots. Both
+    # runtime_inventory_sha256 and source_lock_sha256 are the original,
+    # byte-verbatim gen-1-capture-time hashes -- neither file has been edited
+    # since capture. (An earlier round of this PR briefly appended a
+    # role_provenance_note annotation into source-lock.snapshot.json, which
+    # changed its hash; that was reverted per Codex CHANGES_REQUESTED so the
+    # raw file stays byte-verbatim. The equivalent caveat now lives in the
+    # separate source-lock-role-disclaimer.json sidecar, referenced from
+    # attestation.json.source_lock_role_disclaimer_ref, and does not affect
+    # this file's hash or the fields compared below.)
     left_repos = {r["name"]: {k: r[k] for k in REPO_FIELDS} for r in source_lock["subrepos"]}
     left_runtime_paths = {name: v["path"] for name, v in runtime_inv["repos"].items()}
     left_host = runtime_inv["host"]
@@ -102,11 +106,13 @@ def main() -> None:
                 "captured_at": attestation["captured_at"],
                 "source_lock_snapshot_sha256": source_lock_sha,
                 "source_lock_snapshot_sha256_note": (
-                    "Hash of the file as currently committed (includes an added, "
-                    "additive source_repo.role_provenance_note; the compared "
-                    "subrepos[*] fields are unchanged from gen-1 capture). See "
-                    "attestation.json.source_lock_provenance_note for the original "
-                    "pre-annotation hash and its git provenance."
+                    "Hash of the raw, byte-verbatim gen-1-capture-time file "
+                    "(unmodified since capture; matches "
+                    "attestation.json.source_lock_sha256). A caveat about "
+                    "source_repo.role's authority scope is recorded separately "
+                    "in source-lock-role-disclaimer.json (referenced from "
+                    "attestation.json.source_lock_role_disclaimer_ref) and does "
+                    "not affect this hash."
                 ),
                 "runtime_inventory_snapshot_sha256": runtime_inv_sha,
                 "runtime_inventory_snapshot_sha256_matches_attestation": (
