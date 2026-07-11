@@ -1,0 +1,21 @@
+{
+ "artifact_id": "sec-fund-provenance-coverage-fix-20260711",
+ "fingerprint": "sha256:abfb3c4669367756539d01ca67ee201f1d9e4d78f7c2b146a8ebaa69e44a03f7",
+ "metrics": {
+  "reviewed_pr": "hallovorld/renquant-base-data#43",
+  "post_fix_commit": "360b778fa2438a60dc845f849973790a04d53870",
+  "provenance_case_ey_source_age_days": 101,
+  "provenance_case_roe_source_age_days": 9,
+  "provenance_case_tight_60d_freshness_ok": false,
+  "coverage_case_legacy_priced_relative": 1.0,
+  "coverage_case_universe_denominator": 0.1,
+  "coverage_case_prerequisite_price_coverage": 0.1,
+  "coverage_case_combined_axis_ok": false,
+  "note": "Sealed before/after reproduction for base-data#43's response to Codex CHANGES_REQUESTED (a coverage/freshness guard that can certify stale or unavailable ratio inputs as healthy is worse than no guard). Two P1 fixes reproduced from controlled synthetic fixtures (no live-tree read, no network, no production path touched): (1) per-concept provenance freshness -- a shares-backed ratio recovered by carry-forward correctly retains its OLDER contributing filing's age (101d) and fails a tight 60d freshness bound, rather than inheriting the newest filing's misleadingly-fresh timestamp; (2) dual coverage denominator -- a 1-of-10-priced universe reports a misleading perfect 1.0 on the legacy priced-relative number while the new universe-denominator (0.10) and prerequisite-price-coverage (0.10) numbers correctly flag the axis unhealthy. Also documents the test_fetchers_lift root-cause fix (a fragile parents[2]-relative path heuristic could find a wrong same-named directory and report a false byte-mismatch FAILURE instead of a clean skip; fixed via a subrepos.lock.json marker check + RENQUANT_UMBRELLA_PATH override)."
+ },
+ "model_family": "sec-fundamentals-data-quality-guard",
+ "promotion_status": "diagnostic",
+ "retention_class": "experiment-pinned",
+ "strategy": "renquant_104",
+ "uri": "store://experiments/sec-fund-provenance-coverage-fix-20260711/RUN-LOCK.json"
+}
