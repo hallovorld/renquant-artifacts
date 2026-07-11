@@ -1,0 +1,13 @@
+{
+ "artifact_id": "xstock-pilot-20260711",
+ "model_family": "hf-patchtst-panel",
+ "strategy": "renquant_104",
+ "fingerprint": "sha256:86b06dec1c2dec3a04a37eb278bf995b52bd31a17a0fc445b921b107b21fd01d",
+ "uri": "store://experiments/xstock-pilot-20260711/RUN-LOCK.json",
+ "promotion_status": "diagnostic",
+ "metrics": {
+  "accepted": false,
+  "note": "Sealed evidence bundle for the cross-stock attention targeted confirmation (orchestrator #467, memo 2026-07-10-106-roadmap-audit-xstock-verdict.md). Paired delta best_val_ic: seed44 +0.0207, seed45 +0.0172 on pre-known seeds \u2014 evidence for the weekly ride-along recommendation ONLY; justifies NO live or shadow promotion. Full sha256s in store/STORE-MANIFEST.json; checkpoints excluded by policy, hashes in RUN-LOCK.json excluded_blobs."
+ },
+ "retention_class": "experiment-pinned"
+}

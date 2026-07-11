@@ -1,0 +1,240 @@
+{
+ "experiment_id": "xstock-pilot-20260711",
+ "purpose": "Targeted 2-seed paired confirmation (base vs --cross-stock-attn) on the current corpus vintage under the exact weekly-rail recipe. NOT an independent replication: seeds 44/45 were previously reported positive in orchestrator #126 (selection bias documented in the memo).",
+ "prereg": {
+  "repo": "renquant-orchestrator",
+  "pr": 467,
+  "freeze_commit": "3e8bc3ac",
+  "results_commit": "4b0b48f7",
+  "memo": "doc/research/2026-07-10-106-roadmap-audit-xstock-verdict.md"
+ },
+ "argv_template": [
+  "<venv-python>",
+  "-m",
+  "renquant_model_patchtst.hf_trainer",
+  "--cut",
+  "all",
+  "--train-cutoff",
+  "2026-03-30",
+  "--epochs",
+  "5",
+  "--device",
+  "mps",
+  "--seed",
+  "<SEED>",
+  "--label",
+  "fwd_60d_excess",
+  "--lr",
+  "1e-4",
+  "--weight-decay",
+  "0.3",
+  "--seq-len",
+  "24",
+  "--early-stopping-patience",
+  "2",
+  "--save-model",
+  "--output-dir",
+  "<scratch>/<arm>_s<SEED>",
+  "--dataset",
+  "<repo>/data/transformer_v4_wl200_clean.parquet",
+  "--spy-path",
+  "<repo>/data/ohlcv/SPY/1d.parquet",
+  "--strategy-config",
+  "<github>/renquant-strategy-104/configs/strategy_config.shadow.json"
+ ],
+ "argv_note": "Exact runner scripts included in this bundle (run_pilot.sh seed-44 pair + first seed-45 attempt; run_pilot_s45.sh relaunched seed-45 pair; argv identical across attempts). --cross-stock-attn appended for the xstock arm only. Defaults in effect: --val-tail-pct 0.10, --embargo-days 60, --detector-version v2026-05-31, distributional head ON.",
+ "environment": {
+  "host_os": "Darwin 25.5.0 (macOS, Apple Silicon MPS)",
+  "python": "3.10.20",
+  "torch": "2.11.0",
+  "transformers": "5.8.1",
+  "venv": "RenQuant/.venv -> miniconda3/envs/renquant (umbrella-managed; documented limitation, see memo)"
+ },
+ "code_identity": {
+  "resolution": "PYTHONPATH resolved via RenQuant/scripts/subrepo_env.sh to the PINNED runtime checkouts under RenQuant/.subrepo_runtime/repos (all clean trees at run time)",
+  "runtime_pins": {
+   "renquant-orchestrator": "690c82fc6",
+   "renquant-common": "f5cb6ab2c",
+   "renquant-base-data": "fef604bff",
+   "renquant-artifacts": "c09d66f8d",
+   "renquant-model": "84a3c1864",
+   "renquant-pipeline": "289b91990",
+   "renquant-execution": "42e5d7d72",
+   "renquant-strategy-104": "0e5d98913",
+   "renquant-backtesting": "8f6700ab3"
+  },
+  "notes": [
+   "renquant-model trainer files (hf_trainer.py, sequence_training.py) at runtime pin 84a3c1864 are byte-identical to renquant-model main @ 45e42a1e3 (verified: empty git diff).",
+   "strategy_config.shadow.json was read from the PRIMARY checkout renquant-strategy-104 @ 6d205fd41 (clean); it only stamps a config fingerprint into the summary and does not affect training.",
+   "cutoff 2026-03-30 derived by renquant_orchestrator.patchtst_weekly_cutoff (runtime pin 690c82fc6) from the corpus's labeled frontier, Monday-quantized."
+  ]
+ },
+ "inputs": {
+  "training_corpus": {
+   "logical_name": "transformer_v4_wl200_clean.parquet",
+   "sha256": "46da7f431ccc7db228abf9162ac36b0af2d03c0013575c48e35562dec35ce197",
+   "bytes": 401398353,
+   "rows_total": 351134,
+   "rows_after_label_dropna": 342330,
+   "labeled_frontier": "2026-04-02",
+   "file_mtime": "2026-07-03T16:57 PT",
+   "recipe_owner": "renquant-base-data src/.../transformer_corpus.py (runtime pin fef604bff)",
+   "consumed_from": "local umbrella working copy RenQuant/data/ (READ-ONLY). LIMITATION: not resolved through a pinned artifact-store binding; the ride-along wiring MUST bind this input by recipe commit + content sha256 via the artifact_store mechanism (renquant-artifacts store/README.md)."
+  },
+  "spy_ohlcv": {
+   "logical_name": "ohlcv/SPY/1d.parquet",
+   "sha256": "ab9f5d4a283b7331a038d47b697a85622d134b916ea7a7b586a998fd9cea9125",
+   "bytes": 122481,
+   "file_mtime": "2026-07-10T13:00 PT",
+   "consumed_from": "local umbrella working copy (READ-ONLY); same limitation as above"
+  },
+  "train_cutoff": "2026-03-30",
+  "data_end_exclusive_derived": "cutoff - 60 BDay (hf_trainer default when --data-end omitted)"
+ },
+ "runs": [
+  {
+   "run": "base_s44",
+   "seed": 44,
+   "cross_stock_attn": false,
+   "start_utc": "2026-07-11T05:28:01Z",
+   "end_utc": "2026-07-11T05:45:14Z",
+   "rc": 0,
+   "best_val_ic": 0.04204822678178456,
+   "n_params": 67908,
+   "per_regime_ic": {
+    "BULL_CALM": 0.04204822678178456,
+    "BULL_VOLATILE": 0.08199199294863094,
+    "BEAR": 0.1378839891519324,
+    "CHOPPY": 0.05463468055267177
+   }
+  },
+  {
+   "run": "xstock_s44",
+   "seed": 44,
+   "cross_stock_attn": true,
+   "start_utc": "2026-07-11T05:45:14Z",
+   "end_utc": "2026-07-11T06:13:13Z",
+   "rc": 0,
+   "best_val_ic": 0.06272823257888159,
+   "n_params": 101381,
+   "per_regime_ic": {
+    "BULL_CALM": 0.06272823257888159,
+    "BULL_VOLATILE": 0.09434633377324544,
+    "BEAR": 0.16392022301308762,
+    "CHOPPY": 0.06526676329675545
+   }
+  },
+  {
+   "run": "base_s45",
+   "seed": 45,
+   "cross_stock_attn": false,
+   "start_utc": "2026-07-11T06:28:41Z",
+   "end_utc": "2026-07-11T06:51:02Z",
+   "rc": 0,
+   "best_val_ic": -0.007641391715859415,
+   "n_params": 67908,
+   "per_regime_ic": {
+    "BULL_CALM": 0.0437,
+    "BULL_VOLATILE": 0.0768,
+    "BEAR": 0.1021,
+    "CHOPPY": -0.0076
+   },
+   "per_regime_note": "rounded from summary.json (exact values in the bundled summary)"
+  },
+  {
+   "run": "xstock_s45",
+   "seed": 45,
+   "cross_stock_attn": true,
+   "start_utc": "2026-07-11T06:51:02Z",
+   "end_utc": "2026-07-11T07:13:36Z",
+   "rc": 0,
+   "best_val_ic": 0.009511154212548535,
+   "n_params": 101381,
+   "per_regime_ic": {
+    "BULL_CALM": 0.059,
+    "BULL_VOLATILE": 0.0856,
+    "BEAR": 0.1023,
+    "CHOPPY": 0.0095
+   },
+   "per_regime_note": "rounded from summary.json (exact values in the bundled summary)"
+  }
+ ],
+ "interruption_record": {
+  "event": "first seed-45 pair attempt (started 2026-07-11T06:13:13Z as arm=base) was KILLED mid-training ~06:20Z by session background-task teardown (not a training failure)",
+  "action": "relaunched detached (nohup) 06:28:41Z with byte-identical argv (run_pilot_s45.sh, included); its output dir was rm -rf'd and recreated before the relaunch; the completed seed-44 pair was untouched",
+  "spec_change": "NONE"
+ },
+ "results": {
+  "paired_delta_best_val_ic": {
+   "seed_44": 0.02067999,
+   "seed_45": 0.01715255,
+   "mean": 0.01891627
+  },
+  "per_regime_deltas_nonnegative": "8/8",
+  "classification": "TARGETED CONFIRMATION on pre-known seeds (44/45 were the positive seeds of #126) \u2014 NOT an independent replication; see memo section 7"
+ },
+ "excluded_blobs": [
+  {
+   "run": "base_s44",
+   "file": "hf_patchtst_all_seed44_model.pt",
+   "sha256": "32bfc7808de38e5ed642ffa48ea2c0272546adb50efd2091e0945c13bd778045",
+   "bytes": 307959,
+   "included_in_store": false
+  },
+  {
+   "run": "xstock_s44",
+   "file": "hf_patchtst_all_seed44_model.pt",
+   "sha256": "1defbe7d8d5034350652e10013d11110aab08ceb9b35509eaf8f9ec51cfe9d0a",
+   "bytes": 446305,
+   "included_in_store": false
+  },
+  {
+   "run": "base_s45",
+   "file": "hf_patchtst_all_seed45_model.pt",
+   "sha256": "485224ffd650b2b258d9575392e75151fb29e9f60983c0f7521b48ed5379a5e8",
+   "bytes": 307959,
+   "included_in_store": false
+  },
+  {
+   "run": "xstock_s45",
+   "file": "hf_patchtst_all_seed45_model.pt",
+   "sha256": "c51747c1be6907b73cb730d13b9c28dbc5e8662a9d6a5acc507054ee553a12ce",
+   "bytes": 446305,
+   "included_in_store": false
+  }
+ ],
+ "raw_log_hashes": {
+  "base_s44/train.log(raw)": {
+   "sha256": "a089f4a3d96c2fa1ef139782323a838e85734d0bfeec35313c3e799bdd73f1b4",
+   "bytes": 441017
+  },
+  "xstock_s44/train.log(raw)": {
+   "sha256": "ec30c6bb723345249ed88d3df051ce52e097d186689bc41a06fb2b544e915410",
+   "bytes": 762651
+  },
+  "base_s45/train.log(raw)": {
+   "sha256": "8f02515e6adf96e31b78c5ed4debe05b3f211216d7b531e6c697897145f67193",
+   "bytes": 596989
+  },
+  "xstock_s45/train.log(raw)": {
+   "sha256": "fbee20080d89c9711df6c94be4df2f715aed9c9efff3dfa10abd4b3c19a31368",
+   "bytes": 596977
+  },
+  "driver.log(raw)": {
+   "sha256": "5401c2f5d6cb804d40d52bf5cbd06952cc61d8697233c6e4247331c80704f50d",
+   "bytes": 629
+  }
+ },
+ "log_cleaning_rule": "carriage-return progress frames collapsed to their final state and pure progress-bar lines dropped; all [INFO]/eval/traceback lines retained verbatim. Raw (uncleaned) log sha256s recorded above; raw logs were not retained in a durable store.",
+ "future_seed_rule": {
+  "rule": "seeds = successive 4-hex-char groups of sha256('d6-xstock-ridealong-2026') interpreted as ints mod 10000, skipping duplicates and previously-inspected seeds {42,43,44,45,46}",
+  "digest": "ad0666c93dc1bd933139f23f4227295dec9a784792a1135156e09d4a9449d564",
+  "first_five": [
+   4294,
+   6313,
+   5809,
+   8531,
+   2601
+  ]
+ }
+}
