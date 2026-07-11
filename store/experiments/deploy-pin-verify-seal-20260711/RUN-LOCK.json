@@ -1,0 +1,207 @@
+{
+ "capture_timestamp": "2026-07-11T17:42:15Z",
+ "capture_tool": {
+  "caveat": "fb3b69ff (the manifest's OWN recorded renquant-orchestrator commit -- the deployed production pin the 18 launchd jobs consume, at capture time) is NOT an ancestor of 90a6e8bb (the commit that merged deploy_pin.py itself) -- confirmed via `git merge-base --is-ancestor 90a6e8bb fb3b69ff` returning false, this sealing session. This is expected, not an error: deploy-pin is a new, not-yet-daily-consumed tool: the operator ran it ad hoc from a local checkout carrying the newer merged code, against the still-fb3b69ff-pinned production lock. The exact orchestrator commit of THAT executing checkout was not separately recorded at capture time and cannot be reconstructed with certainty after the fact -- this bundle does not fabricate that value; it states 90a6e8bb as the implementation-landed reference point only.",
+  "cli_module": "src/renquant_orchestrator/deploy_pin.py",
+  "command": "renquant-orchestrator deploy-pin capture --write",
+  "deployed_orchestrator_pin_at_capture": "fb3b69ffad7b05258065c968e2669a97c5134fe0",
+  "implementation_landed_in": "orchestrator PR #477 (feat(deploy): R-PIN Stage 1 -- deployment-manifest schema + neutral state root + deploy-pin capture), merged as 90a6e8bb9e3df7865c713c0366779c01b35691ae"
+ },
+ "captured_manifest": {
+  "content_sha256": "e302ee0bbaa8086fb6d68230f7f780a931246e20f73f82909ff0120e411c847f",
+  "deployed_at": "2026-07-11T17:42:15Z",
+  "deployed_by": "operator",
+  "generated_at": "2026-07-11T17:42:15Z",
+  "generation": 1,
+  "note": "sha256 of the ORIGINALLY COMMITTED deploy/deployment-manifest.json in orchestrator#483 (state=captured, evidence_ref=null, artifact_store.path=\"\") -- byte-identical to what production wrote to ~/.renquant/deploy/expected-generation.json.manifest_sha256 at capture time [VERIFIED against both files, this sealing session, read-only]. The evidence-binding follow-up commit sets evidence_ref (this bundle's store:// ref) and artifact_store.path (\"\" -> \"store\", the resolvable subdir given the repo's actual layout) so state flips deployed per build_deployment_manifest_payload's own logic; every OTHER field (generation, repos, deployed_by, deployed_at, supersedes_sha256) is unchanged."
+ },
+ "cross_check": {
+  "both_equal_manifest_repos_identity_digest": true,
+  "lock_identity_digest_equals_inventory_identity_digest": true,
+  "manifest_repos_identity_digest_recomputed_this_session": "e1c30ce2d52b79160cd21ad8477f2848083c33ca364e17737d6fe7585121f96b",
+  "note": "All three independently-derived digests (declared on-disk lock, live materialized .subrepo_runtime clone HEADs, and the committed manifest's own repos field) are IDENTICAL -- this is the proof that the committed manifest records the lock AND clone set actually observed on the production host at capture time, not just an editable list of commit hashes."
+ },
+ "inventory_identity_digest": "e1c30ce2d52b79160cd21ad8477f2848083c33ca364e17737d6fe7585121f96b",
+ "kind": "deploy-pin-evidence-v1",
+ "lock_identity_digest": "e1c30ce2d52b79160cd21ad8477f2848083c33ca364e17737d6fe7585121f96b",
+ "materialized_runtime_inventory": {
+  "clone_heads_read_via": "git -C <clone> rev-parse HEAD, this sealing session",
+  "identity_digest": "e1c30ce2d52b79160cd21ad8477f2848083c33ca364e17737d6fe7585121f96b",
+  "identity_digest_method": "renquant_orchestrator.deployment_manifest.repo_identity_digest() over the lock's identity rows with 'commit' replaced by a live git rev-parse HEAD reading of each .subrepo_runtime clone",
+  "identity_entries": [
+   {
+    "branch": "main",
+    "commit": "f5cb6ab2cf4eca6d726d23bfbd4da10db5be1a4c",
+    "name": "renquant-common",
+    "remote": "https://github.com/hallovorld/renquant-common",
+    "role": "shared primitives + contracts + shared TRAINING/EVAL utilities (Task/Job/Pipeline, purged_cv, walk_forward_splits, hmm_regime_labels, config_consistency) \u2014 imported by the model factory & pipeline",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "f01c02598b176a45a21ac04e6ca22b16f7392c02",
+    "name": "renquant-strategy-104",
+    "remote": "https://github.com/hallovorld/renquant-strategy-104",
+    "role": "active 104 strategy config; CONSUMES models from renquant-artifacts",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "84a3c1864f195bc0c71c3fad2c15544a0a89b0bc",
+    "name": "renquant-model",
+    "remote": "https://github.com/hallovorld/renquant-model",
+    "role": "MODEL FACTORY \u2014 ingests base-data + common code, runs research/training (GBDT + PatchTST families), and produces models published to renquant-artifacts",
+    "status": "active"
+   },
+   {
+    "branch": "main",
+    "commit": "289b919908fcda3a38523fbc8447d40e6431e176",
+    "name": "renquant-pipeline",
+    "remote": "https://github.com/hallovorld/renquant-pipeline",
+    "role": "runtime inference/decision pipeline; shares regime/config code with trainers",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "42e5d7d722513f16d8d17508303b2b93c64aaa55",
+    "name": "renquant-execution",
+    "remote": "https://github.com/hallovorld/renquant-execution",
+    "role": "broker execution and order-audit pipeline",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "8f6700ab35589d7ada518305ea8cd5aaa598af47",
+    "name": "renquant-backtesting",
+    "remote": "https://github.com/hallovorld/renquant-backtesting",
+    "role": "backtesting, LEAN assembly, simulation, forensics; CONSUMES models from renquant-artifacts",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "1bdfeb6fc601432f9614b4b6167a2ff9fb09ed73",
+    "name": "renquant-base-data",
+    "remote": "https://github.com/hallovorld/renquant-base-data",
+    "role": "base-data manifests + the training-data INPUT consumed by the model factory",
+    "status": "active"
+   },
+   {
+    "branch": "main",
+    "commit": "c71edf7fa6e723c9a4475782f54914b71b694043",
+    "name": "renquant-artifacts",
+    "remote": "https://github.com/hallovorld/renquant-artifacts",
+    "role": "artifact registry \u2014 RECEIVES trained models from the factory; consumed by sim/backtest/strategy-104",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "fb3b69ffad7b05258065c968e2669a97c5134fe0",
+    "name": "renquant-orchestrator",
+    "remote": "https://github.com/hallovorld/renquant-orchestrator",
+    "role": "pinned-subrepo daily orchestration + run bundles (wires factory output into daily/sim/backtest)",
+    "status": "active"
+   }
+  ],
+  "note": "host path shown for audit only -- not portable, not read by deploy-pin verify",
+  "raw_file_sha256": "d7521b300d728ef6ceac917554a21ad2fdf54e7aeeb4ae5a6dc48613d4151a4a",
+  "read_at": "2026-07-11T18:08:24Z",
+  "state_root_file": "~/.renquant/deploy/runtime-inventory.json"
+ },
+ "purpose": "Evidence bundle sealing the response to Codex CHANGES_REQUESTED on orchestrator#483 (the first committed R-PIN deployment manifest, deploy/deployment-manifest.json generation 1). Codex: 'it asserts host state while evidence_ref and artifact_store.path are empty, and it records neither the exact source-lock digest nor a materialized-runtime-inventory digest/capture attestation.' This bundle seals both digests plus capture-tool/timestamp/verification provenance so orchestrator#483's manifest.deployment.verify.evidence_ref can bind to it and `deploy-pin verify` can cross-check it against the manifest's own recorded repo commits.",
+ "sealing_session": {
+  "note": "All host-state reads in this bundle (the lock file, the 9 .subrepo_runtime clone HEADs via git rev-parse, and the ~/.renquant/deploy/* files) were performed READ-ONLY in this sealing session. Nothing on the production host was written, mutated, or re-captured; `deploy-pin capture --write` was NOT re-run.",
+  "read_only": true,
+  "sealed_at": "2026-07-11T18:08:24Z",
+  "sealed_for": "https://github.com/hallovorld/renquant-orchestrator/pull/483"
+ },
+ "source_lock": {
+  "host_path": "~/git/github/RenQuant/subrepos.lock.json",
+  "identity_digest": "e1c30ce2d52b79160cd21ad8477f2848083c33ca364e17737d6fe7585121f96b",
+  "identity_digest_method": "renquant_orchestrator.deployment_manifest.repo_identity_digest(renquant_orchestrator.deploy_pin.read_lock_subrepo_identity(lock_path))",
+  "identity_entries": [
+   {
+    "branch": "main",
+    "commit": "f5cb6ab2cf4eca6d726d23bfbd4da10db5be1a4c",
+    "name": "renquant-common",
+    "remote": "https://github.com/hallovorld/renquant-common",
+    "role": "shared primitives + contracts + shared TRAINING/EVAL utilities (Task/Job/Pipeline, purged_cv, walk_forward_splits, hmm_regime_labels, config_consistency) \u2014 imported by the model factory & pipeline",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "f01c02598b176a45a21ac04e6ca22b16f7392c02",
+    "name": "renquant-strategy-104",
+    "remote": "https://github.com/hallovorld/renquant-strategy-104",
+    "role": "active 104 strategy config; CONSUMES models from renquant-artifacts",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "84a3c1864f195bc0c71c3fad2c15544a0a89b0bc",
+    "name": "renquant-model",
+    "remote": "https://github.com/hallovorld/renquant-model",
+    "role": "MODEL FACTORY \u2014 ingests base-data + common code, runs research/training (GBDT + PatchTST families), and produces models published to renquant-artifacts",
+    "status": "active"
+   },
+   {
+    "branch": "main",
+    "commit": "289b919908fcda3a38523fbc8447d40e6431e176",
+    "name": "renquant-pipeline",
+    "remote": "https://github.com/hallovorld/renquant-pipeline",
+    "role": "runtime inference/decision pipeline; shares regime/config code with trainers",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "42e5d7d722513f16d8d17508303b2b93c64aaa55",
+    "name": "renquant-execution",
+    "remote": "https://github.com/hallovorld/renquant-execution",
+    "role": "broker execution and order-audit pipeline",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "8f6700ab35589d7ada518305ea8cd5aaa598af47",
+    "name": "renquant-backtesting",
+    "remote": "https://github.com/hallovorld/renquant-backtesting",
+    "role": "backtesting, LEAN assembly, simulation, forensics; CONSUMES models from renquant-artifacts",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "1bdfeb6fc601432f9614b4b6167a2ff9fb09ed73",
+    "name": "renquant-base-data",
+    "remote": "https://github.com/hallovorld/renquant-base-data",
+    "role": "base-data manifests + the training-data INPUT consumed by the model factory",
+    "status": "active"
+   },
+   {
+    "branch": "main",
+    "commit": "c71edf7fa6e723c9a4475782f54914b71b694043",
+    "name": "renquant-artifacts",
+    "remote": "https://github.com/hallovorld/renquant-artifacts",
+    "role": "artifact registry \u2014 RECEIVES trained models from the factory; consumed by sim/backtest/strategy-104",
+    "status": "bootstrapped"
+   },
+   {
+    "branch": "main",
+    "commit": "fb3b69ffad7b05258065c968e2669a97c5134fe0",
+    "name": "renquant-orchestrator",
+    "remote": "https://github.com/hallovorld/renquant-orchestrator",
+    "role": "pinned-subrepo daily orchestration + run bundles (wires factory output into daily/sim/backtest)",
+    "status": "active"
+   }
+  ],
+  "note": "host path shown for audit only -- not portable, not read by deploy-pin verify",
+  "raw_file_sha256": "ca31e11ce2846cce1b81968e57351286f0f3e97bcf964e85be37ca12c0b3fb36",
+  "read_at": "2026-07-11T18:08:24Z"
+ },
+ "verification_output": {
+  "args": {
+   "min_admits": 1
+  },
+  "exit": 0,
+  "profile": "readonly-e2e",
+  "source": "deployment.verify block of the committed manifest -- this is the ONLY recorded verification output. This sealing session searched ~/.renquant/ and the RenQuant umbrella tree for a separate readonly-e2e log file and found none; no additional output is fabricated here."
+ }
+}

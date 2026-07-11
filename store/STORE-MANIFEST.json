@@ -1,4 +1,5 @@
 {
+ "experiments/deploy-pin-verify-seal-20260711/RUN-LOCK.json": "01b0da52264cb52c3d53c55d4389af711de7aa5a55c11f3ea7331e39163944d3",
  "experiments/enablement-floor-replay-20260711/RUN-LOCK.json": "db81fa15ed05f1a05144d00bc3ca2a422f7f5ea5b44fcbc8ce07277156bdc498",
  "experiments/meta-no-buy-forensics-20260711/RUN-LOCK.json": "b9cc2ecc33357452be9c1568c5c0023f82e10d5bde6c8f9100064805e2c0ea9b",
  "experiments/meta-score-attribution-20260711/RUN-LOCK.json": "87a7ef84b1b31cbf9823686ccc573f9348a33906efe3b671b4078b37eb125200",

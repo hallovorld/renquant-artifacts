@@ -1,0 +1,16 @@
+{
+ "artifact_id": "deploy-pin-verify-seal-20260711",
+ "fingerprint": "sha256:01b0da52264cb52c3d53c55d4389af711de7aa5a55c11f3ea7331e39163944d3",
+ "metrics": {
+  "accepted": true,
+  "codex_review": "CHANGES_REQUESTED on orchestrator#483, 2026-07-11 -- the first committed R-PIN deployment manifest asserted host state while evidence_ref and artifact_store.path were empty, with neither an exact source-lock digest nor a materialized-runtime-inventory digest sealed.",
+  "lock_identity_digest": "e1c30ce2d52b79160cd21ad8477f2848083c33ca364e17737d6fe7585121f96b",
+  "inventory_identity_digest": "e1c30ce2d52b79160cd21ad8477f2848083c33ca364e17737d6fe7585121f96b",
+  "note": "Sealed, read-only evidence bundle for orchestrator#483's R-PIN Stage 1 first durable deployment record. Seals: (1) the exact source-lock identity digest, independently recomputed from a fresh read of the production subrepos.lock.json plus its raw file sha256; (2) the materialized-runtime-inventory identity digest, independently recomputed from live `git rev-parse HEAD` reads of all 9 .subrepo_runtime clones plus the raw runtime-inventory.json sha256; (3) proof all three digests (lock, inventory, and the committed manifest's own repos field) are identical; (4) capture-tool command/implementation-commit provenance (with an explicit, non-fabricated caveat about the deployed-orchestrator-pin vs the executing-checkout-commit distinction); (5) the capture timestamp; (6) the only recorded readonly-e2e verification output (no separate log file exists on the host). orchestrator#483's deploy/deployment-manifest.json binds deployment.verify.evidence_ref to this bundle's store:// URI so `deploy-pin verify` can cross-check the sealed lock_identity_digest/inventory_identity_digest against the manifest's own recorded repo commits and reject on any mismatch."
+ },
+ "model_family": "deployment-pin-evidence",
+ "promotion_status": "diagnostic",
+ "retention_class": "experiment-pinned",
+ "strategy": "renquant_104",
+ "uri": "store://experiments/deploy-pin-verify-seal-20260711/RUN-LOCK.json"
+}
