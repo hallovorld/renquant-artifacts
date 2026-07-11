@@ -1,0 +1,1636 @@
+{
+  "artifact_id": "std60-rule-provenance-20260711",
+  "codex_review_findings_addressed_by_this_bundle": {
+    "point_1_reproducibility": "Partially addressed: the fields below under independently_reverified_2026_07_11 are sealed content-addressed evidence with fresh sha256 hashes of the exact source files, computed in this session, and CAN be independently re-checked by anyone with read access to the same live-tree files. The fields under sealed_as_reported_not_independently_reproduced are explicitly NOT resolved by this bundle -- their generating code no longer exists and is flagged as such rather than re-asserted as verified.",
+    "point_2_oos_underpowered": "Not something this bundle can fix by resealing -- the underlying OOS sample size (4 mature 60d-matched dates) is a fact about calendar time elapsed, not a computation error. This bundle seals the exact descriptive OOS figures as descriptive-only (see sealed_as_reported_not_independently_reproduced.h2_post_training_oos_descriptive_only) so they are not silently re-cited as confirmatory evidence.",
+    "point_3_post_hoc_selection": "Not resolved by this bundle. No preregistered candidate set or purged/embargoed walk-forward design exists yet; see the orchestrator research doc's SS7 'Required next artifact'.",
+    "point_4_mechanism_not_established": "Not resolved by this bundle. The STD60 numerator/denominator/returns-vol decomposition sealed here under independently_reverified_2026_07_11 is a fact about the feature definition and META's price series, independently reproduced this session -- it is NOT evidence about what the fitted booster's learned response is driven by. Conditional ALE/SHAP, local support counts, grouped-attribution residuals, and frozen-model ablations are still required and have not been run."
+  },
+  "description": "Sealed evidence for orchestrator#476 (STD60 low-vol-bearish rule provenance, deepest-layer follow-up to #475 META score attribution), sealed in response to Codex CHANGES_REQUESTED (2026-07-11): the original doc asserted a root-cause verdict from a mix of independently-checkable facts and uncommitted-scratch-script computation. This bundle separates the two: fields under `independently_reverified_2026_07_11` were re-derived directly from the live artifact/OHLCV/corpus files (read-only) in this sealing session and their exact values matched the research doc's citations; fields under `sealed_as_reported_not_independently_reproduced` are a verbatim transcript of the research doc's own tables, produced by uncommitted scratch scripts (std60_provenance.py, std60_followup.py) from the original 2026-07-11 research session that are not available in this or any other worktree to re-run. This bundle does NOT itself satisfy Codex's point 3 (preregistered, selection-adjusted inference plan) or point 4 (conditional ALE/SHAP mechanism evidence) \u2014 those remain the required next artifact described in the orchestrator doc's \u00a77.",
+  "extraction_method": "Direct read-only file access (Python open()/pandas.read_parquet, no git operations, no writes) against the live umbrella tree's production artifact, its .previous snapshot, the training corpus parquet, and META's OHLCV parquet. No production path written; no order touched; no git operation in the live umbrella tree; this sealing session ran entirely outside the orchestrator worktree used to edit the research doc.",
+  "independently_reverified_2026_07_11": {
+    "candidate_2026_07_05_not_overridden": {
+      "artifact_path": "backtesting/renquant_104/artifacts/prod/panel-ltr.alpha158_fund.previous.json",
+      "artifact_sha256": "7a232110d2cb1e5cbe42c7335f92fd5ab80cf5fdf98412948f533e579cb48bca",
+      "note": "re-verified this session: the 07-05 candidate (eeee9542) failed the same wf_reason check and was NOT overridden -- i.e. never went live, unlike the 07-06 artifact above.",
+      "sanity_reason": "FAIL: shuf_ic=-0.0009 (need |\u00b7| < 0.005), genuine_ic=+0.0092 (need genuine_ic = aligned_real_ic \u2212 placebo_ic > +0.020 [genuine_ic>0.02 (shadow-only, not enforced)]; aligned_real_ic=+0.0654, placebo_ic=+0.0562)",
+      "train_run_id": "eeee9542",
+      "trained_date": "2026-07-05",
+      "wf_gate_metadata_manual_override": null,
+      "wf_gate_metadata_passed": false,
+      "wf_reason": "FAIL: absolute_ok=True, benchmark_ok=False, regime_ok=False; mean Sharpe +0.776, 3/3 cuts > 0; SPY mean Sharpe +1.081, \u0394Sharpe -0.305, beat SPY Sharpe 1/3, beat SPY APY 0/3; benchmark-lag regimes=['HIGH_CALM', 'LOW_SPIKED']"
+    },
+    "meta_std60_mechanical_decomposition": {
+      "2026-07-06": {
+        "close": 600.2899780273438,
+        "returns_vol60": 0.026828303203136505,
+        "std60_numerator_60d_level_std": 37.107079083981574,
+        "std60_ratio": 0.061815256696308385,
+        "std60_z_using_artifact_train_stats": 0.0899549343320882
+      },
+      "2026-07-10": {
+        "close": 669.2100219726562,
+        "returns_vol60": 0.028105271766476408,
+        "std60_numerator_60d_level_std": 37.14507030588826,
+        "std60_ratio": 0.05550584881618225,
+        "std60_z_using_artifact_train_stats": -0.043075173355627154
+      },
+      "definition": "STD60 = std(close, 60d, ddof=1) / close_today (pandas .rolling(60).std() default ddof=1); returns_vol60 = std(pct_change(close), 60d)",
+      "note": "Independently recomputed in this sealing session directly from META OHLCV; matches the research doc SS3 table (600.29->669.21 close, 37.11->37.15 numerator, 0.0618->0.0555 ratio, 0.0268->0.0281 returns-vol) to within rounding. This establishes the feature's mechanical/definitional behavior for this ticker-week; it does NOT establish what the fitted booster's learned response is driven by (see codex_review_findings_addressed_by_this_bundle.point_4).",
+      "pct_change": {
+        "close": 0.1148112520082305,
+        "returns_vol60": 0.04759781316287692,
+        "std60_numerator": 0.0010238267965179126,
+        "std60_ratio": -0.10206878070770731
+      },
+      "source_file": "data/ohlcv/META/1d.parquet",
+      "source_sha256": "c6d75c9cb9eb1563116f66a4bd578f3488c6669808f942cc59b932d938e84596"
+    },
+    "model_identity": {
+      "artifact_path": "backtesting/renquant_104/artifacts/prod/panel-ltr.alpha158_fund.json",
+      "artifact_sha256": "5211f6bebd90ca088c7fe2492cae1845369b80b84e53ed347d3c27d7a864c9cf",
+      "config_fingerprint": "sha256:f8fb2259b2bf1537",
+      "lookahead_days": 60,
+      "panel_shape": {
+        "dates": 2580,
+        "rows": 722775,
+        "tickers": 292
+      },
+      "std60_feature_index": 131,
+      "std60_feature_mean": 0.057548836249115755,
+      "std60_feature_std": 0.047428420451536446,
+      "train_run_id": "240f9b27",
+      "trained_date": "2026-07-06"
+    },
+    "training_corpus": {
+      "date_max": "2026-04-08",
+      "date_min": "2016-01-04",
+      "n_dates": 2580,
+      "n_rows": 722775,
+      "n_tickers": 292,
+      "note": "row/ticker/date counts and date range independently re-read with pandas in this session; match artifact panel_shape and the research doc's SS0 exactly.",
+      "path": "data/alpha158_291_fundamental_dataset.parquet",
+      "sha256": "9a495e28b95acee44730a73e0a63f59115092386a6413ec71e98b9b868b81319"
+    },
+    "wf_gate_metadata_full": {
+      "alpha_economics": {
+        "evidence": {
+          "n_benchmark_sleeve_closed": 0
+        },
+        "passed": true,
+        "reason": "no benchmark sleeve closed trades; full WF metrics are alpha-owned"
+      },
+      "artifact_usage": {
+        "candidate_artifact_used": false,
+        "candidate_n_features": 172,
+        "candidate_recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+        "eval_scope": "walkforward_manifest",
+        "manifest_path": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/sim/walkforward_manifest_gbdt_prod_recipe_v2.calibrated.json",
+        "manifest_rows_checked": 43,
+        "manifest_sample_reports": [
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2023-10-02/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2023-10-23/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2023-11-13/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2023-12-04/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2023-12-25/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-01-15/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-02-05/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-02-26/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-03-18/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-04-08/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-04-29/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-05-20/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-06-10/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-07-01/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-07-22/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-08-12/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-09-02/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-09-23/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-10-14/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-11-04/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-11-25/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2024-12-16/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-01-06/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-01-27/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-02-17/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-03-10/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-03-31/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-04-21/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-05-12/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-06-02/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-06-23/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-07-14/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-08-04/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-08-25/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-09-15/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-10-06/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-10-27/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-11-17/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-12-08/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2025-12-29/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2026-01-19/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2026-02-09/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          },
+          {
+            "artifact_uri": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/walkforward_gbdt_prod_recipe_v2/2026-03-02/panel-ltr.json",
+            "exists": true,
+            "extra_features_vs_candidate": [],
+            "missing_features_vs_candidate": [],
+            "n_features": 172,
+            "recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+            "recipe_matches": true
+          }
+        ],
+        "reason": "manifest artifacts match candidate recipe",
+        "recipe_validated": true,
+        "strategy_config": "artifacts/diagnostics/wf_eval_configs/strategy_config.sim_wl200_gbdt_prod_recipe_calibrated.prod_semantic.json"
+      },
+      "benchmark_by_dominant_regime": {
+        "HIGH_CALM": {
+          "mean_apy": 0.1024137448582122,
+          "mean_apy_vs_spy": -0.08440235243936078,
+          "mean_sharpe": 0.7050892874155079,
+          "mean_sharpe_vs_spy": -0.5586044648510489,
+          "mean_spy_apy": 0.18681609729757298,
+          "mean_spy_sharpe": 1.2636937522665568,
+          "n_beat_spy_apy": 0,
+          "n_beat_spy_sharpe": 0,
+          "n_cuts": 2
+        },
+        "LOW_SPIKED": {
+          "mean_apy": 0.11573983824215217,
+          "mean_apy_vs_spy": -0.01892829849795774,
+          "mean_sharpe": 0.9231030296794878,
+          "mean_sharpe_vs_spy": 0.20797453818940204,
+          "mean_spy_apy": 0.1346681367401099,
+          "mean_spy_sharpe": 0.7151284914900857,
+          "n_beat_spy_apy": 0,
+          "n_beat_spy_sharpe": 1,
+          "n_cuts": 1
+        }
+      },
+      "candidate_artifact_used": false,
+      "candidate_recipe_fingerprint": "sha256:cfdd6cb8e950da0f",
+      "config_parity": {
+        "candidate_artifact": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/prod/panel-ltr.alpha158_fund.weekly_20260706T230931Z.staging.json",
+        "checked_paths": [
+          "ranking.panel_scoring.enabled",
+          "ranking.panel_scoring.kind",
+          "ranking.panel_scoring.buy_floor",
+          "ranking.panel_scoring.rotation_advantage",
+          "ranking.panel_scoring.sizing",
+          "ranking.panel_scoring.sigma_sizing",
+          "ranking.panel_scoring.ngboost.enabled",
+          "ranking.panel_scoring.ngboost.score_mode",
+          "ranking.panel_scoring.ngboost.lambda_sigma",
+          "ranking.kelly_sizing",
+          "rotation.joint_actions",
+          "risk.panel_exit",
+          "risk.stop_loss_anchor_policy",
+          "regime_params",
+          "max_concurrent_positions",
+          "max_positions_per_sector",
+          "wash_sale_days",
+          "execution",
+          "tax",
+          "defensive_tickers",
+          "sector_map",
+          "tiered_thresholds"
+        ],
+        "issues": [],
+        "passed": true,
+        "prod_config": "/Users/renhao/git/github/RenQuant/.subrepo_runtime/repos/renquant-strategy-104/configs/strategy_config.json",
+        "wf_config": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_eval_configs/strategy_config.sim_wl200_gbdt_prod_recipe_calibrated.prod_semantic.json"
+      },
+      "cuts": [
+        {
+          "annual_net_apy": 0.11221851072880029,
+          "annual_net_sharpe": 0.7522223748807695,
+          "annual_net_tax_estimate": 8277.336291884714,
+          "apy": 0.11221851072880029,
+          "apy_vs_spy": -0.12883194295225708,
+          "dominant_hmm_regime": "BULL_CALM",
+          "dominant_spy_grid_regime": "HIGH_CALM",
+          "end": "2024-12-31",
+          "event_level_apy": 0.19536876565821637,
+          "event_level_sharpe": 1.3344817505824718,
+          "event_level_tax_debited": 0.0,
+          "market_context": {
+            "benchmark": "SPY",
+            "hmm_regime_counts": {
+              "BEAR": 7,
+              "BULL_CALM": 195,
+              "BULL_VOLATILE": 36,
+              "CHOPPY": 14
+            },
+            "n_trading_days": 251,
+            "spy_apy": 0.24105045368105738,
+            "spy_grid_regime_counts": {
+              "HIGH_CALM": 82,
+              "HIGH_NORMAL": 49,
+              "HIGH_SPIKED": 45,
+              "LOW_CALM": 1,
+              "LOW_NORMAL": 1,
+              "LOW_SPIKED": 7,
+              "MED_CALM": 14,
+              "MED_NORMAL": 13,
+              "MED_SPIKED": 40
+            },
+            "spy_sharpe": 1.7782752408798004
+          },
+          "performance_tax_basis": "annual_net",
+          "returncode": 0,
+          "sharpe": 0.7522223748807695,
+          "sharpe_vs_spy": -1.026052865999031,
+          "start": "2024-01-02",
+          "tax_overstatement_vs_annual_net": 2386.4081522177657,
+          "trace_paths": {
+            "equity_json": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-01-02_to_2024-12-31.equity.json",
+            "report_md": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-01-02_to_2024-12-31.report.md",
+            "round_trips_csv": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-01-02_to_2024-12-31.round_trips.csv",
+            "trade_csv": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-01-02_to_2024-12-31.trades.csv",
+            "trade_json": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-01-02_to_2024-12-31.trades.json"
+          },
+          "trade_trace_summary": {
+            "buy_missing_mu": 0,
+            "buy_missing_sigma": 0,
+            "buy_regime_counts": {
+              "BULL_CALM": 47,
+              "BULL_VOLATILE": 1,
+              "CHOPPY": 6
+            },
+            "buy_source_counts": {
+              "SelectionJob": 33,
+              "TopUpJob": 21
+            },
+            "n_buys": 54,
+            "n_sells": 25,
+            "sell_exit_reason_counts": {
+              "panel_conviction": 2,
+              "single_day_loss": 6,
+              "stop_loss": 1,
+              "trailing_stop": 16
+            },
+            "sell_regime_counts": {
+              "BEAR": 2,
+              "BULL_CALM": 4,
+              "BULL_VOLATILE": 1,
+              "CHOPPY": 18
+            },
+            "sell_source_counts": {
+              "InferencePipeline": 2,
+              "TickerSellJob": 23
+            }
+          }
+        },
+        {
+          "annual_net_apy": 0.11573983824215217,
+          "annual_net_sharpe": 0.9231030296794878,
+          "annual_net_tax_estimate": 5641.187200257161,
+          "apy": 0.11573983824215217,
+          "apy_vs_spy": -0.01892829849795774,
+          "dominant_hmm_regime": "BULL_CALM",
+          "dominant_spy_grid_regime": "LOW_SPIKED",
+          "end": "2025-06-30",
+          "event_level_apy": 0.1729230055302664,
+          "event_level_sharpe": 1.4110453973073096,
+          "event_level_tax_debited": 0.0,
+          "market_context": {
+            "benchmark": "SPY",
+            "hmm_regime_counts": {
+              "BEAR": 39,
+              "BULL_CALM": 139,
+              "BULL_VOLATILE": 59,
+              "CHOPPY": 13
+            },
+            "n_trading_days": 249,
+            "spy_apy": 0.1346681367401099,
+            "spy_grid_regime_counts": {
+              "HIGH_CALM": 32,
+              "HIGH_NORMAL": 11,
+              "HIGH_SPIKED": 39,
+              "LOW_CALM": 3,
+              "LOW_NORMAL": 12,
+              "LOW_SPIKED": 74,
+              "MED_CALM": 17,
+              "MED_NORMAL": 14,
+              "MED_SPIKED": 48
+            },
+            "spy_sharpe": 0.7151284914900857
+          },
+          "performance_tax_basis": "annual_net",
+          "returncode": 0,
+          "sharpe": 0.9231030296794878,
+          "sharpe_vs_spy": 0.20797453818940204,
+          "start": "2024-07-01",
+          "tax_overstatement_vs_annual_net": 2398.8741890245437,
+          "trace_paths": {
+            "equity_json": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-07-01_to_2025-06-30.equity.json",
+            "report_md": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-07-01_to_2025-06-30.report.md",
+            "round_trips_csv": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-07-01_to_2025-06-30.round_trips.csv",
+            "trade_csv": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-07-01_to_2025-06-30.trades.csv",
+            "trade_json": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2024-07-01_to_2025-06-30.trades.json"
+          },
+          "trade_trace_summary": {
+            "buy_missing_mu": 0,
+            "buy_missing_sigma": 0,
+            "buy_regime_counts": {
+              "BULL_CALM": 43,
+              "CHOPPY": 1
+            },
+            "buy_source_counts": {
+              "SelectionJob": 30,
+              "TopUpJob": 14
+            },
+            "n_buys": 44,
+            "n_sells": 22,
+            "sell_exit_reason_counts": {
+              "panel_conviction": 1,
+              "single_day_loss": 2,
+              "stop_loss": 9,
+              "trailing_stop": 10
+            },
+            "sell_regime_counts": {
+              "BEAR": 8,
+              "BULL_CALM": 9,
+              "CHOPPY": 5
+            },
+            "sell_source_counts": {
+              "InferencePipeline": 1,
+              "TickerSellJob": 21
+            }
+          }
+        },
+        {
+          "annual_net_apy": 0.0926089789876241,
+          "annual_net_sharpe": 0.6579561999502463,
+          "annual_net_tax_estimate": 9367.541084353643,
+          "apy": 0.0926089789876241,
+          "apy_vs_spy": -0.039972761926464484,
+          "dominant_hmm_regime": "BULL_CALM",
+          "dominant_spy_grid_regime": "HIGH_CALM",
+          "end": "2026-03-28",
+          "event_level_apy": 0.1879934106583785,
+          "event_level_sharpe": 1.3801812978328671,
+          "event_level_tax_debited": 0.0,
+          "market_context": {
+            "benchmark": "SPY",
+            "hmm_regime_counts": {
+              "BEAR": 27,
+              "BULL_CALM": 155,
+              "BULL_VOLATILE": 52,
+              "CHOPPY": 15
+            },
+            "n_trading_days": 248,
+            "spy_apy": 0.13258174091408859,
+            "spy_grid_regime_counts": {
+              "HIGH_CALM": 70,
+              "HIGH_NORMAL": 30,
+              "HIGH_SPIKED": 10,
+              "LOW_CALM": 3,
+              "LOW_NORMAL": 27,
+              "LOW_SPIKED": 48,
+              "MED_CALM": 25,
+              "MED_NORMAL": 28,
+              "MED_SPIKED": 8
+            },
+            "spy_sharpe": 0.7491122636533133
+          },
+          "performance_tax_basis": "annual_net",
+          "returncode": 0,
+          "sharpe": 0.6579561999502463,
+          "sharpe_vs_spy": -0.09115606370306695,
+          "start": "2025-04-01",
+          "tax_overstatement_vs_annual_net": 5059.762442852209,
+          "trace_paths": {
+            "equity_json": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2025-04-01_to_2026-03-28.equity.json",
+            "report_md": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2025-04-01_to_2026-03-28.report.md",
+            "round_trips_csv": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2025-04-01_to_2026-03-28.round_trips.csv",
+            "trade_csv": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2025-04-01_to_2026-03-28.trades.csv",
+            "trade_json": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z/2025-04-01_to_2026-03-28.trades.json"
+          },
+          "trade_trace_summary": {
+            "buy_missing_mu": 0,
+            "buy_missing_sigma": 0,
+            "buy_regime_counts": {
+              "BULL_CALM": 46,
+              "BULL_VOLATILE": 8,
+              "CHOPPY": 2
+            },
+            "buy_source_counts": {
+              "SelectionJob": 31,
+              "TopUpJob": 25
+            },
+            "n_buys": 56,
+            "n_sells": 29,
+            "sell_exit_reason_counts": {
+              "panel_conviction": 5,
+              "single_day_loss": 7,
+              "stop_loss": 4,
+              "trailing_stop": 13
+            },
+            "sell_regime_counts": {
+              "BEAR": 2,
+              "BULL_CALM": 7,
+              "BULL_VOLATILE": 7,
+              "CHOPPY": 13
+            },
+            "sell_source_counts": {
+              "InferencePipeline": 5,
+              "TickerSellJob": 24
+            }
+          }
+        }
+      ],
+      "diagnostic_only": false,
+      "gate_version": 2,
+      "hmm_regime_counts_total": {
+        "BEAR": 73,
+        "BULL_CALM": 489,
+        "BULL_VOLATILE": 147,
+        "CHOPPY": 42
+      },
+      "label_autocorr_profile": {
+        "horizon_days": 60,
+        "label_col": "fwd_60d_excess",
+        "method": "cross-sectional corr(label_t, label_{t-shift}) at {1x,2x,3x}\u00d7horizon; diagnostic-only, no gate effect (RFC #259 Layer 1a)",
+        "per_regime": {
+          "BEAR": {
+            "1x": 0.17117763367358235,
+            "2x": 0.02962710044748641,
+            "3x": -0.015086501603168798
+          },
+          "BULL_CALM": {
+            "1x": -0.048264883237357614,
+            "2x": 0.05092839950583167,
+            "3x": 0.0377598159504985
+          },
+          "BULL_VOLATILE": {
+            "1x": 0.049407914679218894,
+            "2x": 0.021337740325613006,
+            "3x": 0.001248096553807432
+          },
+          "CHOPPY": {
+            "1x": -0.004139171232079294,
+            "2x": 0.056274708855701384,
+            "3x": -0.02604569657310568
+          }
+        },
+        "pooled": {
+          "1x": -0.020452516459758287,
+          "2x": 0.04818312175781547,
+          "3x": 0.026223002751366353
+        },
+        "shift_multiples": {
+          "1x": 60,
+          "2x": 120,
+          "3x": 180
+        }
+      },
+      "manual_override": true,
+      "manual_override_reason": "2026-07-06 operator-directed freshness promote per model freshness governance policy (NO model >28d; freshness > strict gate). genuine_ic=+0.008 below 0.020 threshold due to structural embargo leakage floor (~+0.04 placebo on 60d label). real_ic=+0.055 is positive. Trained 2026-07-06.",
+      "model_placebo_profile": {
+        "gate_shift_multiple": "2x",
+        "label_col": "fwd_60d_excess",
+        "method": "genuine_ic = aligned_real_ic - placebo_ic at {1x,2x,3x}\u00d7horizon; diagnostic-only, gate verdict unchanged (RFC #259 Layer 1a)",
+        "per_regime": {
+          "BEAR": {
+            "1x": {
+              "aligned_real_ic": 0.3530870875926561,
+              "genuine_ic": 0.24537679015755182,
+              "label_autocorr_ic": 0.17117763367358235,
+              "n_dates": 50,
+              "placebo_ic": 0.10771029743510428
+            },
+            "2x": {
+              "aligned_real_ic": 0.3508898711944478,
+              "genuine_ic": 0.33464025402982267,
+              "label_autocorr_ic": 0.02962710044748641,
+              "n_dates": 50,
+              "placebo_ic": 0.016249617164625113
+            },
+            "3x": {
+              "aligned_real_ic": 0.3606031806887796,
+              "genuine_ic": 0.4825018177097972,
+              "label_autocorr_ic": -0.015086501603168798,
+              "n_dates": 49,
+              "placebo_ic": -0.1218986370210176
+            }
+          },
+          "BULL_CALM": {
+            "1x": {
+              "aligned_real_ic": 0.014357737983207703,
+              "genuine_ic": -0.026633887069970497,
+              "label_autocorr_ic": -0.048264883237357614,
+              "n_dates": 411,
+              "placebo_ic": 0.0409916250531782
+            },
+            "2x": {
+              "aligned_real_ic": 0.029972087331594996,
+              "genuine_ic": -0.0294791413991619,
+              "label_autocorr_ic": 0.05092839950583167,
+              "n_dates": 363,
+              "placebo_ic": 0.059451228730756894
+            },
+            "3x": {
+              "aligned_real_ic": 0.03922749470382795,
+              "genuine_ic": -0.06848919557187688,
+              "label_autocorr_ic": 0.0377598159504985,
+              "n_dates": 308,
+              "placebo_ic": 0.10771669027570482
+            }
+          },
+          "BULL_VOLATILE": {
+            "1x": {
+              "aligned_real_ic": -0.003076642210530308,
+              "genuine_ic": -0.03193641260377891,
+              "label_autocorr_ic": 0.049407914679218894,
+              "n_dates": 19,
+              "placebo_ic": 0.028859770393248607
+            },
+            "2x": {
+              "aligned_real_ic": 0.0741492342781417,
+              "genuine_ic": -0.08004687342463489,
+              "label_autocorr_ic": 0.021337740325613006,
+              "n_dates": 11,
+              "placebo_ic": 0.15419610770277659
+            },
+            "3x": {
+              "aligned_real_ic": 0.0741492342781417,
+              "genuine_ic": 0.26886440232694403,
+              "label_autocorr_ic": 0.001248096553807432,
+              "n_dates": 11,
+              "placebo_ic": -0.19471516804880232
+            }
+          },
+          "CHOPPY": {
+            "1x": {
+              "aligned_real_ic": 0.013594909880071643,
+              "genuine_ic": -0.0010522854298688489,
+              "label_autocorr_ic": -0.004139171232079294,
+              "n_dates": 32,
+              "placebo_ic": 0.014647195309940492
+            },
+            "2x": {
+              "aligned_real_ic": 0.01961017685929934,
+              "genuine_ic": -0.0409959442809048,
+              "label_autocorr_ic": 0.056274708855701384,
+              "n_dates": 28,
+              "placebo_ic": 0.06060612114020414
+            },
+            "3x": {
+              "aligned_real_ic": 0.010131904570349307,
+              "genuine_ic": 0.005893780293587993,
+              "label_autocorr_ic": -0.02604569657310568,
+              "n_dates": 24,
+              "placebo_ic": 0.004238124276761314
+            }
+          }
+        },
+        "pooled": {
+          "1x": {
+            "aligned_real_ic": 0.04674212032205741,
+            "genuine_ic": 0.0013317323220549127,
+            "label_autocorr_ic": -0.020452516459758287,
+            "n_dates": 512,
+            "placebo_ic": 0.045410388000002494
+          },
+          "2x": {
+            "aligned_real_ic": 0.0659050614827684,
+            "genuine_ic": 0.008855491871812046,
+            "label_autocorr_ic": 0.04818312175781547,
+            "n_dates": 452,
+            "placebo_ic": 0.05704956961095635
+          },
+          "3x": {
+            "aligned_real_ic": 0.07859803956448252,
+            "genuine_ic": 0.014405295878276742,
+            "label_autocorr_ic": 0.026223002751366353,
+            "n_dates": 392,
+            "placebo_ic": 0.06419274368620578
+          }
+        },
+        "shuf_ic": -0.0010420638012897546
+      },
+      "n_cuts_beat_spy_apy": 0,
+      "n_cuts_beat_spy_sharpe": 1,
+      "n_positive_cuts": 3,
+      "passed": true,
+      "performance_tax_basis_counts": {
+        "annual_net": 3
+      },
+      "placebo_criterion": "threshold=+0.0326 (0.5\u00d7|aligned_real_ic|, aligned_real_ic=+0.0651)",
+      "placebo_shift_diagnostics": [
+        {
+          "abs_ratio_to_aligned_real": 0.9685446969508978,
+          "abs_ratio_to_full_real": 0.9546012735260548,
+          "aligned_real_ic": 0.05385420091643197,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.05216020070613837,
+          "n_dates": 567,
+          "n_rows": 160344,
+          "shift_days": 5
+        },
+        {
+          "abs_ratio_to_aligned_real": 0.9210521550529279,
+          "abs_ratio_to_full_real": 0.8980285537172271,
+          "aligned_real_ic": 0.0532749642670122,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.049069020648499315,
+          "n_dates": 562,
+          "n_rows": 158884,
+          "shift_days": 10
+        },
+        {
+          "abs_ratio_to_aligned_real": 0.9974490192068247,
+          "abs_ratio_to_full_real": 0.9476379534125701,
+          "aligned_real_ic": 0.051912146040984423,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.05177971915350136,
+          "n_dates": 552,
+          "n_rows": 155964,
+          "shift_days": 20
+        },
+        {
+          "abs_ratio_to_aligned_real": 1.0272355679062766,
+          "abs_ratio_to_full_real": 0.8292065048600954,
+          "aligned_real_ic": 0.0441072413835623,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.04530852715142284,
+          "n_dates": 532,
+          "n_rows": 150124,
+          "shift_days": 40
+        },
+        {
+          "abs_ratio_to_aligned_real": 0.9674763415598397,
+          "abs_ratio_to_full_real": 0.8310706943083761,
+          "aligned_real_ic": 0.046936949307502834,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.045410388000002494,
+          "n_dates": 512,
+          "n_rows": 144284,
+          "shift_days": 60
+        },
+        {
+          "abs_ratio_to_aligned_real": 0.7873875114027543,
+          "abs_ratio_to_full_real": 0.7475473300720057,
+          "aligned_real_ic": 0.051876111720137376,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.04084660250857022,
+          "n_dates": 492,
+          "n_rows": 138444,
+          "shift_days": 80
+        },
+        {
+          "abs_ratio_to_aligned_real": 0.8757560333103469,
+          "abs_ratio_to_full_real": 1.0440832486736058,
+          "aligned_real_ic": 0.06514322190314771,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.05704956961095635,
+          "n_dates": 452,
+          "n_rows": 126764,
+          "shift_days": 120
+        },
+        {
+          "abs_ratio_to_aligned_real": 0.8115532820340398,
+          "abs_ratio_to_full_real": 1.1748128658326313,
+          "aligned_real_ic": 0.07909861879347718,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.06419274368620578,
+          "n_dates": 392,
+          "n_rows": 109244,
+          "shift_days": 180
+        },
+        {
+          "abs_ratio_to_aligned_real": 0.8524212936335831,
+          "abs_ratio_to_full_real": 0.6052218689110991,
+          "aligned_real_ic": 0.0387951617382626,
+          "full_real_ic": 0.05464082455439413,
+          "ic": 0.03306982195565389,
+          "n_dates": 320,
+          "n_rows": 88220,
+          "shift_days": 252
+        }
+      ],
+      "qp_contract": {
+        "evidence": {
+          "solver": "greedy"
+        },
+        "issues": [],
+        "passed": true
+      },
+      "real_ic": 0.05464082455439413,
+      "recipe_validated": true,
+      "regime_benchmark_failures": [
+        "HIGH_CALM",
+        "LOW_SPIKED"
+      ],
+      "run_at": "2026-07-06T23:22:50.218634",
+      "sanity_cutoff_contract": "manifest entry effective_train_cutoff_date/cutoff_date + lookahead_days < eval date",
+      "sanity_eval_end": "2026-04-08",
+      "sanity_eval_scope": "walkforward_manifest",
+      "sanity_eval_start": "2023-12-26",
+      "sanity_label_col": "fwd_60d_excess",
+      "sanity_label_horizon_days": 60,
+      "sanity_manifest_path": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/sim/walkforward_manifest_gbdt_prod_recipe_v2.calibrated.json",
+      "sanity_method": "manifest_point_in_time_label_diagnostics",
+      "sanity_n_oos_dates": 572,
+      "sanity_placebo_absolute_rule_pass": false,
+      "sanity_placebo_absolute_rule_threshold": 0.032571610951573855,
+      "sanity_placebo_aligned_real_ic": 0.06514322190314771,
+      "sanity_placebo_gate_mode": "absolute_ceiling_enforced_v3_shadow",
+      "sanity_placebo_gate_shift_days": 120,
+      "sanity_placebo_genuine_ic": 0.008093652292191361,
+      "sanity_placebo_genuine_ic_margin": 0.02,
+      "sanity_placebo_ic": 0.05704956961095635,
+      "sanity_placebo_v3_criterion": "genuine_ic>0.02 (shadow-only, not enforced)",
+      "sanity_placebo_v3_gating": false,
+      "sanity_placebo_v3_shadow_verdict": false,
+      "sanity_reason": "FAIL: shuf_ic=-0.0010 (need |\u00b7| < 0.005), genuine_ic=+0.0081 (need genuine_ic = aligned_real_ic \u2212 placebo_ic > +0.020 [genuine_ic>0.02 (shadow-only, not enforced)]; aligned_real_ic=+0.0651, placebo_ic=+0.0570)",
+      "sanity_regime_ic": {
+        "genuine_ic_diag_abs_floor": 0.02,
+        "genuine_ic_diag_real_ratio": 0.25,
+        "genuine_ic_margin": 0.02,
+        "max_placebo_ratio": 0.5,
+        "min_mean_ic": 0.013660206138598533,
+        "min_n_dates": 20,
+        "passed": false,
+        "placebo_criterion": "absolute ceiling: |placebo_ic| <= max(0.005, 0.5x|ref|)",
+        "placebo_gate_shift_days": 120,
+        "placebo_v3_shadow_criterion": "genuine_ic>0.02 (shadow-only, not enforced)",
+        "reason": "regime sanity IC failed: BULL_CALM,BULL_VOLATILE,CHOPPY",
+        "regimes": {
+          "BEAR": {
+            "eligible": true,
+            "hit_rate": 0.9636363636363636,
+            "label_autocorr_60_ic": 0.02962710044748641,
+            "label_autocorr_gate_ic": 0.02962710044748641,
+            "mean_confidence": 0.8138722180022783,
+            "mean_ic": 0.3298780237142613,
+            "median_ic": 0.3427054158651825,
+            "n_dates": 55,
+            "n_raw_rows": 15320,
+            "n_rows": 15320,
+            "passed": true,
+            "placebo_60_aligned_real_ic": 0.3508898711944478,
+            "placebo_60_ic": 0.016249617164625113,
+            "placebo_criterion": "absolute ceiling: |placebo_ic| <= max(0.005, 0.5x|ref|)",
+            "placebo_gate_absolute_rule_pass": true,
+            "placebo_gate_aligned_real_ic": 0.3508898711944478,
+            "placebo_gate_genuine_ic": 0.33464025402982267,
+            "placebo_gate_ic": 0.016249617164625113,
+            "placebo_gate_shift_days": 120,
+            "placebo_gate_v3_gating": false,
+            "placebo_gate_v3_shadow_pass": true,
+            "std_ic": 0.1294557259849641
+          },
+          "BULL_CALM": {
+            "eligible": true,
+            "hit_rate": 0.5033860045146726,
+            "label_autocorr_60_ic": 0.05092839950583167,
+            "label_autocorr_gate_ic": 0.05092839950583167,
+            "mean_confidence": 0.6386706300814363,
+            "mean_ic": 0.02109162349822352,
+            "median_ic": 0.0015433532396630287,
+            "n_dates": 443,
+            "n_raw_rows": 126948,
+            "n_rows": 126948,
+            "passed": false,
+            "placebo_60_aligned_real_ic": 0.029972087331594996,
+            "placebo_60_ic": 0.059451228730756894,
+            "placebo_criterion": "absolute ceiling: |placebo_ic| <= max(0.005, 0.5x|ref|)",
+            "placebo_gate_absolute_rule_pass": false,
+            "placebo_gate_aligned_real_ic": 0.029972087331594996,
+            "placebo_gate_genuine_ic": -0.0294791413991619,
+            "placebo_gate_ic": 0.059451228730756894,
+            "placebo_gate_shift_days": 120,
+            "placebo_gate_v3_gating": false,
+            "placebo_gate_v3_shadow_pass": false,
+            "std_ic": 0.16100432455206498
+          },
+          "BULL_VOLATILE": {
+            "eligible": true,
+            "hit_rate": 0.6666666666666666,
+            "label_autocorr_60_ic": 0.021337740325613006,
+            "label_autocorr_gate_ic": 0.021337740325613006,
+            "mean_confidence": 0.6525614053639358,
+            "mean_ic": 0.09920951584571534,
+            "median_ic": 0.14609825022836506,
+            "n_dates": 33,
+            "n_raw_rows": 7564,
+            "n_rows": 7564,
+            "passed": false,
+            "placebo_60_aligned_real_ic": 0.0741492342781417,
+            "placebo_60_ic": 0.15419610770277659,
+            "placebo_criterion": "absolute ceiling: |placebo_ic| <= max(0.005, 0.5x|ref|)",
+            "placebo_gate_absolute_rule_pass": false,
+            "placebo_gate_aligned_real_ic": 0.0741492342781417,
+            "placebo_gate_genuine_ic": -0.08004687342463489,
+            "placebo_gate_ic": 0.15419610770277659,
+            "placebo_gate_shift_days": 120,
+            "placebo_gate_v3_gating": false,
+            "placebo_gate_v3_shadow_pass": false,
+            "std_ic": 0.1552137593414118
+          },
+          "CHOPPY": {
+            "eligible": true,
+            "hit_rate": 0.7073170731707317,
+            "label_autocorr_60_ic": 0.056274708855701384,
+            "label_autocorr_gate_ic": 0.056274708855701384,
+            "mean_confidence": 0.3249697512502496,
+            "mean_ic": 0.01204285629774242,
+            "median_ic": 0.03723140491712031,
+            "n_dates": 41,
+            "n_raw_rows": 11972,
+            "n_rows": 11972,
+            "passed": false,
+            "placebo_60_aligned_real_ic": 0.01961017685929934,
+            "placebo_60_ic": 0.06060612114020414,
+            "placebo_criterion": "absolute ceiling: |placebo_ic| <= max(0.005, 0.5x|ref|)",
+            "placebo_gate_absolute_rule_pass": false,
+            "placebo_gate_aligned_real_ic": 0.01961017685929934,
+            "placebo_gate_genuine_ic": -0.0409959442809048,
+            "placebo_gate_ic": 0.06060612114020414,
+            "placebo_gate_shift_days": 120,
+            "placebo_gate_v3_gating": false,
+            "placebo_gate_v3_shadow_pass": false,
+            "std_ic": 0.1127258041927835
+          }
+        }
+      },
+      "sanity_shuffled_ic": -0.0010420638012897546,
+      "skipped_required_gates": [],
+      "spy_apy_mean": 0.16943344377841862,
+      "spy_grid_regime_counts_total": {
+        "HIGH_CALM": 184,
+        "HIGH_NORMAL": 90,
+        "HIGH_SPIKED": 94,
+        "LOW_CALM": 7,
+        "LOW_NORMAL": 40,
+        "LOW_SPIKED": 129,
+        "MED_CALM": 56,
+        "MED_NORMAL": 55,
+        "MED_SPIKED": 96
+      },
+      "spy_sharpe_mean": 1.0808386653410664,
+      "strategy_minus_spy_apy_mean": -0.06257766779222644,
+      "strategy_minus_spy_sharpe_mean": -0.30307813050423194,
+      "trade_buy_missing_mu_total": 0,
+      "trade_buy_missing_sigma_total": 0,
+      "trade_buy_regime_counts_total": {
+        "BULL_CALM": 136,
+        "BULL_VOLATILE": 9,
+        "CHOPPY": 9
+      },
+      "trade_buy_source_counts_total": {
+        "SelectionJob": 94,
+        "TopUpJob": 60
+      },
+      "trade_contract": {
+        "evidence": {
+          "missing_entry_sigma": 0,
+          "missing_exit_regime": 0,
+          "missing_exit_threshold_columns": [],
+          "n_alpha_entry_auditable": 154,
+          "n_auditable": 154,
+          "n_benchmark_sleeve_auditable": 0,
+          "n_closed": 128,
+          "n_rows": 154
+        },
+        "passed": true,
+        "reason": "trade ledger contract OK",
+        "require_entry_expected_return": false,
+        "require_entry_horizon": false,
+        "require_entry_mu": false,
+        "require_entry_sigma": true
+      },
+      "trade_monotonicity": {
+        "allow_pass_open": false,
+        "min_n_per_regime": 30,
+        "min_spearman": 0.02,
+        "min_top_bottom_spread": 0.0,
+        "passed": false,
+        "pooled": {
+          "bottom_net_pnl": 1896.1403492178943,
+          "bottom_return_mean": 0.15109582179426745,
+          "n": 128,
+          "spearman": -0.029630858897227892,
+          "top_bottom_return_spread": -0.06359014506297966,
+          "top_net_pnl": 3394.6461805870085,
+          "top_return_mean": 0.08750567673128778
+        },
+        "reason": "score monotonicity failed for entry_rank_score: score monotonicity failed in active regime(s): BULL_CALM",
+        "regimes": [
+          {
+            "bottom_net_pnl": 3781.7787897692697,
+            "bottom_return_mean": 0.19741112416060086,
+            "eligible": true,
+            "n": 110,
+            "passed": false,
+            "regime": "BULL_CALM",
+            "small_n_inversion": true,
+            "spearman": -0.07717814450577852,
+            "top_bottom_return_spread": -0.13667247667163762,
+            "top_net_pnl": 1888.5516867271442,
+            "top_return_mean": 0.06073864748896325
+          },
+          {
+            "bottom_net_pnl": 1669.5873994216927,
+            "bottom_return_mean": 0.20976245574885877,
+            "detail": "fail-closed: n=9 < min_n_per_regime=30",
+            "eligible": false,
+            "n": 9,
+            "passed": false,
+            "regime": "BULL_VOLATILE",
+            "small_n_inversion": false,
+            "spearman": -0.16666666666666669,
+            "top_bottom_return_spread": -0.15207621021093962,
+            "top_net_pnl": -36.884952603150055,
+            "top_return_mean": 0.05768624553791915
+          },
+          {
+            "bottom_net_pnl": -1747.8651801448812,
+            "bottom_return_mean": -0.1598691396687806,
+            "detail": "fail-closed: n=9 < min_n_per_regime=30",
+            "eligible": false,
+            "n": 9,
+            "passed": false,
+            "regime": "CHOPPY",
+            "small_n_inversion": false,
+            "spearman": 0.65,
+            "top_bottom_return_spread": 0.3032640085586717,
+            "top_net_pnl": 402.1308198844913,
+            "top_return_mean": 0.1433948688898911
+          }
+        ],
+        "score_cols": [
+          "entry_rank_score"
+        ],
+        "score_reports": {
+          "entry_rank_score": {
+            "passed": false,
+            "pooled": {
+              "bottom_net_pnl": 1896.1403492178943,
+              "bottom_return_mean": 0.15109582179426745,
+              "n": 128,
+              "spearman": -0.029630858897227892,
+              "top_bottom_return_spread": -0.06359014506297966,
+              "top_net_pnl": 3394.6461805870085,
+              "top_return_mean": 0.08750567673128778
+            },
+            "reason": "score monotonicity failed in active regime(s): BULL_CALM",
+            "regimes": [
+              {
+                "bottom_net_pnl": 3781.7787897692697,
+                "bottom_return_mean": 0.19741112416060086,
+                "eligible": true,
+                "n": 110,
+                "passed": false,
+                "regime": "BULL_CALM",
+                "small_n_inversion": true,
+                "spearman": -0.07717814450577852,
+                "top_bottom_return_spread": -0.13667247667163762,
+                "top_net_pnl": 1888.5516867271442,
+                "top_return_mean": 0.06073864748896325
+              },
+              {
+                "bottom_net_pnl": 1669.5873994216927,
+                "bottom_return_mean": 0.20976245574885877,
+                "detail": "fail-closed: n=9 < min_n_per_regime=30",
+                "eligible": false,
+                "n": 9,
+                "passed": false,
+                "regime": "BULL_VOLATILE",
+                "small_n_inversion": false,
+                "spearman": -0.16666666666666669,
+                "top_bottom_return_spread": -0.15207621021093962,
+                "top_net_pnl": -36.884952603150055,
+                "top_return_mean": 0.05768624553791915
+              },
+              {
+                "bottom_net_pnl": -1747.8651801448812,
+                "bottom_return_mean": -0.1598691396687806,
+                "detail": "fail-closed: n=9 < min_n_per_regime=30",
+                "eligible": false,
+                "n": 9,
+                "passed": false,
+                "regime": "CHOPPY",
+                "small_n_inversion": false,
+                "spearman": 0.65,
+                "top_bottom_return_spread": 0.3032640085586717,
+                "top_net_pnl": 402.1308198844913,
+                "top_return_mean": 0.1433948688898911
+              }
+            ]
+          }
+        },
+        "small_n_inversion_min_n": 10
+      },
+      "trade_sell_exit_reason_counts_total": {
+        "panel_conviction": 8,
+        "single_day_loss": 15,
+        "stop_loss": 14,
+        "trailing_stop": 39
+      },
+      "trade_sell_regime_counts_total": {
+        "BEAR": 12,
+        "BULL_CALM": 20,
+        "BULL_VOLATILE": 8,
+        "CHOPPY": 36
+      },
+      "wf_3cut_apy_mean": 0.10685577598619218,
+      "wf_3cut_sharpe_mean": 0.7777605348368345,
+      "wf_3cut_sharpe_std": 0.13440557480745732,
+      "wf_eval_scope": "walkforward_manifest",
+      "wf_jobs": 3,
+      "wf_reason": "FAIL: absolute_ok=True, benchmark_ok=False, regime_ok=False; mean Sharpe +0.778, 3/3 cuts > 0; SPY mean Sharpe +1.081, \u0394Sharpe -0.303, beat SPY Sharpe 1/3, beat SPY APY 0/3; benchmark-lag regimes=['HIGH_CALM', 'LOW_SPIKED']",
+      "wf_trade_trace_dir": "/Users/renhao/git/github/RenQuant/backtesting/renquant_104/artifacts/diagnostics/wf_trade_traces/20260706T231312Z"
+    }
+  },
+  "related_prs": {
+    "meta_score_attribution": "hallovorld/renquant-orchestrator#475 (open at sealing time; not depended upon)",
+    "prior_evidence_bundles_consulted_for_pattern": [
+      "hallovorld/renquant-artifacts#15",
+      "hallovorld/renquant-artifacts#16"
+    ]
+  },
+  "reproduction_gap_note": "This bundle closes part of Codex's point 1 (the model-identity, wf_gate_metadata, and META STD60 decomposition facts are now independently reproducible from sealed sha256-pinned sources) but explicitly does NOT close it for the H1/H2 quintile and per-year/regime IC tables, nor for the H3 FTNT/cross-sectional claims -- those require the preregistered, reproducible pipeline described in the orchestrator research doc's SS7 'Required next artifact', not a better transcript of the existing numbers.",
+  "sealed_as_reported_not_independently_reproduced": {
+    "h1_population_and_survivorship_notes": {
+      "n_names_delisted_pre_2026_in_panel": 0,
+      "n_names_ge5x_since_2016": 84,
+      "n_names_total": 292,
+      "q1_pct_ge20pct_below_52wk_high": 7.5,
+      "q1_pct_positive_120d_return": 66.5,
+      "q1_pct_rows_from_eventual_5x_names": 15.7,
+      "q1_pct_within_5pct_of_52wk_high": 37.2,
+      "q5_pct_rows_from_eventual_5x_names": 42.1
+    },
+    "h1_q1_subset_table": [
+      {
+        "cell": "Q1_and_up_120d",
+        "mean_label_z": -0.087,
+        "mean_raw_fwd60_excess_pct": -0.56,
+        "n_rows": 96906,
+        "t_adj_raw": -0.9
+      },
+      {
+        "cell": "Q1_and_down_120d",
+        "mean_label_z": -0.11,
+        "mean_raw_fwd60_excess_pct": -1.01,
+        "n_rows": 42443,
+        "t_adj_raw": -1.3
+      },
+      {
+        "cell": "Q1_and_near_52wk_high_le5pct_off",
+        "mean_label_z": -0.104,
+        "mean_raw_fwd60_excess_pct": -1.12,
+        "n_rows": 54190,
+        "t_adj_raw": -1.4
+      },
+      {
+        "cell": "Q1_and_far_from_high_ge20pct_off",
+        "mean_label_z": -0.011,
+        "mean_raw_fwd60_excess_pct": 0.76,
+        "n_rows": 10941,
+        "t_adj_raw": 0.4
+      },
+      {
+        "cell": "Q1_and_up_and_near_high_meta_class",
+        "mean_label_z": -0.103,
+        "mean_raw_fwd60_excess_pct": -1.1,
+        "n_rows": 52477,
+        "t_adj_raw": -1.4
+      }
+    ],
+    "h1_std60_quintile_table": [
+      {
+        "mean_label_z": -0.089,
+        "mean_raw_fwd60_excess_pct": -0.5,
+        "n_rows": 145816,
+        "quintile": "Q1_lowest",
+        "t_adj": -2.7
+      },
+      {
+        "mean_label_z": -0.064,
+        "mean_raw_fwd60_excess_pct": null,
+        "n_rows": 143746,
+        "quintile": "Q2",
+        "t_adj": -2.8
+      },
+      {
+        "mean_label_z": -0.033,
+        "mean_raw_fwd60_excess_pct": null,
+        "n_rows": 143929,
+        "quintile": "Q3",
+        "t_adj": -1.8
+      },
+      {
+        "mean_label_z": 0.044,
+        "mean_raw_fwd60_excess_pct": null,
+        "n_rows": 143746,
+        "quintile": "Q4",
+        "t_adj": 1.8
+      },
+      {
+        "mean_label_z": 0.142,
+        "mean_raw_fwd60_excess_median_pct": 1.4,
+        "mean_raw_fwd60_excess_pct": 4.0,
+        "n_rows": 145538,
+        "quintile": "Q5_highest",
+        "t_adj": 3.0
+      }
+    ],
+    "h2_bull_calm_by_year": {
+      "2018": -0.073,
+      "2019": -0.019,
+      "2024": -0.026,
+      "2024_2026_pooled": {
+        "mean_ic": 0.017,
+        "t_adj": 0.27
+      },
+      "2026_in_corpus": {
+        "hit_rate": 0.15,
+        "mean_ic": -0.088,
+        "n_dates": 20
+      }
+    },
+    "h2_cv_fold2_span_2021_02_to_2023_09": {
+      "feature_ic": 0.019,
+      "hit_rate": 0.53,
+      "t": 0.31
+    },
+    "h2_ic_by_regime_table": [
+      {
+        "hit_rate": 0.78,
+        "mean_ic": 0.15,
+        "n_dates": 317,
+        "regime": "BEAR"
+      },
+      {
+        "hit_rate": 0.74,
+        "mean_ic": 0.095,
+        "n_dates": 705,
+        "regime": "BULL_VOLATILE"
+      },
+      {
+        "hit_rate": 0.57,
+        "mean_ic": 0.035,
+        "n_dates": 1464,
+        "regime": "BULL_CALM"
+      },
+      {
+        "hit_rate": 0.54,
+        "mean_ic": 0.007,
+        "n_dates": 93,
+        "regime": "CHOPPY"
+      }
+    ],
+    "h2_ic_by_year_table": [
+      {
+        "hit_rate": 0.75,
+        "mean_ic": 0.087,
+        "year": 2016
+      },
+      {
+        "hit_rate": 0.76,
+        "mean_ic": 0.063,
+        "year": 2017
+      },
+      {
+        "hit_rate": 0.64,
+        "mean_ic": 0.042,
+        "year": 2018
+      },
+      {
+        "hit_rate": 0.48,
+        "mean_ic": 0.029,
+        "year": 2019
+      },
+      {
+        "hit_rate": 0.9,
+        "mean_ic": 0.213,
+        "year": 2020
+      },
+      {
+        "hit_rate": 0.51,
+        "mean_ic": 0.005,
+        "year": 2021
+      },
+      {
+        "hit_rate": 0.49,
+        "mean_ic": -0.004,
+        "year": 2022
+      },
+      {
+        "hit_rate": 0.71,
+        "mean_ic": 0.117,
+        "year": 2023
+      },
+      {
+        "hit_rate": 0.46,
+        "mean_ic": -0.022,
+        "year": 2024
+      },
+      {
+        "hit_rate": 0.72,
+        "mean_ic": 0.122,
+        "year": 2025
+      },
+      {
+        "hit_rate": 0.64,
+        "mean_ic": 0.027,
+        "year": "2026_to_0408"
+      }
+    ],
+    "h2_pooled_2016_2026_ic": {
+      "hit_rate": 0.64,
+      "mean_ic": 0.064,
+      "t_adj": 2.35
+    },
+    "h2_post_training_oos_descriptive_only": {
+      "apr_9_14_2026_full_60d_matured": {
+        "comparable_to_trained_60d_target": true,
+        "horizon_days": 60,
+        "ic": 0.164,
+        "n_dates": 4,
+        "n_dates_caveat": "4 dates cannot establish a regime conclusion in either direction"
+      },
+      "apr_may_2026_20d_forward": {
+        "comparable_to_trained_60d_target": false,
+        "hit_rate": 0.8,
+        "horizon_days": 20,
+        "ic": 0.128,
+        "n_dates": 44
+      },
+      "bull_volatile_dates_subset_20d_forward": {
+        "ic": 0.181
+      },
+      "caveat": "DESCRIPTIVE ONLY, per Codex point 2 -- not statistically sufficient to establish a regime conclusion. The 20d-truncated figures are NOT comparable to the 60d trained target.",
+      "june_11_30_2026_20d_truncated": {
+        "comparable_to_trained_60d_target": false,
+        "hit_rate": 0.38,
+        "horizon_days": 20,
+        "ic": -0.019,
+        "n_dates": 13,
+        "truncated_at": "2026-07-10"
+      }
+    },
+    "h3_additional_unverified_claims": {
+      "cross_sectional_rank_correlation_sampling": "weekly sampled, 508 dates",
+      "detrended_std60_meta": {
+        "2026-07-06": 0.036,
+        "2026-07-10": 0.0409,
+        "pct_change": 14
+      },
+      "ftnt_pct_of_std60_variance_trend_component": 92,
+      "ftnt_returns_vol_z": 1.4,
+      "ftnt_std60_z": 2.48,
+      "n_ticker_weeks_for_mis_signal_stat": 440000,
+      "note": "None of these figures were independently reproduced in the 2026-07-11 sealing session (they require panel-wide historical computation across 292 tickers, or a detrending computation, neither of which the sealing session performed). Sealed as-reported only.",
+      "pct_uptrend_ticker_weeks_std60_falling_while_returns_vol_flat_or_rising": 23,
+      "returns_vol_train_panel_stats_as_reported": {
+        "mean": 0.02,
+        "std": 0.0113
+      },
+      "std60_vs_returns_vol_cross_sectional_rank_correlation": 0.7
+    },
+    "provenance_note": "Everything in this section is a verbatim transcript of doc/research/2026-07-11-std60-rule-provenance.md as authored in the original research session. It was produced by uncommitted scratch scripts (std60_provenance.py, std60_followup.py) against the training corpus + OHLCV cache + HMM regime labels. Those scripts are session-local scratch artifacts and were never committed; they are not present in this worktree, the orchestrator repo, or any other repo consulted while building this bundle, and could not be re-run to independently verify the numbers below. They are sealed here as-reported, not fabricated or silently re-verified, per the operator's instruction to seal what exists and flag what is missing/reconstructed rather than invent verification that did not happen."
+  },
+  "source_orchestrator_pr": "hallovorld/renquant-orchestrator#476"
+}

@@ -14,6 +14,7 @@
  "experiments/meta-score-attribution-20260711/reproduce_meta.py": "fd1c690a3ad63c06b6a2fd1b0037fda50d3834fb58e2df7c14aa1ddfda780f98",
  "experiments/meta-score-attribution-20260711/std60_sweep.csv": "1c19ef654a626917bdfb7628988216b8f4c7f51b530ca01599d6feed9e0b2923",
  "experiments/silent-no-buy-block-registry-20260711/RUN-LOCK.json": "624be9ade4dc54c1923a0efa0bc7a74fc1da5bea69750371b4dfae3f537e8d94",
+ "experiments/std60-rule-provenance-20260711/RUN-LOCK.json": "71005f1f757a370f1c76e7624566092e25c384310cec9b6f21f8a055c4cf087d",
  "experiments/xstock-pilot-20260711/RUN-LOCK.json": "86b06dec1c2dec3a04a37eb278bf995b52bd31a17a0fc445b921b107b21fd01d",
  "experiments/xstock-pilot-20260711/base_s44/hf_patchtst_all_seed44_model.pt.metadata.json": "ef6334a0ec464297a1da482670b6fa8829e9f6e39c3ee1a7a0d5b8d7fee61637",
  "experiments/xstock-pilot-20260711/base_s44/hf_patchtst_all_seed44_summary.json": "df195e99a7a64e446b0f7e0a837b1880e741c9b4c93e05fbb4fbe5be38a3628e",
