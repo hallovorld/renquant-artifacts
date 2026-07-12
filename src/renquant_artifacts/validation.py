@@ -105,6 +105,9 @@ def validate_triad_sidecar_contract(
     }
 
 
+_CRYPTO_PROMOTION_STATUSES = ("diagnostic", "shadow", "prod")
+
+
 def validate_crypto_promotion_contract(
     manifest: dict[str, Any],
     *,
@@ -119,18 +122,29 @@ def validate_crypto_promotion_contract(
     if manifest.get("asset_class") != "crypto":
         raise ValueError("manifest is not a crypto artifact")
 
+    if target_status not in _CRYPTO_PROMOTION_STATUSES:
+        raise ValueError(
+            f"unknown crypto promotion target_status {target_status!r}; "
+            f"expected one of {_CRYPTO_PROMOTION_STATUSES}"
+        )
+
     metrics = manifest.get("metrics") or {}
     errors: list[str] = []
 
     if target_status in ("shadow", "prod"):
-        if not metrics.get("paper_battery_pass"):
+        if metrics.get("paper_battery_pass") is not True:
             errors.append("stage-0 paper battery must pass before shadow promotion")
 
     if target_status == "prod":
         if metrics.get("accepted") is not True:
             errors.append("prod crypto artifact must have accepted=true")
-        if not metrics.get("shadow_days"):
-            errors.append("prod crypto artifact must report shadow_days")
+        shadow_days = metrics.get("shadow_days")
+        if not isinstance(shadow_days, (int, float)) or isinstance(
+            shadow_days, bool
+        ) or shadow_days <= 0:
+            errors.append(
+                "prod crypto artifact must report shadow_days as a positive number"
+            )
 
     if errors:
         raise ValueError(

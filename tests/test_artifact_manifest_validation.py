@@ -168,3 +168,62 @@ def test_crypto_promotion_prod_passes_full() -> None:
     )
     assert report["ok"] is True
     assert report["target_status"] == "prod"
+
+
+def test_crypto_promotion_rejects_unknown_target_status() -> None:
+    with pytest.raises(ValueError, match="unknown crypto promotion target_status"):
+        validate_crypto_promotion_contract(
+            _crypto_manifest(), target_status="prod-scaled"
+        )
+
+
+def test_crypto_promotion_shadow_rejects_string_false_battery_flag() -> None:
+    # A hand-edited manifest could carry the string "false" instead of a JSON
+    # boolean; a truthy check would treat it as passing. Must fail closed.
+    with pytest.raises(ValueError, match="paper battery"):
+        validate_crypto_promotion_contract(
+            _crypto_manifest(metrics={"paper_battery_pass": "false"}),
+            target_status="shadow",
+        )
+
+
+def test_crypto_promotion_prod_rejects_non_numeric_shadow_days() -> None:
+    with pytest.raises(ValueError, match="shadow_days"):
+        validate_crypto_promotion_contract(
+            _crypto_manifest(
+                metrics={
+                    "paper_battery_pass": True,
+                    "accepted": True,
+                    "shadow_days": "7",
+                }
+            ),
+            target_status="prod",
+        )
+
+
+def test_crypto_promotion_prod_rejects_zero_shadow_days() -> None:
+    with pytest.raises(ValueError, match="shadow_days"):
+        validate_crypto_promotion_contract(
+            _crypto_manifest(
+                metrics={
+                    "paper_battery_pass": True,
+                    "accepted": True,
+                    "shadow_days": 0,
+                }
+            ),
+            target_status="prod",
+        )
+
+
+def test_crypto_promotion_prod_rejects_bool_shadow_days() -> None:
+    with pytest.raises(ValueError, match="shadow_days"):
+        validate_crypto_promotion_contract(
+            _crypto_manifest(
+                metrics={
+                    "paper_battery_pass": True,
+                    "accepted": True,
+                    "shadow_days": True,
+                }
+            ),
+            target_status="prod",
+        )
