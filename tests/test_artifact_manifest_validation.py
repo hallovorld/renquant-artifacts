@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from renquant_artifacts import (
     ArtifactManifestContext,
     ArtifactManifestValidationPipeline,
+    validate_crypto_promotion_contract,
     validate_triad_sidecar_contract,
 )
 
@@ -93,3 +95,76 @@ def test_triad_sidecar_preflight_rejects_unsafe_report() -> None:
                 "leakage_safe": False,
             }
         })
+
+
+# ── crypto promotion contract ──────────────────────────────────────
+
+
+def _crypto_manifest(**overrides: Any) -> dict[str, Any]:
+    base: dict[str, Any] = {
+        "artifact_id": "crypto-xgb-test",
+        "model_family": "xgb-crypto",
+        "strategy": "renquant_crypto",
+        "asset_class": "crypto",
+        "fingerprint": "sha256:test",
+        "uri": "store://crypto/test/model.json",
+        "promotion_status": "diagnostic",
+        "metrics": {"accepted": False, "paper_battery_pass": False},
+    }
+    base.update(overrides)
+    return base
+
+
+def test_crypto_manifest_validates() -> None:
+    manifest = json.loads(
+        (Path(__file__).parents[1] / "registry" / "crypto-xgb-diagnostic.json").read_text()
+    )
+    ctx = ArtifactManifestContext(manifest)
+    result = ArtifactManifestValidationPipeline().run(ctx)
+    assert result.ok is True
+
+
+def test_crypto_promotion_rejects_non_crypto() -> None:
+    with pytest.raises(ValueError, match="not a crypto artifact"):
+        validate_crypto_promotion_contract({"asset_class": "equity"})
+
+
+def test_crypto_promotion_diagnostic_passes_without_battery() -> None:
+    report = validate_crypto_promotion_contract(
+        _crypto_manifest(), target_status="diagnostic"
+    )
+    assert report["ok"] is True
+
+
+def test_crypto_promotion_shadow_requires_battery() -> None:
+    with pytest.raises(ValueError, match="paper battery"):
+        validate_crypto_promotion_contract(
+            _crypto_manifest(), target_status="shadow"
+        )
+
+
+def test_crypto_promotion_shadow_passes_with_battery() -> None:
+    report = validate_crypto_promotion_contract(
+        _crypto_manifest(metrics={"paper_battery_pass": True}),
+        target_status="shadow",
+    )
+    assert report["ok"] is True
+
+
+def test_crypto_promotion_prod_requires_accepted_and_shadow_days() -> None:
+    with pytest.raises(ValueError, match="accepted=true"):
+        validate_crypto_promotion_contract(
+            _crypto_manifest(metrics={"paper_battery_pass": True}),
+            target_status="prod",
+        )
+
+
+def test_crypto_promotion_prod_passes_full() -> None:
+    report = validate_crypto_promotion_contract(
+        _crypto_manifest(
+            metrics={"paper_battery_pass": True, "accepted": True, "shadow_days": 7}
+        ),
+        target_status="prod",
+    )
+    assert report["ok"] is True
+    assert report["target_status"] == "prod"

@@ -103,3 +103,43 @@ def validate_triad_sidecar_contract(
         "present": True,
         "roles": roles,
     }
+
+
+def validate_crypto_promotion_contract(
+    manifest: dict[str, Any],
+    *,
+    target_status: str = "shadow",
+) -> dict[str, Any]:
+    """Validate crypto-specific promotion requirements.
+
+    Crypto artifacts must pass the stage-0 paper battery before promotion
+    beyond diagnostic.  Shadow and prod require progressively stricter
+    evidence.
+    """
+    if manifest.get("asset_class") != "crypto":
+        raise ValueError("manifest is not a crypto artifact")
+
+    metrics = manifest.get("metrics") or {}
+    errors: list[str] = []
+
+    if target_status in ("shadow", "prod"):
+        if not metrics.get("paper_battery_pass"):
+            errors.append("stage-0 paper battery must pass before shadow promotion")
+
+    if target_status == "prod":
+        if metrics.get("accepted") is not True:
+            errors.append("prod crypto artifact must have accepted=true")
+        if not metrics.get("shadow_days"):
+            errors.append("prod crypto artifact must report shadow_days")
+
+    if errors:
+        raise ValueError(
+            f"crypto promotion to {target_status} blocked: {'; '.join(errors)}"
+        )
+
+    return {
+        "ok": True,
+        "asset_class": "crypto",
+        "target_status": target_status,
+        "checks_passed": True,
+    }
