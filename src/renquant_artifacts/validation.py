@@ -27,6 +27,12 @@ class ValidateArtifactManifestTask(Task):
         missing = [key for key in required if not ctx.manifest.get(key)]
         if missing:
             raise ValueError(f"artifact manifest missing required keys: {missing}")
+        if ctx.manifest.get("draft") is True:
+            raise ValueError(
+                "artifact manifest is marked draft/placeholder "
+                f"({ctx.manifest.get('artifact_id')!r}) and cannot be validated "
+                "as a real artifact; no consumer may resolve, load, or promote it"
+            )
         if ctx.manifest["promotion_status"] == "prod" and ctx.manifest["metrics"].get("accepted") is not True:
             raise ValueError("prod artifact must have accepted=true metrics")
         if ctx.manifest["uri"].startswith("/Users/"):
@@ -103,3 +109,122 @@ def validate_triad_sidecar_contract(
         "present": True,
         "roles": roles,
     }
+
+
+_CRYPTO_PROMOTION_STATUSES = ("diagnostic", "shadow", "prod")
+
+# Legal single-step promotion edges. Skip-stage jumps (diagnostic -> prod),
+# staying put (X -> X), and moving backwards are all illegal.
+_CRYPTO_PROMOTION_TRANSITIONS = {
+    ("diagnostic", "shadow"),
+    ("shadow", "prod"),
+}
+
+
+class EvidenceBoundPromotionNotImplementedError(NotImplementedError):
+    """Raised by :func:`validate_crypto_promotion_contract` for every
+    diagnostic -> shadow or shadow -> prod request.
+
+    An earlier version of this function accepted three self-attested,
+    hand-editable manifest metrics (``paper_battery_pass``, ``accepted``,
+    ``shadow_days``) as proof of Stage-0/model/shadow readiness and
+    returned ``ok=True``. Codex review 2026-07-13 (round 2) on
+    artifacts#23 correctly rejected documenting that as a "dormant" known
+    limitation: a function named ``validate_crypto_promotion_contract``
+    that returns a successful-looking result is a reusable API whose name
+    and return value advertise real authorization semantics, regardless
+    of whether anything calls it today. A later caller could wire it into
+    a real decision path without ever touching this file again.
+
+    This function therefore refuses every shadow/prod request outright
+    until a real, cross-repo, content-addressed evidence design exists:
+      - a Stage-0 paper-readiness record (run_id, environment, verdict,
+        report digest, producer identity) produced by
+        orchestrator/execution,
+      - a model-evaluation/acceptance evidence artifact (manifest digest,
+        pre-registered metrics, decision) produced by renquant-model,
+      - a timestamped shadow-observation coverage record (start/end,
+        required-session coverage) produced by orchestrator.
+    Once that design lands, this function should validate typed,
+    content-addressed references to those artifacts -- never boolean/
+    numeric fields hand-set on the manifest itself.
+    """
+
+
+def validate_crypto_promotion_contract(
+    manifest: dict[str, Any],
+    *,
+    current_status: str | None = None,
+    target_status: str = "shadow",
+) -> dict[str, Any]:
+    """Validate crypto promotion PRECONDITIONS -- draft/placeholder status,
+    explicit current_status, and a legal transition-graph edge.
+
+    Callers must pass an explicit ``current_status`` (the promotion stage the
+    artifact is being promoted *from*). It is cross-checked against the
+    manifest's own ``promotion_status`` field (a mismatch is rejected -- the
+    caller's belief about where the artifact is must agree with the record),
+    and the ``(current_status, target_status)`` pair must be a legal single
+    step in the ``diagnostic -> shadow -> prod`` ladder.
+
+    Every request that clears those preconditions -- i.e. every
+    diagnostic -> shadow or shadow -> prod request -- unconditionally raises
+    :class:`EvidenceBoundPromotionNotImplementedError`. This function does
+    NOT inspect ``paper_battery_pass``, ``accepted``, or ``shadow_days`` at
+    all: those are self-attested, hand-editable manifest fields with no
+    binding to any real evidence artifact, and a function that accepted them
+    at face value would be indistinguishable from real authorization to a
+    future caller. See :class:`EvidenceBoundPromotionNotImplementedError`
+    for what a real implementation requires.
+    """
+    if manifest.get("asset_class") != "crypto":
+        raise ValueError("manifest is not a crypto artifact")
+
+    if manifest.get("draft") is True:
+        raise ValueError(
+            "crypto artifact manifest is marked draft/placeholder "
+            f"({manifest.get('artifact_id')!r}) and cannot be promoted"
+        )
+
+    if current_status is None:
+        raise ValueError(
+            "validate_crypto_promotion_contract requires an explicit "
+            "current_status (the promotion stage being promoted from); "
+            "it must not be inferred implicitly"
+        )
+    if current_status not in _CRYPTO_PROMOTION_STATUSES:
+        raise ValueError(
+            f"unknown crypto promotion current_status {current_status!r}; "
+            f"expected one of {_CRYPTO_PROMOTION_STATUSES}"
+        )
+    if target_status not in _CRYPTO_PROMOTION_STATUSES:
+        raise ValueError(
+            f"unknown crypto promotion target_status {target_status!r}; "
+            f"expected one of {_CRYPTO_PROMOTION_STATUSES}"
+        )
+
+    manifest_status = manifest.get("promotion_status")
+    if manifest_status != current_status:
+        raise ValueError(
+            "crypto promotion current_status mismatch: caller asserted "
+            f"{current_status!r} but manifest promotion_status is "
+            f"{manifest_status!r}"
+        )
+
+    if (current_status, target_status) not in _CRYPTO_PROMOTION_TRANSITIONS:
+        raise ValueError(
+            f"illegal promotion transition: {current_status} -> {target_status} "
+            "(only diagnostic -> shadow and shadow -> prod are permitted; "
+            "skip-stage jumps, same-status no-ops, and backwards transitions "
+            "are all rejected)"
+        )
+
+    raise EvidenceBoundPromotionNotImplementedError(
+        f"crypto promotion {current_status} -> {target_status} refused: "
+        "evidence-bound promotion validation is not implemented. This "
+        "function does not verify paper_battery_pass/accepted/shadow_days "
+        "against any real evidence artifact -- do not treat any return "
+        "value from this function as authorization for a shadow/prod "
+        "promotion until a cross-repo evidence-artifact design lands "
+        "(see EvidenceBoundPromotionNotImplementedError)."
+    )
