@@ -6,6 +6,7 @@
   "fingerprint": "sha256:placeholder-awaiting-first-train",
   "uri": "store://crypto/xgb-crypto-diagnostic/model.json",
   "promotion_status": "diagnostic",
+  "draft": true,
   "metrics": {
     "accepted": false,
     "paper_battery_pass": false,

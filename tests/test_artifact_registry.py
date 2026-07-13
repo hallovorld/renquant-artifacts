@@ -62,3 +62,40 @@ def test_load_artifact_manifest_validates_file(tmp_path: Path) -> None:
     _write_manifest(path)
 
     assert load_artifact_manifest(path)["artifact_id"] == "panel-ltr-prod"
+
+
+def test_load_artifact_manifest_rejects_draft_placeholder(tmp_path: Path) -> None:
+    path = tmp_path / "draft.json"
+    _write_manifest(
+        path,
+        artifact_id="crypto-xgb-diagnostic",
+        promotion_status="diagnostic",
+        draft=True,
+        metrics={"accepted": False},
+    )
+
+    with pytest.raises(ValueError, match="draft/placeholder"):
+        load_artifact_manifest(path)
+
+
+def test_resolve_artifact_manifest_rejects_draft_placeholder(tmp_path: Path) -> None:
+    # A draft/placeholder manifest must not be selectable by the real
+    # consumer-facing lookup function, even when it is the only candidate
+    # that matches the requested criteria.
+    _write_manifest(
+        tmp_path / "crypto-diagnostic.json",
+        artifact_id="crypto-xgb-diagnostic",
+        model_family="xgb-crypto",
+        strategy="renquant_crypto",
+        promotion_status="diagnostic",
+        draft=True,
+        metrics={"accepted": False},
+    )
+
+    with pytest.raises(ValueError, match="draft/placeholder"):
+        resolve_artifact_manifest(
+            tmp_path,
+            strategy="renquant_crypto",
+            model_family="xgb-crypto",
+            promotion_status="diagnostic",
+        )
