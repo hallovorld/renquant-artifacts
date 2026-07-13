@@ -121,51 +121,61 @@ _CRYPTO_PROMOTION_TRANSITIONS = {
 }
 
 
+class EvidenceBoundPromotionNotImplementedError(NotImplementedError):
+    """Raised by :func:`validate_crypto_promotion_contract` for every
+    diagnostic -> shadow or shadow -> prod request.
+
+    An earlier version of this function accepted three self-attested,
+    hand-editable manifest metrics (``paper_battery_pass``, ``accepted``,
+    ``shadow_days``) as proof of Stage-0/model/shadow readiness and
+    returned ``ok=True``. Codex review 2026-07-13 (round 2) on
+    artifacts#23 correctly rejected documenting that as a "dormant" known
+    limitation: a function named ``validate_crypto_promotion_contract``
+    that returns a successful-looking result is a reusable API whose name
+    and return value advertise real authorization semantics, regardless
+    of whether anything calls it today. A later caller could wire it into
+    a real decision path without ever touching this file again.
+
+    This function therefore refuses every shadow/prod request outright
+    until a real, cross-repo, content-addressed evidence design exists:
+      - a Stage-0 paper-readiness record (run_id, environment, verdict,
+        report digest, producer identity) produced by
+        orchestrator/execution,
+      - a model-evaluation/acceptance evidence artifact (manifest digest,
+        pre-registered metrics, decision) produced by renquant-model,
+      - a timestamped shadow-observation coverage record (start/end,
+        required-session coverage) produced by orchestrator.
+    Once that design lands, this function should validate typed,
+    content-addressed references to those artifacts -- never boolean/
+    numeric fields hand-set on the manifest itself.
+    """
+
+
 def validate_crypto_promotion_contract(
     manifest: dict[str, Any],
     *,
     current_status: str | None = None,
     target_status: str = "shadow",
 ) -> dict[str, Any]:
-    """Validate crypto-specific promotion requirements.
-
-    Crypto artifacts must pass the stage-0 paper battery before promotion
-    beyond diagnostic.  Shadow and prod require progressively stricter
-    evidence.
+    """Validate crypto promotion PRECONDITIONS -- draft/placeholder status,
+    explicit current_status, and a legal transition-graph edge.
 
     Callers must pass an explicit ``current_status`` (the promotion stage the
     artifact is being promoted *from*). It is cross-checked against the
     manifest's own ``promotion_status`` field (a mismatch is rejected -- the
     caller's belief about where the artifact is must agree with the record),
     and the ``(current_status, target_status)`` pair must be a legal single
-    step in the ``diagnostic -> shadow -> prod`` ladder. This closes a gap
-    where a caller could request ``target_status="prod"`` directly against a
-    still-``diagnostic`` manifest and have it evaluated only against the prod
-    metrics gate, silently skipping the shadow stage.
+    step in the ``diagnostic -> shadow -> prod`` ladder.
 
-    KNOWN LIMITATION (Codex CHANGES_REQUESTED #23, finding 1, not fixed by
-    this function): ``paper_battery_pass``, ``accepted``, and ``shadow_days``
-    below are self-attested, hand-editable manifest fields. This function
-    does **not** verify them against any real evidence artifact -- there is
-    no check against a Stage-0 paper-readiness record produced by the
-    orchestrator, a model-evaluation/acceptance evidence artifact produced by
-    renquant-model, or an actual timestamped shadow-observation history. A
-    caller can hand-edit a manifest's metrics block and this function will
-    accept it at face value. This is a known, currently *dormant* gap:
-    grepping every sibling repo (orchestrator, execution, model, pipeline,
-    strategy, backtesting) shows zero external callers of this function, and
-    the orchestrator's crypto entry pipeline is independently hard-blocked by
-    ``ENTRY_AUTHORIZATION_TRUST_ANCHOR_READY = False`` in
-    ``crypto_session.py`` regardless of what this contract reports -- so this
-    gap cannot currently authorize any live capital-risk action. Closing it
-    for real requires a cross-repo, content-addressed evidence-binding design
-    (digest/run_id references into orchestrator's Stage-0 readiness records,
-    renquant-model's evaluation-acceptance evidence, and a shadow-observation
-    evidence artifact with timestamps) -- a design decision reserved for a
-    human operator to make deliberately, not something to invent unilaterally
-    inside a mechanical bug-fix PR. Do not treat ``ok=True`` from this
-    function as proof of real paper/shadow performance until that follow-up
-    lands.
+    Every request that clears those preconditions -- i.e. every
+    diagnostic -> shadow or shadow -> prod request -- unconditionally raises
+    :class:`EvidenceBoundPromotionNotImplementedError`. This function does
+    NOT inspect ``paper_battery_pass``, ``accepted``, or ``shadow_days`` at
+    all: those are self-attested, hand-editable manifest fields with no
+    binding to any real evidence artifact, and a function that accepted them
+    at face value would be indistinguishable from real authorization to a
+    future caller. See :class:`EvidenceBoundPromotionNotImplementedError`
+    for what a real implementation requires.
     """
     if manifest.get("asset_class") != "crypto":
         raise ValueError("manifest is not a crypto artifact")
@@ -209,33 +219,12 @@ def validate_crypto_promotion_contract(
             "are all rejected)"
         )
 
-    metrics = manifest.get("metrics") or {}
-    errors: list[str] = []
-
-    if target_status in ("shadow", "prod"):
-        if metrics.get("paper_battery_pass") is not True:
-            errors.append("stage-0 paper battery must pass before shadow promotion")
-
-    if target_status == "prod":
-        if metrics.get("accepted") is not True:
-            errors.append("prod crypto artifact must have accepted=true")
-        shadow_days = metrics.get("shadow_days")
-        if not isinstance(shadow_days, (int, float)) or isinstance(
-            shadow_days, bool
-        ) or shadow_days <= 0:
-            errors.append(
-                "prod crypto artifact must report shadow_days as a positive number"
-            )
-
-    if errors:
-        raise ValueError(
-            f"crypto promotion to {target_status} blocked: {'; '.join(errors)}"
-        )
-
-    return {
-        "ok": True,
-        "asset_class": "crypto",
-        "current_status": current_status,
-        "target_status": target_status,
-        "checks_passed": True,
-    }
+    raise EvidenceBoundPromotionNotImplementedError(
+        f"crypto promotion {current_status} -> {target_status} refused: "
+        "evidence-bound promotion validation is not implemented. This "
+        "function does not verify paper_battery_pass/accepted/shadow_days "
+        "against any real evidence artifact -- do not treat any return "
+        "value from this function as authorization for a shadow/prod "
+        "promotion until a cross-repo evidence-artifact design lands "
+        "(see EvidenceBoundPromotionNotImplementedError)."
+    )

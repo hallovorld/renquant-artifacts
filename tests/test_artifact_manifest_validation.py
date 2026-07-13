@@ -9,6 +9,7 @@ import pytest
 from renquant_artifacts import (
     ArtifactManifestContext,
     ArtifactManifestValidationPipeline,
+    EvidenceBoundPromotionNotImplementedError,
     validate_crypto_promotion_contract,
     validate_triad_sidecar_contract,
 )
@@ -205,50 +206,6 @@ def test_crypto_promotion_rejects_backwards_transition() -> None:
         )
 
 
-def test_crypto_promotion_shadow_requires_battery() -> None:
-    with pytest.raises(ValueError, match="paper battery"):
-        validate_crypto_promotion_contract(
-            _crypto_manifest(), current_status="diagnostic", target_status="shadow"
-        )
-
-
-def test_crypto_promotion_shadow_passes_with_battery() -> None:
-    report = validate_crypto_promotion_contract(
-        _crypto_manifest(metrics={"paper_battery_pass": True}),
-        current_status="diagnostic",
-        target_status="shadow",
-    )
-    assert report["ok"] is True
-    assert report["current_status"] == "diagnostic"
-    assert report["target_status"] == "shadow"
-
-
-def test_crypto_promotion_prod_requires_accepted_and_shadow_days() -> None:
-    with pytest.raises(ValueError, match="accepted=true"):
-        validate_crypto_promotion_contract(
-            _crypto_manifest(
-                promotion_status="shadow",
-                metrics={"paper_battery_pass": True},
-            ),
-            current_status="shadow",
-            target_status="prod",
-        )
-
-
-def test_crypto_promotion_prod_passes_full() -> None:
-    report = validate_crypto_promotion_contract(
-        _crypto_manifest(
-            promotion_status="shadow",
-            metrics={"paper_battery_pass": True, "accepted": True, "shadow_days": 7},
-        ),
-        current_status="shadow",
-        target_status="prod",
-    )
-    assert report["ok"] is True
-    assert report["current_status"] == "shadow"
-    assert report["target_status"] == "prod"
-
-
 def test_crypto_promotion_rejects_unknown_target_status() -> None:
     with pytest.raises(ValueError, match="unknown crypto promotion target_status"):
         validate_crypto_promotion_contract(
@@ -256,60 +213,74 @@ def test_crypto_promotion_rejects_unknown_target_status() -> None:
         )
 
 
-def test_crypto_promotion_shadow_rejects_string_false_battery_flag() -> None:
-    # A hand-edited manifest could carry the string "false" instead of a JSON
-    # boolean; a truthy check would treat it as passing. Must fail closed.
-    with pytest.raises(ValueError, match="paper battery"):
+# ── evidence-bound promotion is not implemented (Codex round-2, artifacts#23) ──
+#
+# validate_crypto_promotion_contract must refuse every diagnostic->shadow or
+# shadow->prod request outright -- it must NEVER inspect paper_battery_pass/
+# accepted/shadow_days, since those are self-attested, hand-editable manifest
+# fields with no real evidence binding. A fully "correct-looking" metrics
+# block must be refused exactly the same as an empty one: the refusal must
+# not be data-dependent, or a caller could still be misled into thinking a
+# populated manifest is authorization-ready.
+
+
+def test_crypto_promotion_shadow_refuses_even_with_fully_populated_metrics() -> None:
+    with pytest.raises(EvidenceBoundPromotionNotImplementedError):
         validate_crypto_promotion_contract(
-            _crypto_manifest(metrics={"paper_battery_pass": "false"}),
+            _crypto_manifest(
+                metrics={"paper_battery_pass": True, "accepted": True, "shadow_days": 30},
+            ),
             current_status="diagnostic",
             target_status="shadow",
         )
 
 
-def test_crypto_promotion_prod_rejects_non_numeric_shadow_days() -> None:
-    with pytest.raises(ValueError, match="shadow_days"):
+def test_crypto_promotion_shadow_refuses_with_empty_metrics() -> None:
+    with pytest.raises(EvidenceBoundPromotionNotImplementedError):
+        validate_crypto_promotion_contract(
+            _crypto_manifest(), current_status="diagnostic", target_status="shadow"
+        )
+
+
+def test_crypto_promotion_prod_refuses_even_with_fully_populated_metrics() -> None:
+    with pytest.raises(EvidenceBoundPromotionNotImplementedError):
         validate_crypto_promotion_contract(
             _crypto_manifest(
                 promotion_status="shadow",
-                metrics={
-                    "paper_battery_pass": True,
-                    "accepted": True,
-                    "shadow_days": "7",
-                },
+                metrics={"paper_battery_pass": True, "accepted": True, "shadow_days": 30},
             ),
             current_status="shadow",
             target_status="prod",
         )
 
 
-def test_crypto_promotion_prod_rejects_zero_shadow_days() -> None:
-    with pytest.raises(ValueError, match="shadow_days"):
+def test_crypto_promotion_prod_refuses_with_empty_metrics() -> None:
+    with pytest.raises(EvidenceBoundPromotionNotImplementedError):
         validate_crypto_promotion_contract(
-            _crypto_manifest(
-                promotion_status="shadow",
-                metrics={
-                    "paper_battery_pass": True,
-                    "accepted": True,
-                    "shadow_days": 0,
-                },
-            ),
+            _crypto_manifest(promotion_status="shadow", metrics={}),
             current_status="shadow",
             target_status="prod",
         )
 
 
-def test_crypto_promotion_prod_rejects_bool_shadow_days() -> None:
-    with pytest.raises(ValueError, match="shadow_days"):
+def test_crypto_promotion_not_implemented_error_is_not_a_plain_value_error() -> None:
+    # Callers must be able to distinguish "evidence-bound promotion isn't
+    # built yet" from an ordinary precondition failure (draft/mismatch/
+    # illegal-transition), which all remain plain ValueError above.
+    assert issubclass(EvidenceBoundPromotionNotImplementedError, NotImplementedError)
+    assert not issubclass(EvidenceBoundPromotionNotImplementedError, ValueError)
+
+
+def test_crypto_promotion_precondition_failures_still_take_priority() -> None:
+    # An illegal transition must still be rejected as ValueError BEFORE the
+    # not-implemented refusal is ever reached -- preconditions are real
+    # checks and must not be shadowed by the blanket refusal.
+    with pytest.raises(ValueError, match="illegal promotion transition"):
         validate_crypto_promotion_contract(
             _crypto_manifest(
-                promotion_status="shadow",
-                metrics={
-                    "paper_battery_pass": True,
-                    "accepted": True,
-                    "shadow_days": True,
-                },
+                promotion_status="diagnostic",
+                metrics={"paper_battery_pass": True, "accepted": True, "shadow_days": 7},
             ),
-            current_status="shadow",
+            current_status="diagnostic",
             target_status="prod",
         )
