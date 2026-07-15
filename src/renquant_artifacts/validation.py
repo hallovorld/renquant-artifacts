@@ -6,6 +6,8 @@ from typing import Any
 
 from renquant_common import Job, Pipeline, Task
 
+from .experiment_registry import verify_artifact_provenance
+
 
 @dataclass
 class ArtifactManifestContext:
@@ -37,6 +39,41 @@ class ValidateArtifactManifestTask(Task):
             raise ValueError("prod artifact must have accepted=true metrics")
         if ctx.manifest["uri"].startswith("/Users/"):
             raise ValueError("artifact uri must not be developer-local absolute path")
+
+        # F-7 promotion-boundary enforcement (Codex review 2026-07-14 on
+        # RenQuant#471 / renquant-artifacts#24). Round 1 wired
+        # reject_exploratory_promotion() in here conditionally on a
+        # caller-supplied ``provenance_dir`` string -- Codex's follow-up
+        # review correctly flagged that as still bypassable: "provenance is
+        # optional and self-declared... An experiment-derived result can
+        # therefore be promoted simply by omitting provenance_dir." A local
+        # filesystem path is also not durable provenance for a registry
+        # artifact on its own.
+        #
+        # provenance is now a REQUIRED, typed lineage record (see
+        # verify_artifact_provenance / PROVENANCE_KINDS) resolved
+        # deterministically for EVERY candidate manifest -- there is no
+        # longer a code path where a manifest validates successfully
+        # without an explicit provenance/exploratory-status determination
+        # being made. Every real caller across the multirepo funnels
+        # through this one function --
+        # renquant_pipeline.inference.ValidateRuntimeInputsTask (live/
+        # shadow/sim runtime) and
+        # renquant_artifacts.registry.{load,resolve}_artifact_manifest
+        # (registry resolution) -- so wiring the check here makes the
+        # EXPLORATORY_ONLY marker real enforcement instead of an inert log
+        # line nothing consumes.
+        #
+        # Round-3 follow-up (Codex, same PR): "provenance.kind='none'
+        # remains a direct bypass of the experiment gate... an artifact
+        # built from a registered experiment can set {'kind': 'none'} and
+        # verify_artifact_provenance() returns immediately." Fixed by
+        # passing the FULL manifest (not just ctx.manifest["provenance"])
+        # so kind="none" can be independently checked against the
+        # manifest's own on-disk identity fields -- see
+        # verify_artifact_provenance / _verify_none_provenance.
+        verify_artifact_provenance(ctx.manifest)
+
         ctx.validation_report = {
             "artifact_id": ctx.manifest["artifact_id"],
             "fingerprint": ctx.manifest["fingerprint"],

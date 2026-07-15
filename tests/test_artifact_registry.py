@@ -18,6 +18,14 @@ def _write_manifest(path: Path, **overrides) -> dict:
         "promotion_status": "prod",
         "metrics": {"accepted": True, "oos_mean_ic": 0.03},
         "retention_class": "prod",
+        # F-7 (renquant-artifacts#24, Codex 2026-07-14 follow-up):
+        # provenance is now a REQUIRED, typed manifest field -- see
+        # renquant_artifacts.experiment_registry.verify_artifact_provenance.
+        # These fixtures represent ordinary, non-experiment artifacts (the
+        # model-factory training path), so they declare the narrow, explicit
+        # "none" allowlist kind rather than omitting the field (which is
+        # exactly the bypass that fix closes).
+        "provenance": {"kind": "none"},
     }
     payload.update(overrides)
     path.write_text(json.dumps(payload), encoding="utf-8")
