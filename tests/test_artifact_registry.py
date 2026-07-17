@@ -22,10 +22,21 @@ def _write_manifest(path: Path, **overrides) -> dict:
         # provenance is now a REQUIRED, typed manifest field -- see
         # renquant_artifacts.experiment_registry.verify_artifact_provenance.
         # These fixtures represent ordinary, non-experiment artifacts (the
-        # model-factory training path), so they declare the narrow, explicit
-        # "none" allowlist kind rather than omitting the field (which is
-        # exactly the bypass that fix closes).
-        "provenance": {"kind": "none"},
+        # model-factory training path). F-7 canonical follow-up: kind="none"
+        # can no longer be combined with promotion_status="prod" (a real
+        # prod artifact must carry a verified run-intent binding instead),
+        # so these prod fixtures declare kind="canonical" with a
+        # run_intent_path that does not resolve locally -- the residual,
+        # honestly-disclosed "nothing to check" path already established for
+        # kind="none" over an opaque store://object:// identity, exercised
+        # here for kind="canonical" instead. The artifact_digest below MUST
+        # keep matching "fingerprint" for any test that doesn't override it.
+        "provenance": {
+            "kind": "canonical",
+            "run_intent_path": "store://renquant-artifacts/panel-ltr-prod/run_intent.json",
+            "run_intent_digest": "sha256:" + "0" * 64,
+            "artifact_digest": "sha256:artifact",
+        },
     }
     payload.update(overrides)
     path.write_text(json.dumps(payload), encoding="utf-8")

@@ -89,11 +89,31 @@ EXPERIMENT_PINS_REQUIRED_KEYS = frozenset(
 #:   evidence fields (``code_commit``, ``config_fingerprint``). What it DOES
 #:   fix is the specific bypass Codex found: silent OMISSION of the whole
 #:   ``provenance`` field is no longer possible -- every manifest must make
-#:   an explicit, git-reviewable act either way.
-PROVENANCE_KINDS = frozenset({"experiment", "none"})
+#:   an explicit, git-reviewable act either way. As of the F-7 canonical
+#:   follow-up, ``kind="none"`` additionally can never be combined with
+#:   ``promotion_status="prod"`` -- see :func:`verify_artifact_provenance`.
+#: * ``"canonical"`` -- the artifact derives from an automated, unreviewed
+#:   canonical daily-full training run (no per-run PR the way a registered
+#:   experiment has -- see :mod:`renquant_artifacts.canonical_registry`'s
+#:   module docstring for why that path can't reuse the experiment INDEX.json
+#:   pattern verbatim). Verified via the ``provenance.artifact_digest ==
+#:   manifest["fingerprint"]`` binding, checked unconditionally and first --
+#:   see :func:`verify_artifact_provenance` for the full contract.
+PROVENANCE_KINDS = frozenset({"experiment", "canonical", "none"})
 
 #: Required keys inside ``provenance`` when ``kind == "experiment"``.
 PROVENANCE_EXPERIMENT_REQUIRED_KEYS = frozenset({"dir", "registry_index_path"})
+
+#: Required keys inside ``provenance`` when ``kind == "canonical"``. See
+#: :mod:`renquant_artifacts.canonical_registry` for the record these
+#: reference and :func:`verify_artifact_provenance` for how they are
+#: enforced -- ``artifact_digest`` must equal the manifest's own
+#: ``fingerprint`` UNCONDITIONALLY, which is what makes this binding work for
+#: opaque ``store://``/``object://``-only artifact identities with no local
+#: path to resolve at all.
+PROVENANCE_CANONICAL_REQUIRED_KEYS = frozenset(
+    {"run_intent_path", "run_intent_digest", "artifact_digest"}
+)
 
 #: Manifest keys that MAY carry a real, locally-resolvable filesystem
 #: reference to the artifact's own on-disk content -- as opposed to an
@@ -518,6 +538,31 @@ def reject_exploratory_promotion(
         )
 
 
+def _resolve_local_path(raw: Any) -> Path | None:
+    """Resolve a single manifest identity-field value to a real,
+    locally-existing :class:`Path`, or ``None`` if it isn't a usable local
+    reference -- an opaque ``store://``/``object://`` URI (resolved by
+    object-store infrastructure outside this repo, with no local filesystem
+    truth to inspect), or a path that simply doesn't exist on this
+    filesystem.
+
+    Shared by :func:`_candidate_local_artifact_dirs` (the ``kind="none"``
+    check) and the ``kind="canonical"`` supplemental local check in
+    :func:`verify_artifact_provenance` -- one "is this actually a local
+    path" rule rather than two independently hand-copied ones.
+    """
+    if not raw or not isinstance(raw, str):
+        return None
+    if "://" in raw:
+        if not raw.startswith("file://"):
+            return None
+        raw = raw[len("file://"):]
+    path = Path(raw)
+    if not path.exists():
+        return None
+    return path
+
+
 def _candidate_local_artifact_dirs(manifest: dict[str, Any]) -> list[Path]:
     """Resolve real, on-disk directories implied by a manifest's OWN
     identity fields -- never a value read from inside the caller-supplied
@@ -529,18 +574,114 @@ def _candidate_local_artifact_dirs(manifest: dict[str, Any]) -> list[Path]:
     """
     dirs: list[Path] = []
     for key in _LOCAL_ARTIFACT_PATH_KEYS:
-        raw = manifest.get(key)
-        if not raw or not isinstance(raw, str):
-            continue
-        if "://" in raw:
-            if not raw.startswith("file://"):
-                continue
-            raw = raw[len("file://"):]
-        path = Path(raw)
-        if not path.exists():
+        path = _resolve_local_path(manifest.get(key))
+        if path is None:
             continue
         dirs.append(path if path.is_dir() else path.parent)
     return dirs
+
+
+def _find_repo_root_with_subrepos_lock(start: Path) -> Path | None:
+    """Walk upward from ``start``, bounded by :data:`_MAX_MARKER_SEARCH_LEVELS`,
+    looking for a directory containing ``subrepos.lock.json`` -- used to
+    auto-derive the ``repo_root``
+    :func:`renquant_artifacts.canonical_registry.verify_canonical_run_intent`
+    needs for its code-pin checks, when the supplemental local
+    ``kind="canonical"`` check (:func:`_verify_canonical_run_intent_if_resolvable`)
+    has no caller-supplied ``repo_root`` to work with. Mirrors
+    :func:`_find_experiment_classification_marker`'s bounded-walk idiom.
+    """
+    current = start.resolve()
+    for _ in range(_MAX_MARKER_SEARCH_LEVELS):
+        if (current / "subrepos.lock.json").exists():
+            return current
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    return None
+
+
+def _verify_canonical_not_exploratory(manifest: dict[str, Any]) -> None:
+    """Round-5-style negative check for ``kind="canonical"``, mirroring
+    :func:`_verify_none_provenance`: does the artifact's own on-disk
+    identity resolve under a real ``EXPLORATORY_ONLY`` classification
+    marker? A ``"canonical"`` declaration is exactly as dishonest as a
+    ``"none"`` declaration would be in that case, so this reuses the same
+    :func:`reject_exploratory_promotion` enforcement rather than
+    re-implementing the self-report/registration logic a second time.
+    """
+    for candidate_dir in _candidate_local_artifact_dirs(manifest):
+        marker = _find_experiment_classification_marker(candidate_dir)
+        if marker is None:
+            continue
+        try:
+            reject_exploratory_promotion(marker.parent)
+        except ValueError as exc:
+            raise ValueError(
+                "artifact manifest declares provenance.kind='canonical' but "
+                f"its own artifact path ({candidate_dir}) resolves under a "
+                f"real EXPLORATORY_ONLY classification record ({marker}) -- "
+                "a 'canonical' declaration is not honest here"
+            ) from exc
+
+
+def _verify_canonical_run_intent_if_resolvable(provenance: dict[str, Any]) -> None:
+    """Best-effort supplemental check for ``kind="canonical"`` provenance.
+
+    If ``provenance["run_intent_path"]`` resolves to a real local file (or a
+    directory containing one), this recomputes its content hash and checks
+    it against ``run_intent_digest`` (a tamper check on the record itself),
+    then -- if a ``subrepos.lock.json`` can be discovered via a bounded
+    upward walk from that file -- runs the full
+    :func:`renquant_artifacts.canonical_registry.verify_canonical_run_intent`
+    check (required keys, producer allowlist, and all 3 code pins against
+    the actual current checkout).
+
+    If ``run_intent_path`` does NOT resolve locally at all (this artifact's
+    only identity is an opaque ``store://``/``object://`` reference), or no
+    ``subrepos.lock.json`` is discoverable nearby, this is skipped --
+    consistent with this whole check's status as "a useful supplemental
+    detector, not a promotion boundary" (see :func:`verify_artifact_provenance`
+    and the F-7 design doc): the ``artifact_digest == manifest["fingerprint"]``
+    comparison already performed by the caller is the authoritative boundary
+    in that case, precisely because it needs no local disk access.
+    """
+    # Local import: canonical_registry imports verify_code_pin FROM this
+    # module, so importing it back at module scope here would be circular.
+    from . import canonical_registry
+
+    raw = provenance.get("run_intent_path")
+    path = _resolve_local_path(raw if isinstance(raw, str) else None)
+    if path is None:
+        return
+    if path.is_dir():
+        path = path / canonical_registry.CANONICAL_RUN_INTENT_FILENAME
+        if not path.exists():
+            return
+
+    actual_digest = artifact_sha256(path)
+    expected_digest = provenance.get("run_intent_digest")
+    if actual_digest != expected_digest:
+        raise ValueError(
+            f"provenance.run_intent_digest does not match the actual "
+            f"content hash of {path} (expected {expected_digest!r}, got "
+            f"{actual_digest!r}) -- the run_intent.json record appears to "
+            "have been tampered with after the digest was computed"
+        )
+
+    repo_root = _find_repo_root_with_subrepos_lock(path.parent)
+    if repo_root is None:
+        # No discoverable subrepos.lock.json nearby -- skip the deeper
+        # code-pin/producer check. The tamper check above already ran, and
+        # the artifact_digest binding is authoritative regardless.
+        return
+
+    errors = canonical_registry.verify_canonical_run_intent(path, repo_root=repo_root)
+    if errors:
+        raise ValueError(
+            f"canonical run-intent record at {path} failed verification: {errors}"
+        )
 
 
 def _find_experiment_classification_marker(start: Path) -> Path | None:
@@ -646,7 +787,26 @@ def verify_artifact_provenance(manifest: dict[str, Any]) -> None:
       checks the manifest's own real, on-disk identity fields for a nearby
       EXPLORATORY_ONLY classification marker and rejects the declaration if
       one is found (see that function's docstring for the full contract
-      and its honestly-disclosed residual limit).
+      and its honestly-disclosed residual limit). F-7 canonical follow-up:
+      ``kind="none"`` can additionally never be combined with
+      ``promotion_status="prod"`` -- a real production artifact must use
+      ``kind="canonical"`` (a verified run-intent binding) instead, not the
+      narrow non-production allowlist.
+    * ``"canonical"`` -- requires ``run_intent_path``, ``run_intent_digest``,
+      and ``artifact_digest`` (see :data:`PROVENANCE_CANONICAL_REQUIRED_KEYS`).
+      ``artifact_digest`` is checked against ``manifest["fingerprint"]``
+      UNCONDITIONALLY and FIRST -- this is what makes the check work
+      identically for local and opaque ``store://``/``object://``-only
+      artifact identities: a dishonest manifest that copies a real
+      ``run_intent_path``/``run_intent_digest`` from a genuine canonical run
+      onto a DIFFERENT artifact fails here, because that different
+      artifact's ``fingerprint`` won't match ``artifact_digest``. The
+      round-5-style exploratory-marker check
+      (:func:`_verify_canonical_not_exploratory`) and a best-effort local
+      re-verification of the run-intent record itself
+      (:func:`_verify_canonical_run_intent_if_resolvable`, supplementary --
+      same status as the ``kind="none"`` marker-scan, "a useful supplemental
+      detector, not a promotion boundary") both run afterward.
     * ``"experiment"`` -- requires ``dir`` (the run's output directory,
       expected to carry ``_experiment_classification.json``) and
       ``registry_index_path`` (the immutable, git-tracked manifest-registry
@@ -683,7 +843,30 @@ def verify_artifact_provenance(manifest: dict[str, Any]) -> None:
             f"{sorted(PROVENANCE_KINDS)}, got {kind!r}"
         )
     if kind == "none":
+        if manifest.get("promotion_status") == "prod":
+            raise ValueError(
+                "provenance.kind='none' cannot be combined with "
+                "promotion_status='prod' -- use workflow_class="
+                "WORKFLOW_CLASS_CANONICAL (a verified run-intent binding) "
+                "instead"
+            )
         _verify_none_provenance(manifest)
+        return
+    if kind == "canonical":
+        missing = PROVENANCE_CANONICAL_REQUIRED_KEYS - provenance.keys()
+        if missing:
+            raise ValueError(
+                f"artifact manifest provenance.kind='canonical' missing "
+                f"required keys: {sorted(missing)}"
+            )
+        if provenance["artifact_digest"] != manifest.get("fingerprint"):
+            raise ValueError(
+                "provenance.artifact_digest does not match this manifest's "
+                "own fingerprint -- a canonical provenance record for a "
+                "DIFFERENT artifact cannot be attached to this one"
+            )
+        _verify_canonical_not_exploratory(manifest)
+        _verify_canonical_run_intent_if_resolvable(provenance)
         return
     missing = PROVENANCE_EXPERIMENT_REQUIRED_KEYS - provenance.keys()
     if missing:

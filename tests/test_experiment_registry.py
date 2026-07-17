@@ -21,6 +21,7 @@ from pathlib import Path
 import pytest
 
 from renquant_artifacts import (
+    build_canonical_provenance_reference,
     build_experiment_provenance_reference,
     load_artifact_manifest,
     reject_exploratory_promotion,
@@ -28,11 +29,13 @@ from renquant_artifacts import (
     validate_artifact_manifest,
     verify_artifact_provenance,
     verify_calendar_universe_pin,
+    verify_canonical_run_intent,
     verify_code_pin,
     verify_data_snapshot_pin,
     verify_experiment_pins,
     verify_manifest_registered,
     verify_model_artifact_pin,
+    write_canonical_run_intent,
     write_experiment_classification,
 )
 from renquant_common.model_fingerprint import artifact_sha256
@@ -410,14 +413,22 @@ class TestPromotionBoundaryIntegration:
         the now-required explicit 'kind=none' declaration. This is the
         narrow allowlist the fix permits; it must not be confused with the
         OLD "no provenance_dir at all" bypass -- the field is present and
-        explicit, just declaring "not experiment-derived"."""
+        explicit, just declaring "not experiment-derived".
+
+        promotion_status is deliberately NOT "prod" here (F-7 canonical
+        follow-up): kind="none" can no longer be combined with
+        promotion_status="prod" at all (see
+        TestProvenanceKindNoneProdRejection below) -- a real prod artifact
+        must carry a verified kind="canonical" run-intent binding instead.
+        This test's job is only to prove the narrow "none" allowlist itself
+        still works for genuinely non-prod, ordinary artifacts."""
         manifest = {
             "artifact_id": "ordinary-artifact",
             "model_family": "gbdt-panel-ltr",
             "strategy": "renquant_104",
             "fingerprint": "sha256:ordinary",
             "uri": "object://renquant-artifacts/ordinary.json",
-            "promotion_status": "prod",
+            "promotion_status": "diagnostic",
             "metrics": {"accepted": True},
             "provenance": {"kind": "none"},
         }
@@ -596,10 +607,29 @@ class TestProvenanceBypassClosed:
         _verify_none_provenance's docstring), not the closed bypass. It
         must be told apart from an artifact that DOES reference a real,
         locally-visible experiment output directory (which is now
-        rejected, not accepted)."""
-        manifest = self._candidate(provenance={"kind": "none"})
+        rejected, not accepted).
+
+        promotion_status is overridden to non-prod here (F-7 canonical
+        follow-up): kind='none' + promotion_status='prod' is now rejected
+        unconditionally regardless of local resolvability -- see
+        test_provenance_kind_none_with_no_local_path_at_prod_rejected below,
+        which is this SAME fixture at prod."""
+        manifest = self._candidate(provenance={"kind": "none"}, promotion_status="diagnostic")
         report = validate_artifact_manifest(manifest)
         assert report["ok"] is True
+
+    def test_provenance_kind_none_with_no_local_path_at_prod_rejected(self, tmp_path):
+        """F-7 canonical follow-up (companion to Scenario C below): the SAME
+        fixture as test_provenance_kind_none_with_no_local_path_has_nothing_to_check
+        immediately above, but at promotion_status='prod'. Before this
+        fixed, kind='none' passed unconditionally here BECAUSE there was
+        nothing local to check -- exactly the residual gap the F-7 canonical
+        design exists to close for real production artifacts: the new
+        prod+none rule rejects this regardless of local resolvability, since
+        it does not depend on any filesystem walk at all."""
+        manifest = self._candidate(provenance={"kind": "none"})  # promotion_status='prod' by default
+        with pytest.raises(ValueError, match="cannot be combined with"):
+            validate_artifact_manifest(manifest)
 
     def test_provenance_kind_none_over_registered_experiment_output_rejected(self, tmp_path):
         """THE exact end-to-end negative test Codex's round-3 follow-up
@@ -642,9 +672,16 @@ class TestProvenanceBypassClosed:
         candidate_file = run_dir / "candidate_run" / "output.json"
         candidate_file.parent.mkdir(parents=True)
         candidate_file.write_text("{}")
+        # promotion_status overridden to non-prod (F-7 canonical follow-up):
+        # this test is specifically about the marker-scan bypass closure,
+        # not the separate, unconditional kind='none'+prod rejection (see
+        # test_provenance_kind_none_over_opaque_store_uri_at_prod_rejected
+        # for that one) -- prod would raise on the new rule before ever
+        # reaching the marker-scan check this test exists to exercise.
         manifest = self._candidate(
             local_artifact_path=str(candidate_file),
             provenance={"kind": "none"},
+            promotion_status="diagnostic",
         )
 
         with pytest.raises(ValueError, match="EXPLORATORY_ONLY classification record"):
@@ -673,7 +710,12 @@ class TestProvenanceBypassClosed:
             {"artifact_path": str(artifact_file)},
             {"uri": f"file://{artifact_file}"},
         ):
-            manifest = self._candidate(provenance={"kind": "none"}, **kwargs)
+            # promotion_status overridden to non-prod for the same reason as
+            # test_provenance_kind_none_over_registered_experiment_output_rejected
+            # above -- this test targets the marker-scan bypass closure.
+            manifest = self._candidate(
+                provenance={"kind": "none"}, promotion_status="diagnostic", **kwargs,
+            )
             with pytest.raises(ValueError, match="EXPLORATORY_ONLY classification record"):
                 validate_artifact_manifest(manifest)
 
@@ -685,7 +727,13 @@ class TestProvenanceBypassClosed:
         filesystem path to inspect at all, so it still passes. This is
         materially narrower than the prior gap (which accepted this for
         EVERY kind='none' manifest, including ones with a real local path)
-        and is not silently claimed to be closed."""
+        and is not silently claimed to be closed.
+
+        Regression control kept at non-prod (F-7 canonical follow-up): see
+        test_provenance_kind_none_over_opaque_store_uri_at_prod_rejected
+        immediately below for the SAME fixture at promotion_status='prod',
+        which is Scenario C -- low-stakes 'none' usage away from prod is
+        unaffected by that new rule."""
         run_dir = tmp_path / "sim_output" / "exp-none-bypass-3"
         write_experiment_classification(
             run_dir, experiment_id="exp-none-bypass-3",
@@ -695,9 +743,36 @@ class TestProvenanceBypassClosed:
         manifest = self._candidate(
             uri="object://renquant-artifacts/opaque-only.json",
             provenance={"kind": "none"},
+            promotion_status="diagnostic",
         )
         report = validate_artifact_manifest(manifest)
         assert report["ok"] is True
+
+    def test_provenance_kind_none_over_opaque_store_uri_at_prod_rejected(self, tmp_path):
+        """Scenario C (F-7 canonical follow-up design doc, section 8): the
+        EXACT SAME fixture as
+        test_provenance_kind_none_over_opaque_store_uri_has_nothing_to_check
+        above (a real registered experiment, artifact identity is an opaque
+        object://... URI only, no local path) but at
+        promotion_status='prod'. Before this fix, kind='none' passed
+        unconditionally here -- Codex's core complaint this whole design
+        exists to fix ("kind='none' passes unconditionally for artifacts
+        whose only identity is an opaque store://object:// URI"). Now
+        rejected: a real prod artifact can never use kind='none' at all,
+        regardless of whether there is anything local to inspect."""
+        run_dir = tmp_path / "sim_output" / "exp-none-bypass-3-prod"
+        write_experiment_classification(
+            run_dir, experiment_id="exp-none-bypass-3-prod",
+            manifest_path="experiments/manifests/exp-none-bypass-3-prod.json",
+            manifest_digest="sha256:none-bypass-3-prod", config_digest="sha256:c",
+        )
+        manifest = self._candidate(
+            uri="object://renquant-artifacts/opaque-only-prod.json",
+            provenance={"kind": "none"},
+            # promotion_status='prod' by default via self._candidate()
+        )
+        with pytest.raises(ValueError, match="cannot be combined with"):
+            validate_artifact_manifest(manifest)
 
     def test_unknown_provenance_kind_rejected(self, tmp_path):
         manifest = self._candidate(provenance={"kind": "totally-made-up"})
@@ -706,5 +781,294 @@ class TestProvenanceBypassClosed:
 
     def test_experiment_kind_missing_required_subkeys_rejected(self, tmp_path):
         manifest = self._candidate(provenance={"kind": "experiment"})
+        with pytest.raises(ValueError, match="missing required keys"):
+            validate_artifact_manifest(manifest)
+
+
+# ── kind="canonical": run-intent record + digest-field binding ─────────────
+
+
+class _CanonicalFixture:
+    """Builds 3 real git checkouts (strategy-104/pipeline/model) + a
+    matching subrepos.lock.json + a real run_intent.json written via
+    write_canonical_run_intent, with genuinely matching code pins -- the
+    SAME real-git-repo technique _Fixture/_init_repo already use for the
+    5-category experiment-pin tests above, generalized to the 3 canonical
+    code-pin categories (CANONICAL_CODE_PIN_SUBREPOS).
+    """
+
+    REPOS = {
+        "renquant-strategy-104": "https://github.com/hallovorld/renquant-strategy-104",
+        "renquant-pipeline": "https://github.com/hallovorld/renquant-pipeline",
+        "renquant-model": "https://github.com/hallovorld/renquant-model",
+    }
+
+    def __init__(self, tmp_path: Path):
+        self.tmp_path = tmp_path
+        self.commits = {
+            name: _init_repo(tmp_path / name, remote=remote)
+            for name, remote in self.REPOS.items()
+        }
+        lock = {
+            "subrepos": [
+                {
+                    "name": name,
+                    "local_path": str(tmp_path / name),
+                    "commit": self.commits[name],
+                    "remote": remote,
+                }
+                for name, remote in self.REPOS.items()
+            ]
+        }
+        (tmp_path / "subrepos.lock.json").write_text(json.dumps(lock))
+
+        code_pins = {
+            name: {"commit": self.commits[name], "remote": remote}
+            for name, remote in self.REPOS.items()
+        }
+        self.output_dir = tmp_path / "training_output" / "run-20260716"
+        self.run_intent_path = write_canonical_run_intent(
+            self.output_dir,
+            run_id="run-20260716-001",
+            run_type="daily_full",
+            producer={
+                "repo": "renquant-orchestrator",
+                "entrypoint": "daily.TrainGbdtArtifactTask",
+            },
+            strategy_manifest_fingerprint="sha256:strategy",
+            data_manifest_fingerprint="sha256:data",
+            strategy_config_digest="sha256:strategyconfig",
+            model_config_digest="sha256:modelconfig",
+            calendar_universe_digest="sha256:universe",
+            as_of="2026-07-16",
+            code_pins=code_pins,
+        )
+
+
+class TestVerifyCanonicalRunIntent:
+    """Unit-level tests for canonical_registry.verify_canonical_run_intent
+    -- the code-pin/producer-allowlist check that backs the kind='canonical'
+    provenance branch, mirroring TestVerifyExperimentPins's coverage style
+    for the analogous 5-category experiment check."""
+
+    def test_clean_matching_run_intent_passes(self, tmp_path):
+        fx = _CanonicalFixture(tmp_path)
+        errors = verify_canonical_run_intent(fx.run_intent_path, repo_root=fx.tmp_path)
+        assert errors == []
+
+    def test_missing_required_keys_fails_closed(self, tmp_path):
+        fx = _CanonicalFixture(tmp_path)
+        raw = json.loads(fx.run_intent_path.read_text())
+        del raw["as_of"]
+        fx.run_intent_path.write_text(json.dumps(raw))
+
+        errors = verify_canonical_run_intent(fx.run_intent_path, repo_root=fx.tmp_path)
+        assert any("missing required keys" in e for e in errors)
+
+    def test_unknown_producer_fails_closed(self, tmp_path):
+        """Scenario B(ii) (F-7 canonical follow-up design doc, section 8):
+        a run_intent.json whose producer names an entrypoint not in
+        CANONICAL_PRODUCERS must fail verification."""
+        fx = _CanonicalFixture(tmp_path)
+        raw = json.loads(fx.run_intent_path.read_text())
+        raw["producer"] = {"repo": "renquant-orchestrator", "entrypoint": "some.OtherTask"}
+        fx.run_intent_path.write_text(json.dumps(raw))
+
+        errors = verify_canonical_run_intent(fx.run_intent_path, repo_root=fx.tmp_path)
+        assert any("CANONICAL_PRODUCERS allowlist" in e for e in errors)
+
+    def test_dirty_model_checkout_fails(self, tmp_path):
+        fx = _CanonicalFixture(tmp_path)
+        (tmp_path / "renquant-model" / "f.txt").write_text("dirty")
+
+        errors = verify_canonical_run_intent(fx.run_intent_path, repo_root=fx.tmp_path)
+        assert any("code_pins.renquant-model" in e and "dirty" in e for e in errors)
+
+    def test_stale_pipeline_commit_vs_lock_fails(self, tmp_path):
+        fx = _CanonicalFixture(tmp_path)
+        raw = json.loads(fx.run_intent_path.read_text())
+        raw["code_pins"]["renquant-pipeline"]["commit"] = "0" * 40
+        fx.run_intent_path.write_text(json.dumps(raw))
+
+        errors = verify_canonical_run_intent(fx.run_intent_path, repo_root=fx.tmp_path)
+        assert any(
+            "does not match subrepos.lock.json pin" in e
+            or "does not match pinned commit" in e
+            for e in errors
+        )
+
+    def test_missing_run_intent_file_fails_closed(self, tmp_path):
+        errors = verify_canonical_run_intent(tmp_path / "nope.json", repo_root=tmp_path)
+        assert any("not found" in e for e in errors)
+
+
+class TestWriteCanonicalRunIntent:
+    def test_write_is_atomic_tmp_rename_and_schema_correct(self, tmp_path):
+        out_dir = tmp_path / "training_output"
+        path = write_canonical_run_intent(
+            out_dir,
+            run_id="r1",
+            run_type="daily_full",
+            producer={
+                "repo": "renquant-orchestrator",
+                "entrypoint": "daily.TrainGbdtArtifactTask",
+            },
+            strategy_manifest_fingerprint="sha256:s",
+            data_manifest_fingerprint="sha256:d",
+            strategy_config_digest="sha256:sc",
+            model_config_digest="sha256:mc",
+            calendar_universe_digest="sha256:u",
+            as_of="2026-07-16",
+            code_pins={},
+        )
+        assert path.exists()
+        assert not path.with_suffix(".json.tmp").exists()
+        payload = json.loads(path.read_text())
+        assert payload["schema_version"] == 1
+        assert payload["kind"] == "canonical-run-intent"
+        assert payload["workflow_class"] == "canonical"
+        assert payload["created_at"].endswith("Z")
+
+
+class TestCanonicalProvenance:
+    """End-to-end kind='canonical' coverage through the REAL
+    verify_artifact_provenance/validate_artifact_manifest entrypoints --
+    the digest-field binding this whole design exists to establish (F-7
+    canonical follow-up design doc, section 4: "the manifest field
+    identifying an artifact is already `fingerprint`... the fix: the
+    provenance record itself carries that same digest")."""
+
+    def test_genuine_canonical_provenance_reference_is_accepted(self, tmp_path):
+        """Genuine positive path: a real run_intent.json (real code pins via
+        temp git repos), build_canonical_provenance_reference produces a
+        manifest that verify_artifact_provenance/validate_artifact_manifest
+        accepts."""
+        fx = _CanonicalFixture(tmp_path)
+        manifest = {
+            "artifact_id": "canonical-gbdt-20260716",
+            "model_family": "gbdt-panel-ltr",
+            "strategy": "renquant_104",
+            "fingerprint": "sha256:candidate-canonical",
+            "uri": "object://renquant-artifacts/canonical-gbdt-20260716.json",
+            "promotion_status": "prod",
+            "metrics": {"accepted": True},
+            "provenance": build_canonical_provenance_reference(
+                fx.run_intent_path, "sha256:candidate-canonical",
+            ),
+        }
+        report = validate_artifact_manifest(manifest)
+        assert report["ok"] is True
+
+    def test_artifact_digest_mismatch_from_a_different_run_rejected(self, tmp_path):
+        """Scenario B(i) (F-7 canonical follow-up design doc, section 8):
+        artifact_digest copied from a DIFFERENT real canonical run's
+        provenance onto THIS manifest -- verify_artifact_provenance must
+        raise on the digest mismatch, unconditionally, before any local
+        resolution of run_intent_path is even attempted."""
+        fx = _CanonicalFixture(tmp_path)
+        real_reference = build_canonical_provenance_reference(
+            fx.run_intent_path, "sha256:the-real-artifact-this-run-actually-produced",
+        )
+        manifest = {
+            "artifact_id": "a-different-artifact",
+            "model_family": "gbdt-panel-ltr",
+            "strategy": "renquant_104",
+            # Dishonest: this manifest's OWN fingerprint does not match
+            # real_reference["artifact_digest"], even though run_intent_path
+            # / run_intent_digest are genuinely real and unmodified.
+            "fingerprint": "sha256:a-completely-different-artifact",
+            "uri": "object://renquant-artifacts/a-different-artifact.json",
+            "promotion_status": "prod",
+            "metrics": {"accepted": True},
+            "provenance": real_reference,
+        }
+        with pytest.raises(ValueError, match="does not match this manifest's own fingerprint"):
+            validate_artifact_manifest(manifest)
+
+    def test_end_to_end_rejects_unknown_producer_via_tampered_run_intent(self, tmp_path):
+        """Scenario B(ii), exercised end-to-end through
+        validate_artifact_manifest rather than calling
+        verify_canonical_run_intent directly: a run_intent.json tampered to
+        name a producer outside CANONICAL_PRODUCERS must fail the
+        best-effort local re-verification
+        (_verify_canonical_run_intent_if_resolvable) once its digest is
+        recomputed to match (isolating this from the separate tamper-digest
+        check)."""
+        fx = _CanonicalFixture(tmp_path)
+        raw = json.loads(fx.run_intent_path.read_text())
+        raw["producer"] = {"repo": "renquant-orchestrator", "entrypoint": "some.OtherTask"}
+        fx.run_intent_path.write_text(json.dumps(raw))
+
+        manifest = {
+            "artifact_id": "canonical-gbdt-tampered-producer",
+            "model_family": "gbdt-panel-ltr",
+            "strategy": "renquant_104",
+            "fingerprint": "sha256:candidate-tampered-producer",
+            "uri": "object://renquant-artifacts/canonical-gbdt-tampered-producer.json",
+            "promotion_status": "prod",
+            "metrics": {"accepted": True},
+            # Built AFTER tampering, so run_intent_digest matches the
+            # tampered bytes exactly -- isolates the producer-allowlist
+            # failure from the separate tamper/digest-mismatch check.
+            "provenance": build_canonical_provenance_reference(
+                fx.run_intent_path, "sha256:candidate-tampered-producer",
+            ),
+        }
+        with pytest.raises(ValueError, match="failed verification"):
+            validate_artifact_manifest(manifest)
+
+    def test_canonical_over_registered_experiment_output_rejected(self, tmp_path):
+        """Design doc: 'Also keep the round-5 negative check available for
+        canonical (does output_dir carry a real EXPLORATORY_ONLY marker?)
+        by reusing the existing reject_exploratory_promotion call.' A
+        candidate manifest whose own local_artifact_path resolves under a
+        real, registered EXPLORATORY_ONLY experiment output must be
+        rejected even though it declares kind='canonical' with an
+        otherwise-valid artifact_digest binding."""
+        run_dir = tmp_path / "sim_output" / "exp-canonical-bypass"
+        write_experiment_classification(
+            run_dir, experiment_id="exp-canonical-bypass",
+            manifest_path="experiments/manifests/exp-canonical-bypass.json",
+            manifest_digest="sha256:canonical-bypass", config_digest="sha256:c",
+        )
+        index_path = tmp_path / "experiments" / "manifests" / "INDEX.json"
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_path.write_text(
+            json.dumps({"exp-canonical-bypass": {"digest": "sha256:canonical-bypass", "path": "x"}})
+        )
+        candidate_file = run_dir / "candidate_run" / "output.json"
+        candidate_file.parent.mkdir(parents=True)
+        candidate_file.write_text("{}")
+
+        manifest = {
+            "artifact_id": "candidate-from-exploratory-run",
+            "model_family": "gbdt-panel-ltr",
+            "strategy": "renquant_104",
+            "fingerprint": "sha256:candidate",
+            "uri": "object://renquant-artifacts/candidate.json",
+            "promotion_status": "prod",
+            "metrics": {"accepted": True},
+            "local_artifact_path": str(candidate_file),
+            "provenance": {
+                "kind": "canonical",
+                "run_intent_path": "store://nonexistent/run_intent.json",
+                "run_intent_digest": "sha256:" + "0" * 64,
+                "artifact_digest": "sha256:candidate",
+            },
+        }
+        with pytest.raises(ValueError, match="EXPLORATORY_ONLY classification record"):
+            validate_artifact_manifest(manifest)
+
+    def test_canonical_kind_missing_required_subkeys_rejected(self, tmp_path):
+        manifest = {
+            "artifact_id": "candidate",
+            "model_family": "gbdt-panel-ltr",
+            "strategy": "renquant_104",
+            "fingerprint": "sha256:candidate",
+            "uri": "object://renquant-artifacts/candidate.json",
+            "promotion_status": "prod",
+            "metrics": {"accepted": True},
+            "provenance": {"kind": "canonical"},
+        }
         with pytest.raises(ValueError, match="missing required keys"):
             validate_artifact_manifest(manifest)
