@@ -37,6 +37,8 @@ checks a second time -- see that module's own docstring for the
 from __future__ import annotations
 
 import json
+import subprocess
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -44,6 +46,7 @@ from typing import Any
 from renquant_common.model_fingerprint import artifact_sha256
 
 from .experiment_registry import verify_code_pin
+from .contracts import hash_jsonable
 
 CANONICAL_RUN_INTENT_SCHEMA_VERSION = 1
 CANONICAL_RUN_INTENT_FILENAME = "run_intent.json"
@@ -112,6 +115,80 @@ MAX_REPO_ROOT_SEARCH_LEVELS = 6
 #:   involved.
 CANONICAL_PUBLICATIONS_DIRNAME = "canonical_publications"
 CANONICAL_PUBLICATIONS_INDEX_FILENAME = "INDEX.json"
+
+
+def _normalize_registry_remote(url: str) -> str:
+    url = url.strip().rstrip("/")
+    return url[:-4].lower() if url.endswith(".git") else url.lower()
+
+
+@dataclass(frozen=True)
+class CanonicalPublicationSnapshot:
+    """A trusted, immutable checkout of the reviewed publication registry.
+
+    This is deliberately supplied by the validating pipeline from its pinned
+    integration configuration, never read from an artifact manifest.  A
+    writable runtime directory is not a trust anchor: validation requires a
+    clean checkout at this exact commit and accepts publication records only
+    from its tracked canonical-publications subtree.
+    """
+
+    repo_root: Path
+    commit: str
+    remote: str
+
+
+def canonical_publication_binding(entry: dict[str, Any]) -> str:
+    """Stable digest of the publication index entry bound into a manifest."""
+    return hash_jsonable(entry)
+
+
+def verify_canonical_publication_snapshot(
+    snapshot: CanonicalPublicationSnapshot | None,
+) -> tuple[Path | None, list[str]]:
+    """Resolve a trusted registry snapshot or return fail-closed errors."""
+    if snapshot is None:
+        return None, [
+            "no trusted canonical publication snapshot was supplied; prod "
+            "validation may not trust an ambient writable registry directory"
+        ]
+    repo_root = Path(snapshot.repo_root).resolve()
+    errors: list[str] = []
+    try:
+        head = subprocess.check_output(
+            ("git", "-C", str(repo_root), "rev-parse", "HEAD"), text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        dirty = subprocess.check_output(
+            ("git", "-C", str(repo_root), "status", "--porcelain"), text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        remote = subprocess.check_output(
+            ("git", "-C", str(repo_root), "remote", "get-url", "origin"), text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        return None, [f"canonical publication snapshot git verification failed: {exc}"]
+    if head != snapshot.commit:
+        errors.append(
+            f"canonical publication snapshot HEAD {head} does not match pinned {snapshot.commit}"
+        )
+    if dirty:
+        errors.append("canonical publication snapshot checkout is dirty")
+    if _normalize_registry_remote(remote) != _normalize_registry_remote(snapshot.remote):
+        errors.append(
+            f"canonical publication snapshot remote mismatch: expected {snapshot.remote}, got {remote}"
+        )
+    publications_dir = repo_root / "registry" / CANONICAL_PUBLICATIONS_DIRNAME
+    index_relpath = str(publications_dir.relative_to(repo_root) / CANONICAL_PUBLICATIONS_INDEX_FILENAME)
+    try:
+        subprocess.check_output(
+            ("git", "-C", str(repo_root), "ls-files", "--error-unmatch", index_relpath),
+            text=True, stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        errors.append("canonical publication snapshot INDEX.json is not tracked by the pinned commit")
+    return (None, errors) if errors else (publications_dir, [])
 
 
 def default_canonical_publications_dir() -> Path | None:

@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 from renquant_common import Job, Pipeline, Task
 
 from .experiment_registry import provenance_required, verify_artifact_provenance
+from .canonical_registry import CanonicalPublicationSnapshot
 
 #: FutureWarning emitted (instead of raising) when a manifest with NO
 #: ``provenance`` key validates through the standard funnel while the F-7
@@ -33,17 +33,12 @@ _MISSING_PROVENANCE_WARNING = (
 class ArtifactManifestContext:
     manifest: dict[str, Any]
     validation_report: dict[str, Any] = field(default_factory=dict)
-    #: Optional override for where the authoritative canonical publication
-    #: store lives (defaults to this repo's registry/canonical_publications
-    #: -- see renquant_artifacts.canonical_registry). Supplied by the
-    #: trusted validating caller only; NEVER read from the manifest.
-    canonical_publications_dir: Path | None = None
+    #: Exact, clean registry checkout pinned by the trusted validating caller;
+    #: never inferred from the manifest or an ambient writable directory.
+    canonical_publication_snapshot: CanonicalPublicationSnapshot | None = None
     #: Trusted-caller opt-in that closes the F-7 provenance tolerance
-    #: window for THIS validation regardless of date/environment (it can
-    #: only strengthen enforcement, never weaken it -- once
-    #: ``provenance_required()`` is True, False here is ignored). This is
-    #: the per-callsite hook the sequenced consumer migrations
-    #: (renquant-model#55, renquant-orchestrator#518) flip as they land.
+    #: window for THIS validation regardless of date/environment. It can
+    #: only strengthen enforcement, never weaken it.
     require_provenance: bool = False
 
 
@@ -135,7 +130,7 @@ class ValidateArtifactManifestTask(Task):
         ):
             verify_artifact_provenance(
                 ctx.manifest,
-                canonical_publications_dir=ctx.canonical_publications_dir,
+                canonical_publication_snapshot=ctx.canonical_publication_snapshot,
             )
         else:
             warnings.warn(_MISSING_PROVENANCE_WARNING, FutureWarning, stacklevel=2)
@@ -162,7 +157,7 @@ class ArtifactManifestValidationPipeline(Pipeline):
 def validate_artifact_manifest(
     manifest: dict[str, Any],
     *,
-    canonical_publications_dir: Path | None = None,
+    canonical_publication_snapshot: CanonicalPublicationSnapshot | None = None,
     require_provenance: bool = False,
 ) -> dict[str, Any]:
     """Validate an artifact manifest and return its audit report.
@@ -173,7 +168,7 @@ def validate_artifact_manifest(
     """
     ctx = ArtifactManifestContext(
         manifest,
-        canonical_publications_dir=canonical_publications_dir,
+        canonical_publication_snapshot=canonical_publication_snapshot,
         require_provenance=require_provenance,
     )
     ArtifactManifestValidationPipeline().run(ctx)

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from renquant_artifacts import (
+    CanonicalPublicationSnapshot,
     build_canonical_provenance_reference,
     load_artifact_manifest,
     register_canonical_publication,
@@ -15,11 +17,26 @@ from renquant_artifacts import (
 from renquant_artifacts.canonical_registry import (
     CANONICAL_RUN_INTENT_FILENAME,
     CANONICAL_CODE_PIN_SUBREPOS,
+    canonical_publication_binding,
+    resolve_canonical_publication,
 )
 
 
 def _pubs_dir(root: Path) -> Path:
-    return root / "registry" / "canonical_publications"
+    return root / "registry_repo" / "registry" / "canonical_publications"
+
+
+def _publication_snapshot(root: Path) -> CanonicalPublicationSnapshot:
+    repo_root = root / "registry_repo"
+    if not (repo_root / ".git").exists():
+        subprocess.run(["git", "init", "-q"], cwd=repo_root, check=True)
+        subprocess.run(["git", "config", "user.email", "t@example.com"], cwd=repo_root, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=repo_root, check=True)
+        subprocess.run(["git", "remote", "add", "origin", "https://github.com/hallovorld/renquant-artifacts"], cwd=repo_root, check=True)
+        subprocess.run(["git", "add", "registry"], cwd=repo_root, check=True)
+        subprocess.run(["git", "commit", "-q", "-m", "publish"], cwd=repo_root, check=True)
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_root, text=True).strip()
+    return CanonicalPublicationSnapshot(repo_root, commit, "https://github.com/hallovorld/renquant-artifacts")
 
 
 def _canonical_provenance_for(root: Path, fingerprint: str) -> dict:
@@ -63,7 +80,15 @@ def _canonical_provenance_for(root: Path, fingerprint: str) -> dict:
             artifact_digest=fingerprint,
             artifact_uri=f"object://renquant-artifacts/{fingerprint.replace(':', '_')}.json",
         )
-    return build_canonical_provenance_reference(run_intent_path, fingerprint)
+    snapshot = _publication_snapshot(root)
+    entry, _record, errors = resolve_canonical_publication(fingerprint, _pubs_dir(root))
+    assert errors == []
+    provenance = build_canonical_provenance_reference(run_intent_path, fingerprint)
+    provenance.update(
+        registry_snapshot_commit=snapshot.commit,
+        publication_record_digest=canonical_publication_binding(entry),
+    )
+    return provenance
 
 
 def _write_manifest(path: Path, **overrides) -> dict:
@@ -82,8 +107,7 @@ def _write_manifest(path: Path, **overrides) -> dict:
         # F-7 round-4 follow-up: prod manifests must resolve a REAL
         # publication record from the canonical publication store, so this
         # fixture registers one (see _canonical_provenance_for) and tests
-        # thread canonical_publications_dir=_pubs_dir(tmp_path) into the
-        # resolve/load calls.
+        # thread a clean, exact registry snapshot into resolve/load calls.
     }
     payload.update(overrides)
     if "provenance" not in payload:
@@ -109,7 +133,7 @@ def test_resolve_artifact_manifest_selects_prod_by_strategy_and_family(tmp_path:
         strategy="renquant_104",
         model_family="gbdt-panel-ltr",
         promotion_status="prod",
-        canonical_publications_dir=_pubs_dir(tmp_path),
+        canonical_publication_snapshot=_publication_snapshot(tmp_path),
     )
 
     assert resolved == expected
@@ -134,7 +158,7 @@ def test_load_artifact_manifest_validates_file(tmp_path: Path) -> None:
 
     assert (
         load_artifact_manifest(
-            path, canonical_publications_dir=_pubs_dir(tmp_path)
+            path, canonical_publication_snapshot=_publication_snapshot(tmp_path)
         )["artifact_id"]
         == "panel-ltr-prod"
     )

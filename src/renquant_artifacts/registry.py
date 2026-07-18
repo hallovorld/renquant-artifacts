@@ -8,6 +8,7 @@ from typing import Any
 
 from renquant_common import Job, Pipeline, Task
 
+from .canonical_registry import CanonicalPublicationSnapshot
 from .validation import validate_artifact_manifest
 
 
@@ -24,13 +25,11 @@ class ArtifactRegistryContext:
     selected_path: Path | None = None
     manifest: dict[str, Any] | None = None
     validation_report: dict[str, Any] = field(default_factory=dict)
-    #: Optional override for the canonical publication store location --
-    #: trusted-caller configuration threaded through to
-    #: validate_artifact_manifest; never read from a manifest.
-    canonical_publications_dir: Path | None = None
+    #: Exact registry snapshot supplied by trusted integration configuration;
+    #: never read from a manifest or inferred from a writable checkout.
+    canonical_publication_snapshot: CanonicalPublicationSnapshot | None = None
     #: Trusted-caller opt-in that closes the F-7 provenance tolerance
-    #: window for this resolution -- threaded through to
-    #: validate_artifact_manifest; can only strengthen enforcement.
+    #: window for this resolution. It can only strengthen enforcement.
     require_provenance: bool = False
 
 
@@ -85,7 +84,7 @@ class ValidateSelectedArtifactManifestTask(Task):
             raise ValueError("manifest must be selected before validation")
         ctx.validation_report = validate_artifact_manifest(
             ctx.manifest,
-            canonical_publications_dir=ctx.canonical_publications_dir,
+            canonical_publication_snapshot=ctx.canonical_publication_snapshot,
             require_provenance=ctx.require_provenance,
         )
         ctx.validation_report["path"] = str(ctx.selected_path)
@@ -114,7 +113,7 @@ def resolve_artifact_manifest(
     strategy: str | None = None,
     model_family: str | None = None,
     promotion_status: str | None = None,
-    canonical_publications_dir: Path | None = None,
+    canonical_publication_snapshot: CanonicalPublicationSnapshot | None = None,
     require_provenance: bool = False,
 ) -> dict[str, Any]:
     """Resolve and validate exactly one artifact manifest from a registry."""
@@ -124,7 +123,7 @@ def resolve_artifact_manifest(
         strategy=strategy,
         model_family=model_family,
         promotion_status=promotion_status,
-        canonical_publications_dir=canonical_publications_dir,
+        canonical_publication_snapshot=canonical_publication_snapshot,
         require_provenance=require_provenance,
     )
     ArtifactManifestResolverPipeline().run(ctx)
@@ -136,14 +135,14 @@ def resolve_artifact_manifest(
 def load_artifact_manifest(
     path: str | Path,
     *,
-    canonical_publications_dir: Path | None = None,
+    canonical_publication_snapshot: CanonicalPublicationSnapshot | None = None,
     require_provenance: bool = False,
 ) -> dict[str, Any]:
     """Load and validate a single artifact manifest file."""
     manifest = json.loads(Path(path).read_text(encoding="utf-8"))
     validate_artifact_manifest(
         manifest,
-        canonical_publications_dir=canonical_publications_dir,
+        canonical_publication_snapshot=canonical_publication_snapshot,
         require_provenance=require_provenance,
     )
     return manifest

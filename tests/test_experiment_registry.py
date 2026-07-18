@@ -21,6 +21,7 @@ from pathlib import Path
 import pytest
 
 from renquant_artifacts import (
+    CanonicalPublicationSnapshot,
     build_canonical_provenance_reference,
     build_experiment_provenance_reference,
     load_artifact_manifest,
@@ -43,6 +44,7 @@ from renquant_artifacts import (
 from renquant_artifacts.canonical_registry import (
     CANONICAL_PUBLICATIONS_INDEX_FILENAME,
     _record_filename,
+    canonical_publication_binding,
 )
 from renquant_common.model_fingerprint import artifact_sha256
 
@@ -59,6 +61,37 @@ def _init_repo(path: Path, *, remote: str) -> str:
     return subprocess.check_output(
         ["git", "-C", str(path), "log", "-1", "--format=%H"], text=True,
     ).strip()
+
+
+def _commit_publication_snapshot(publications_dir: Path) -> CanonicalPublicationSnapshot:
+    """Commit a dedicated registry checkout and return its exact trust pin."""
+    repo_root = publications_dir.parents[1]
+    subprocess.run(["git", "init", "-q"], cwd=repo_root, check=True)
+    subprocess.run(["git", "config", "user.email", "t@example.com"], cwd=repo_root, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=repo_root, check=True)
+    subprocess.run(["git", "remote", "add", "origin", "https://github.com/hallovorld/renquant-artifacts"], cwd=repo_root, check=True)
+    subprocess.run(["git", "add", "registry"], cwd=repo_root, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "publish"], cwd=repo_root, check=True)
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_root, text=True).strip()
+    return CanonicalPublicationSnapshot(
+        repo_root=repo_root,
+        commit=commit,
+        remote="https://github.com/hallovorld/renquant-artifacts",
+    )
+
+
+def _publication_provenance(
+    run_intent_path: Path, artifact_digest: str, publications_dir: Path,
+    snapshot: CanonicalPublicationSnapshot,
+) -> dict:
+    entry, _record, errors = resolve_canonical_publication(artifact_digest, publications_dir)
+    assert errors == []
+    provenance = build_canonical_provenance_reference(run_intent_path, artifact_digest)
+    provenance.update(
+        registry_snapshot_commit=snapshot.commit,
+        publication_record_digest=canonical_publication_binding(entry),
+    )
+    return provenance
 
 
 # ── code-pin verification (real git repos, not mocks) ──────────────────────
@@ -965,7 +998,7 @@ class TestCanonicalProvenance:
         end-to-end at promotion_status='prod' because the authoritative
         record resolves from the store (round-4 boundary)."""
         fx = _CanonicalFixture(tmp_path)
-        pubs = tmp_path / "registry" / "canonical_publications"
+        pubs = tmp_path / "registry_repo" / "registry" / "canonical_publications"
         register_canonical_publication(
             pubs,
             run_intent_path=fx.run_intent_path,
@@ -973,6 +1006,7 @@ class TestCanonicalProvenance:
             artifact_uri="object://renquant-artifacts/canonical-gbdt-20260716.bin",
             repo_root=fx.tmp_path,
         )
+        snapshot = _commit_publication_snapshot(pubs)
         manifest = {
             "artifact_id": "canonical-gbdt-20260716",
             "model_family": "gbdt-panel-ltr",
@@ -981,11 +1015,13 @@ class TestCanonicalProvenance:
             "uri": "object://renquant-artifacts/canonical-gbdt-20260716.json",
             "promotion_status": "prod",
             "metrics": {"accepted": True},
-            "provenance": build_canonical_provenance_reference(
-                fx.run_intent_path, "sha256:candidate-canonical",
+            "provenance": _publication_provenance(
+                fx.run_intent_path, "sha256:candidate-canonical", pubs, snapshot,
             ),
         }
-        report = validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+        report = validate_artifact_manifest(
+            manifest, canonical_publication_snapshot=snapshot,
+        )
         assert report["ok"] is True
 
     def test_artifact_digest_mismatch_from_a_different_run_rejected(self, tmp_path):
@@ -1179,7 +1215,7 @@ class TestCanonicalPublicationRecord:
         run_intent_digest) -- and it is still rejected, because
         self-consistent fields are not authority: no publication is
         registered for THIS artifact digest."""
-        pubs = tmp_path / "pubs"
+        pubs = tmp_path / "registry_repo" / "registry" / "canonical_publications"
         unrelated_intent = _write_valid_intent(tmp_path / "runs" / "other", "run-other")
         register_canonical_publication(
             pubs,
@@ -1197,8 +1233,8 @@ class TestCanonicalPublicationRecord:
                 "artifact_digest": "sha256:fabricated-candidate",
             },
         )
-        with pytest.raises(ValueError, match="no canonical publication record is registered"):
-            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+        with pytest.raises(ValueError, match="required registry bindings"):
+            validate_artifact_manifest(manifest)
 
     def test_prod_fails_closed_when_no_store_is_resolvable(self, tmp_path):
         """With NO caller-supplied store location, the default resolves to
@@ -1216,7 +1252,7 @@ class TestCanonicalPublicationRecord:
                 "artifact_digest": "sha256:no-store-candidate",
             },
         )
-        with pytest.raises(ValueError, match="canonical publication"):
+        with pytest.raises(ValueError, match="required registry bindings"):
             validate_artifact_manifest(manifest)
 
     def test_prod_registered_digest_mismatch_rejected(self, tmp_path):
@@ -1224,7 +1260,7 @@ class TestCanonicalPublicationRecord:
         manifest declares a DIFFERENT run_intent_digest than the one the
         publication binds -- rejected as mismatched (a manifest cannot
         re-attribute a published artifact to another run)."""
-        pubs = tmp_path / "pubs"
+        pubs = tmp_path / "registry_repo" / "registry" / "canonical_publications"
         intent = _write_valid_intent(tmp_path / "runs" / "real", "run-real")
         register_canonical_publication(
             pubs,
@@ -1241,15 +1277,15 @@ class TestCanonicalPublicationRecord:
                 "artifact_digest": "sha256:published-artifact",
             },
         )
-        with pytest.raises(ValueError, match="does not match the registered publication binding"):
-            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+        with pytest.raises(ValueError, match="required registry bindings"):
+            validate_artifact_manifest(manifest)
 
     def test_prod_tampered_publication_record_rejected(self, tmp_path):
         """The persisted record file is edited AFTER publication (e.g. to
         swap the producer). The store is content-addressed: recomputing the
         record's sha256 against the indexed run_intent_digest detects the
         edit with no local build-machine path involved -- rejected."""
-        pubs = tmp_path / "pubs"
+        pubs = tmp_path / "registry_repo" / "registry" / "canonical_publications"
         intent = _write_valid_intent(tmp_path / "runs" / "tamper", "run-tamper")
         register_canonical_publication(
             pubs,
@@ -1272,8 +1308,8 @@ class TestCanonicalPublicationRecord:
                 "artifact_digest": "sha256:tamper-artifact",
             },
         )
-        with pytest.raises(ValueError, match="modified after publication"):
-            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+        with pytest.raises(ValueError, match="required registry bindings"):
+            validate_artifact_manifest(manifest)
 
     def test_forged_record_with_unallowlisted_producer_rejected(self, tmp_path):
         """Prod-side producer-allowlist enforcement through the PERSISTED
@@ -1283,7 +1319,7 @@ class TestCanonicalPublicationRecord:
         internally consistent -- but the record names a producer outside
         CANONICAL_PRODUCERS. The resolver's intrinsic verification of the
         persisted record rejects it."""
-        pubs = tmp_path / "pubs"
+        pubs = tmp_path / "registry_repo" / "registry" / "canonical_publications"
         pubs.mkdir(parents=True)
         forged = {
             "schema_version": 1,
@@ -1328,8 +1364,8 @@ class TestCanonicalPublicationRecord:
                 "artifact_digest": "sha256:forged-artifact",
             },
         )
-        with pytest.raises(ValueError, match="CANONICAL_PRODUCERS allowlist"):
-            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+        with pytest.raises(ValueError, match="required registry bindings"):
+            validate_artifact_manifest(manifest)
 
     def test_prod_opaque_object_store_identity_accepted_via_publication_record(self, tmp_path):
         """The normal object-store identity shape round 3/4 called out as
@@ -1339,7 +1375,7 @@ class TestCanonicalPublicationRecord:
         Acceptance is decided entirely by resolving the authoritative
         publication record from the store -- proving the boundary no longer
         depends on local file visibility in either direction."""
-        pubs = tmp_path / "pubs"
+        pubs = tmp_path / "registry_repo" / "registry" / "canonical_publications"
         intent = _write_valid_intent(tmp_path / "runs" / "opaque", "run-opaque")
         digest = artifact_sha256(intent)
         register_canonical_publication(
@@ -1348,19 +1384,44 @@ class TestCanonicalPublicationRecord:
             artifact_digest="sha256:opaque-artifact",
             artifact_uri="object://renquant-artifacts/opaque.bin",
         )
+        snapshot = _commit_publication_snapshot(pubs)
         manifest = self._manifest(
             "sha256:opaque-artifact",
-            {
-                "kind": "canonical",
-                # Deliberately NOT the local path the intent was written to:
-                # the validating machine sees only the opaque reference.
-                "run_intent_path": "store://renquant-artifacts/opaque/run_intent.json",
-                "run_intent_digest": digest,
-                "artifact_digest": "sha256:opaque-artifact",
-            },
+            _publication_provenance(intent, "sha256:opaque-artifact", pubs, snapshot),
         )
-        report = validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+        report = validate_artifact_manifest(
+            manifest, canonical_publication_snapshot=snapshot,
+        )
         assert report["ok"] is True
+
+    def test_valid_local_record_after_pinned_snapshot_is_rejected(self, tmp_path):
+        """A runtime-written, internally valid record is not trusted after
+        the validating caller has pinned a clean registry snapshot."""
+        pubs = tmp_path / "registry_repo" / "registry" / "canonical_publications"
+        initial_intent = _write_valid_intent(tmp_path / "runs" / "initial", "run-initial")
+        register_canonical_publication(
+            pubs,
+            run_intent_path=initial_intent,
+            artifact_digest="sha256:initial-artifact",
+            artifact_uri="object://renquant-artifacts/initial.bin",
+        )
+        snapshot = _commit_publication_snapshot(pubs)
+
+        late_intent = _write_valid_intent(tmp_path / "runs" / "late", "run-late")
+        register_canonical_publication(
+            pubs,
+            run_intent_path=late_intent,
+            artifact_digest="sha256:late-artifact",
+            artifact_uri="object://renquant-artifacts/late.bin",
+        )
+        manifest = self._manifest(
+            "sha256:late-artifact",
+            _publication_provenance(late_intent, "sha256:late-artifact", pubs, snapshot),
+        )
+        with pytest.raises(ValueError, match="checkout is dirty"):
+            validate_artifact_manifest(
+                manifest, canonical_publication_snapshot=snapshot,
+            )
 
     def test_local_visibility_never_substitutes_for_publication_record(self, tmp_path):
         """Round-4 requirement 4, exercised in the direction that matters:
@@ -1370,7 +1431,7 @@ class TestCanonicalPublicationRecord:
         supplemental diagnostics; it is never the boundary, and local
         visibility cannot stand in for the authoritative registry record."""
         fx = _CanonicalFixture(tmp_path)
-        pubs = tmp_path / "pubs"  # exists as a store location, but nothing registered
+        pubs = tmp_path / "registry_repo" / "registry" / "canonical_publications"
         pubs.mkdir(parents=True)
         manifest = self._manifest(
             "sha256:local-only-candidate",
@@ -1378,8 +1439,8 @@ class TestCanonicalPublicationRecord:
                 fx.run_intent_path, "sha256:local-only-candidate",
             ),
         )
-        with pytest.raises(ValueError, match="canonical publication"):
-            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+        with pytest.raises(ValueError, match="required registry bindings"):
+            validate_artifact_manifest(manifest)
 
     def test_register_is_append_only_per_artifact_digest(self, tmp_path):
         """A publication may never be silently rebound: registering the
