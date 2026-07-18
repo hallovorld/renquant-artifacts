@@ -50,6 +50,14 @@ def test_malformed_active_pointer_refused(tmp_path: Path) -> None:
         store.resolve_active()
 
 
+def test_binary_corrupted_active_pointer_refused(tmp_path: Path) -> None:
+    store = make_store(tmp_path)
+    publish_simple(store)
+    (tmp_path / "ACTIVE").write_bytes(b"\xff\xfe\x00garbage")
+    with pytest.raises(BundleReadRefusedError, match="malformed ACTIVE"):
+        store.resolve_active()
+
+
 def test_member_digest_drift_refused(tmp_path: Path) -> None:
     store = make_store(tmp_path)
     result = publish_simple(store)

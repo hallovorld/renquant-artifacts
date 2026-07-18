@@ -889,6 +889,10 @@ class BundleStore:
             text = self.active_path.read_text(encoding="ascii")
         except FileNotFoundError:
             return None
+        except UnicodeDecodeError as exc:
+            raise BundleReadRefusedError(
+                f"malformed ACTIVE pointer (non-ASCII bytes): {exc}"
+            ) from exc
         parts = text.strip().split(" ")
         if len(parts) != 2 or not parts[0].isdigit() or not BUNDLE_ID_RE.match(parts[1]):
             raise BundleReadRefusedError(
