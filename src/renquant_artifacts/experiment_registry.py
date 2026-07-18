@@ -35,7 +35,10 @@ consumes is not governance, it is decoration.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+from collections.abc import Mapping
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -100,6 +103,75 @@ EXPERIMENT_PINS_REQUIRED_KEYS = frozenset(
 #:   manifest["fingerprint"]`` binding, checked unconditionally and first --
 #:   see :func:`verify_artifact_provenance` for the full contract.
 PROVENANCE_KINDS = frozenset({"experiment", "canonical", "none"})
+
+#: Environment flag that opts an environment into strict required-provenance
+#: enforcement AHEAD of :data:`PROVENANCE_REQUIRED_AFTER` (set it to ``"1"``).
+#: The flag is opt-in-early ONLY -- it can bring the strict F-7 behavior
+#: forward, but no value of it can disable enforcement once the window has
+#: closed (see :func:`provenance_required`). Naming follows this repo's
+#: existing ``RQ_*`` environment convention (``RQ_ROOT``,
+#: ``RQ_BUNDLE_STORE_ROOT`` in :mod:`renquant_artifacts.bundle_store_location`).
+PROVENANCE_ENFORCEMENT_ENV = "RQ_REQUIRE_PROVENANCE"
+
+#: On/after this date the standard manifest read/validation funnel
+#: (:class:`renquant_artifacts.validation.ValidateArtifactManifestTask` and
+#: everything that funnels through it: ``validate_artifact_manifest``,
+#: ``load_artifact_manifest``, ``resolve_artifact_manifest``, and
+#: renquant_pipeline's runtime input validation) REQUIRES the F-7
+#: ``provenance`` record on every manifest and fails closed without it.
+#: Before this date a manifest with NO ``provenance`` key at all is
+#: tolerated with a ``FutureWarning`` so pre-F-7 manifests keep validating
+#: while the sequenced consumer migrations (renquant-model#55,
+#: renquant-orchestrator#518) land -- #24's own review ordering put those
+#: AFTER the contract change, so unconditional enforcement was a flag-day
+#: break for every consumer repo's CI.
+#:
+#: This mirrors the fleet's existing enforcement-window precedent -- the
+#: umbrella manifest-URI resolver's ``ARTIFACT_DIGEST_REQUIRED_AFTER``
+#: (tolerate + warn before the date so existing manifests keep validating;
+#: fail closed on/after it). Date chosen to give the two migrations a
+#: ~4-week landing window from 2026-07-18; if they land earlier, flip
+#: enforcement on early per-environment via
+#: :data:`PROVENANCE_ENFORCEMENT_ENV` or per-callsite via
+#: ``require_provenance=True`` instead of waiting for the date.
+#:
+#: SCOPE -- what this window does NOT relax:
+#:
+#: * :func:`verify_artifact_provenance` itself stays unconditionally
+#:   strict for every direct caller.
+#: * A manifest that CARRIES a ``provenance`` key (even a malformed one)
+#:   is always fully verified -- only complete absence of the key (the
+#:   pre-F-7 legacy shape) is tolerated inside the window.
+#: * The canonical-publication paths added in #24
+#:   (:mod:`renquant_artifacts.canonical_registry`) are new surfaces with
+#:   no legacy callers and keep strict enforcement unconditionally.
+PROVENANCE_REQUIRED_AFTER = date(2026, 8, 15)
+
+
+def provenance_required(
+    now: date | None = None,
+    *,
+    environ: Mapping[str, str] | None = None,
+) -> bool:
+    """Whether a missing ``provenance`` record fails closed in the standard
+    manifest validation funnel right now.
+
+    Returns True on/after :data:`PROVENANCE_REQUIRED_AFTER`, or earlier when
+    the environment opts in via :data:`PROVENANCE_ENFORCEMENT_ENV` (any
+    non-empty value other than ``"0"``; canonically ``"1"``). The
+    environment flag can only ENABLE enforcement early -- once the date has
+    passed, enforcement is unconditional and no environment value can turn
+    it back off (fail-closed direction; same one-way semantics as the
+    umbrella's ``digest_required``).
+
+    ``now`` / ``environ`` are injectable for deterministic tests; they
+    default to today's date and ``os.environ``.
+    """
+    env = os.environ if environ is None else environ
+    flag = env.get(PROVENANCE_ENFORCEMENT_ENV, "")
+    if flag and flag != "0":
+        return True
+    return (now or date.today()) >= PROVENANCE_REQUIRED_AFTER
 
 #: Required keys inside ``provenance`` when ``kind == "experiment"``.
 PROVENANCE_EXPERIMENT_REQUIRED_KEYS = frozenset({"dir", "registry_index_path"})

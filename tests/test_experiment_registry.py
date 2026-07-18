@@ -448,7 +448,14 @@ class TestPromotionBoundaryIntegration:
         promoted simply by omitting provenance_dir." provenance is now
         required, so silent omission is itself a rejection. See
         test_kind_none_ordinary_artifact_is_accepted for how an ordinary
-        artifact expresses the same intent explicitly instead."""
+        artifact expresses the same intent explicitly instead.
+
+        Enforcement-window follow-up (#24 sequencing fix): the rejection is
+        GOVERNED until the sequenced consumer migrations (renquant-model#55,
+        renquant-orchestrator#518) land -- asserted here through the
+        per-call strict switch, which is the exact post-migration behavior;
+        the in-window warn-not-raise legacy shape is pinned in
+        tests/test_provenance_enforcement_window.py."""
         manifest = {
             "artifact_id": "ordinary-artifact",
             "model_family": "gbdt-panel-ltr",
@@ -459,7 +466,7 @@ class TestPromotionBoundaryIntegration:
             "metrics": {"accepted": True},
         }
         with pytest.raises(ValueError, match="missing a required 'provenance' record"):
-            validate_artifact_manifest(manifest)
+            validate_artifact_manifest(manifest, require_provenance=True)
 
 
 class TestProvenanceBypassClosed:
@@ -500,8 +507,13 @@ class TestProvenanceBypassClosed:
         index_path.write_text(json.dumps({"exp-1": {"digest": "sha256:m", "path": "x"}}))
 
         manifest = self._candidate()  # no provenance key at all
+        # Post-migration (window-closed) behavior: rejected outright. The
+        # enforcement window (#24 sequencing fix) governs WHEN this becomes
+        # unconditional -- never WHETHER: even while the window is open the
+        # omission is surfaced as a FutureWarning, not silently accepted
+        # (see tests/test_provenance_enforcement_window.py).
         with pytest.raises(ValueError, match="missing a required 'provenance' record"):
-            validate_artifact_manifest(manifest)
+            validate_artifact_manifest(manifest, require_provenance=True)
 
     def test_provenance_pointing_at_nonexistent_directory_rejected(self, tmp_path):
         """provenance.kind='experiment' resolves to a directory that does
