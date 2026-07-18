@@ -36,21 +36,14 @@ protocol semantics.
   publication's job — the P1 seal) and never opens any sibling file, so
   the flat pair alongside is untouched by construction. Refuses missing
   parent dirs and non-local mounts (RFC §2.1 guard, injectable).
-- `bundle_alarms.py` — `create_sentinel_alarm_hook()`: the §2.4 alarm
-  bound to the REAL drift-sentinel channel. The orchestrator sentinel
-  (`ops/run_surface_drift_check.py`) alarms via
-  `renquant_common.notify.send` with the topic from `$RQ_ROOT/.env`
-  (`ops/liveness_common.py:alert`); renquant-common is an install
-  dependency of this package, so the binding is in-boundary — no
-  orchestrator import. Hook contract: stderr `ALARM[...]` record ALWAYS
-  first; then one ntfy send (never raises, honors `RENQUANT_NO_NOTIFY`);
-  unimportable renquant-common degrades to a loud stderr warning.
+- `bundle_alarms.py` — `create_stderr_alarm_hook()`: emits a stable
+  `ALARM[...]` containment event without reading umbrella runtime
+  configuration or selecting a notification channel. Artifacts owns the
+  event; an orchestrator adapter owns sentinel routing, delivery policy,
+  retries, and run evidence.
 - `bundle_breakglass.py` — `--store-root` now optional (declared-location
-  resolution, provenance echoed in the result JSON), alarm hook =
-  sentinel binding, tool_version 1.1.0. Incident-ref mandatory semantics
-  unchanged.
-- `tests/conftest.py` pins `RENQUANT_NO_NOTIFY=1` suite-wide (tests must
-  never send live notifications; wiring tests monkeypatch `send`).
+  resolution, provenance echoed in the result JSON), with the structured
+  containment event preserved. Incident-ref mandatory semantics unchanged.
 
 ## Verification
 
@@ -65,10 +58,9 @@ clean [VERIFIED, this branch, scratch clone]:
   refusal on missing parent / non-dir collision / non-local mount, init
   over a published store changes nothing and serving state stays gen 1.
 - break-glass CLI end-to-end against env- and declaration-resolved roots
-  (no `--store-root`); fail-closed when nothing resolves; commit alarm
-  reaches the sentinel channel (`notify.send` captured: title
-  `[bundle-store] breakglass_commit`, incident-ref in body, env_file =
-  `$RQ_ROOT/.env`) while the stderr record is retained.
+  (no `--store-root`); fail-closed when nothing resolves; every containment
+  action emits the structured stderr event while preserving the operation
+  record.
 - revert-cleanliness import-graph (RFC §3): the three new modules are
   imported ONLY by the break-glass CLI + package facade; the pre-P0
   serving/provenance modules (`contracts`, `registry`, `validation`)
@@ -99,11 +91,11 @@ artifact surgery — the flat pair is never touched).
    untracked store dir as info-only (it is gitignored by the umbrella
    companion PR).
 
-## Orchestrator-side follow-up (documented, not reached across)
+## Orchestrator-side follow-up (required before claiming sentinel delivery)
 
-The sentinel binding here is the outbound alarm channel. Defense in
-depth — the drift sentinel ALSO reading `OPERATIONS.jsonl` (surfacing
-breakglass/RECOVERY records in its daily scan) — is orchestrator-owned
-and belongs to P1+ alongside the run-surface manifest entry for the
-store; tracked in the umbrella companion progress doc, not implemented
-here.
+The artifacts event is not itself notification delivery. An
+orchestrator-owned adapter must consume the structured event and route it to
+the drift-sentinel channel, with delivery result and retry evidence captured
+in an orchestration run bundle. The drift sentinel reading `OPERATIONS.jsonl`
+for defense in depth remains orchestrator-owned and belongs to P1+ alongside
+the run-surface manifest entry for the store.

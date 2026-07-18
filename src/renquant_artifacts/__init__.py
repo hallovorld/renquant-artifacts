@@ -1,10 +1,9 @@
 """RenQuant artifact-registry package."""
 
 from .bundle_alarms import (
-    ALARM_TITLE_PREFIX,
     AlarmHook,
-    create_sentinel_alarm_hook,
-    sentinel_env_file,
+    create_stderr_alarm_hook,
+    format_alarm_record,
 )
 from .bundle_breakglass import build_breakglass_authorization
 from .bundle_contract_binding import (
@@ -76,7 +75,6 @@ from .validation import (
 )
 
 __all__ = [
-    "ALARM_TITLE_PREFIX",
     "AlarmHook",
     "ArtifactManifestContext",
     "ArtifactManifestResolverPipeline",
@@ -118,15 +116,15 @@ __all__ = [
     "compute_manifest_digest",
     "create_default_store",
     "create_pair_validator",
-    "create_sentinel_alarm_hook",
+    "create_stderr_alarm_hook",
     "declaration_path",
     "derive_bundle_id",
     "hash_jsonable",
+    "format_alarm_record",
     "init_store",
     "load_artifact_manifest",
     "resolve_artifact_manifest",
     "resolve_store_root",
-    "sentinel_env_file",
     "sha256_file",
     "validate_artifact_manifest",
     "validate_bundle_manifest_payload",
