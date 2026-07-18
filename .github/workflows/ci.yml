@@ -15,6 +15,16 @@ jobs:
         with:
           repository: hallovorld/renquant-common
           path: renquant-common
+      # Publish-time peer dep (RFC RenQuant#492 §5): sibling checkout only,
+      # NOT pip-installed — the phase-3 binding tests import the
+      # import-light renquant_pipeline.bundle_contract via the pytest
+      # pythonpath entry and read the phase-2 fixture vectors from this
+      # checkout; installing renquant-pipeline would drag its heavy
+      # runtime deps into a repo that must stay importable without them.
+      - uses: actions/checkout@v4
+        with:
+          repository: hallovorld/renquant-pipeline
+          path: renquant-pipeline
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"

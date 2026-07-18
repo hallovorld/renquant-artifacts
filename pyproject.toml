@@ -14,5 +14,12 @@ dependencies = ["renquant-common>=0.5,<1.0"]
 where = ["src"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src", "../renquant-common/src"]
+# ../renquant-pipeline/src: publish-time peer dep (RFC RenQuant#492 §5) —
+# the phase-3 binding tests import renquant_pipeline.bundle_contract
+# (import-light by that module's pinned contract) and read the phase-2
+# fixture vectors from the sibling checkout. The package itself stays
+# importable without renquant-pipeline (lazy import inside the factory,
+# pinned by a subprocess test); this entry is test plumbing, NOT an
+# install dependency.
+pythonpath = ["src", "../renquant-common/src", "../renquant-pipeline/src"]
 testpaths = ["tests"]

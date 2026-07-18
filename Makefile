@@ -1,6 +1,9 @@
 PYTHON ?= python3
 COMMON_SRC ?= ../renquant-common/src
-export PYTHONPATH := $(COMMON_SRC):src:$(PYTHONPATH)
+# Publish-time peer dep (RFC RenQuant#492 §5): only the phase-3 binding
+# tests need it; the package imports it lazily inside the factory.
+PIPELINE_SRC ?= ../renquant-pipeline/src
+export PYTHONPATH := $(COMMON_SRC):$(PIPELINE_SRC):src:$(PYTHONPATH)
 
 .PHONY: test doctor
 
