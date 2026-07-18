@@ -1,6 +1,12 @@
 """RenQuant artifact-registry package."""
 
 from .bundle_breakglass import build_breakglass_authorization
+from .bundle_contract_binding import (
+    PairValidator,
+    PairValidatorUnavailableError,
+    create_default_store,
+    create_pair_validator,
+)
 from .bundle_schema import (
     BREAKGLASS_TOOL,
     BUNDLE_MEMBER_NAMES,
@@ -72,6 +78,8 @@ __all__ = [
     "GCReport",
     "MemberDigest",
     "NonLocalStoreError",
+    "PairValidator",
+    "PairValidatorUnavailableError",
     "PublishResult",
     "RecoveryRequiredError",
     "ResolvedBundle",
@@ -82,6 +90,8 @@ __all__ = [
     "build_run_bundle",
     "canonical_manifest_bytes",
     "compute_manifest_digest",
+    "create_default_store",
+    "create_pair_validator",
     "derive_bundle_id",
     "hash_jsonable",
     "load_artifact_manifest",
