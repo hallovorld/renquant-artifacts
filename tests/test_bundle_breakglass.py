@@ -195,3 +195,146 @@ def test_library_rollback_to_self_is_not_an_ancestor(tmp_path: Path) -> None:
         store.rollback_to(
             result.bundle_id, authorization=make_breakglass_authorization()
         )
+
+
+# -- AC4 P0: operational against the DECLARED real store location ---------
+
+
+def test_cli_resolves_store_root_from_env(tmp_path: Path, monkeypatch, capsys) -> None:
+    """No --store-root: the tool runs against the resolved declared
+    location (here via RQ_BUNDLE_STORE_ROOT) and echoes the provenance."""
+    store_root = tmp_path / "prod"
+    setup = make_store(store_root)
+    publish_simple(setup, "genesis")
+    monkeypatch.setenv("RQ_BUNDLE_STORE_ROOT", str(store_root))
+
+    files = _write_member_files(tmp_path, "env-fix")
+    rc = main(
+        [
+            "--incident-ref",
+            "TASK-77",
+            "--operator",
+            "renhao",
+            "--member",
+            f"{PANEL}={files[PANEL]}",
+            "--member",
+            f"{CAL}={files[CAL]}",
+            "--bindings-json",
+            str(_bindings_file(tmp_path)),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    result = json.loads(captured.out)
+    assert result["store_root"] == str(store_root)
+    assert result["store_root_source"] == "env:RQ_BUNDLE_STORE_ROOT"
+    with make_store(store_root).resolve_active() as resolved:
+        assert resolved.manifest.authorization["source"]["incident_ref"] == "TASK-77"
+
+
+def test_cli_resolves_store_root_from_umbrella_declaration(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    rq_root = tmp_path / "RenQuant"
+    decl = rq_root / "deploy" / "bundle_store_location.json"
+    decl.parent.mkdir(parents=True)
+    decl.write_text(
+        json.dumps({"schema_version": 1, "store_root": "artifacts/prod"})
+    )
+    store_root = rq_root / "artifacts" / "prod"
+    setup = make_store(store_root)
+    publish_simple(setup, "genesis")
+    monkeypatch.setenv("RQ_ROOT", str(rq_root))
+    monkeypatch.delenv("RQ_BUNDLE_STORE_ROOT", raising=False)
+
+    files = _write_member_files(tmp_path, "decl-fix")
+    rc = main(
+        [
+            "--incident-ref",
+            "TASK-88",
+            "--operator",
+            "renhao",
+            "--member",
+            f"{PANEL}={files[PANEL]}",
+            "--member",
+            f"{CAL}={files[CAL]}",
+            "--bindings-json",
+            str(_bindings_file(tmp_path)),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    result = json.loads(captured.out)
+    assert result["store_root"] == str(store_root)
+    assert result["store_root_source"] == f"declaration:{decl}"
+
+
+def test_cli_fails_closed_when_no_location_resolvable(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    monkeypatch.setenv("RQ_ROOT", str(tmp_path / "empty"))
+    monkeypatch.delenv("RQ_BUNDLE_STORE_ROOT", raising=False)
+    rc = main(
+        [
+            "--incident-ref",
+            "INC-1",
+            "--operator",
+            "renhao",
+            "--rollback-to",
+            "20260718T031500Z-0123456789abcdef",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "declaration" in captured.err
+
+
+def test_commit_alarm_reaches_the_sentinel_channel(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """RFC §2.4 always-alarm, wired for real: a break-glass commit sends
+    one notification through renquant_common.notify.send — the exact
+    channel the orchestrator drift sentinel delivers on — with the topic
+    env file at $RQ_ROOT/.env, plus the stderr ALARM record."""
+    import renquant_common.notify
+
+    sent: list[dict] = []
+    monkeypatch.setattr(
+        renquant_common.notify,
+        "send",
+        lambda title, body, topic=None, **kw: sent.append(
+            {"title": title, "body": body, **kw}
+        )
+        or True,
+    )
+    rq_root = tmp_path / "RenQuant"
+    rq_root.mkdir()
+    monkeypatch.setenv("RQ_ROOT", str(rq_root))
+    store_root = tmp_path / "prod"
+    setup = make_store(store_root)
+    publish_simple(setup, "genesis")
+
+    files = _write_member_files(tmp_path, "alarm-fix")
+    rc = main(
+        [
+            "--store-root",
+            str(store_root),
+            "--incident-ref",
+            "TASK-62",
+            "--operator",
+            "renhao",
+            "--member",
+            f"{PANEL}={files[PANEL]}",
+            "--member",
+            f"{CAL}={files[CAL]}",
+            "--bindings-json",
+            str(_bindings_file(tmp_path)),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 0, captured.err
+    assert "ALARM[breakglass_commit]" in captured.err  # stderr record kept
+    assert len(sent) == 1
+    assert sent[0]["title"] == "[bundle-store] breakglass_commit"
+    assert "TASK-62" in sent[0]["body"]
+    assert sent[0]["env_file"] == rq_root / ".env"
