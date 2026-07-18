@@ -24,8 +24,10 @@ from renquant_artifacts import (
     build_canonical_provenance_reference,
     build_experiment_provenance_reference,
     load_artifact_manifest,
+    register_canonical_publication,
     reject_exploratory_promotion,
     resolve_artifact_manifest,
+    resolve_canonical_publication,
     validate_artifact_manifest,
     verify_artifact_provenance,
     verify_calendar_universe_pin,
@@ -37,6 +39,10 @@ from renquant_artifacts import (
     verify_model_artifact_pin,
     write_canonical_run_intent,
     write_experiment_classification,
+)
+from renquant_artifacts.canonical_registry import (
+    CANONICAL_PUBLICATIONS_INDEX_FILENAME,
+    _record_filename,
 )
 from renquant_common.model_fingerprint import artifact_sha256
 
@@ -940,10 +946,21 @@ class TestCanonicalProvenance:
 
     def test_genuine_canonical_provenance_reference_is_accepted(self, tmp_path):
         """Genuine positive path: a real run_intent.json (real code pins via
-        temp git repos), build_canonical_provenance_reference produces a
-        manifest that verify_artifact_provenance/validate_artifact_manifest
-        accepts."""
+        temp git repos), published to a real canonical publication store via
+        register_canonical_publication (WITH the full repo_root environment
+        verification at publish time -- the trusted-publisher gate), then a
+        manifest built with build_canonical_provenance_reference is accepted
+        end-to-end at promotion_status='prod' because the authoritative
+        record resolves from the store (round-4 boundary)."""
         fx = _CanonicalFixture(tmp_path)
+        pubs = tmp_path / "registry" / "canonical_publications"
+        register_canonical_publication(
+            pubs,
+            run_intent_path=fx.run_intent_path,
+            artifact_digest="sha256:candidate-canonical",
+            artifact_uri="object://renquant-artifacts/canonical-gbdt-20260716.bin",
+            repo_root=fx.tmp_path,
+        )
         manifest = {
             "artifact_id": "canonical-gbdt-20260716",
             "model_family": "gbdt-panel-ltr",
@@ -956,7 +973,7 @@ class TestCanonicalProvenance:
                 fx.run_intent_path, "sha256:candidate-canonical",
             ),
         }
-        report = validate_artifact_manifest(manifest)
+        report = validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
         assert report["ok"] is True
 
     def test_artifact_digest_mismatch_from_a_different_run_rejected(self, tmp_path):
@@ -990,10 +1007,18 @@ class TestCanonicalProvenance:
         validate_artifact_manifest rather than calling
         verify_canonical_run_intent directly: a run_intent.json tampered to
         name a producer outside CANONICAL_PRODUCERS must fail the
-        best-effort local re-verification
+        SUPPLEMENTAL local diagnostics
         (_verify_canonical_run_intent_if_resolvable) once its digest is
         recomputed to match (isolating this from the separate tamper-digest
-        check)."""
+        check).
+
+        promotion_status is non-prod here (round-4 follow-up): at prod, the
+        mandatory publication-record boundary rejects this manifest FIRST
+        (no publication exists for it) before the local diagnostics this
+        test exists to exercise would even matter -- see
+        TestCanonicalPublicationRecord::test_forged_record_with_unallowlisted_producer_rejected
+        for the prod-side producer-allowlist coverage through the persisted
+        registry record."""
         fx = _CanonicalFixture(tmp_path)
         raw = json.loads(fx.run_intent_path.read_text())
         raw["producer"] = {"repo": "renquant-orchestrator", "entrypoint": "some.OtherTask"}
@@ -1005,7 +1030,7 @@ class TestCanonicalProvenance:
             "strategy": "renquant_104",
             "fingerprint": "sha256:candidate-tampered-producer",
             "uri": "object://renquant-artifacts/canonical-gbdt-tampered-producer.json",
-            "promotion_status": "prod",
+            "promotion_status": "diagnostic",
             "metrics": {"accepted": True},
             # Built AFTER tampering, so run_intent_digest matches the
             # tampered bytes exactly -- isolates the producer-allowlist
@@ -1072,3 +1097,332 @@ class TestCanonicalProvenance:
         }
         with pytest.raises(ValueError, match="missing required keys"):
             validate_artifact_manifest(manifest)
+
+
+# ── round-4: the authoritative canonical publication store ─────────────────
+
+
+def _write_valid_intent(run_dir: Path, run_id: str) -> Path:
+    """A run_intent.json that passes intrinsic verification (allowlisted
+    producer, well-formed pins, non-empty evidence) without needing real
+    git checkouts -- publication-store tests exercise the registry
+    boundary, which by design performs no environment I/O."""
+    return write_canonical_run_intent(
+        run_dir,
+        run_id=run_id,
+        run_type="daily_full",
+        producer={
+            "repo": "renquant-orchestrator",
+            "entrypoint": "daily.TrainGbdtArtifactTask",
+        },
+        strategy_manifest_fingerprint="sha256:strategy",
+        data_manifest_fingerprint="sha256:data",
+        strategy_config_digest="sha256:strategyconfig",
+        model_config_digest="sha256:modelconfig",
+        calendar_universe_digest="sha256:universe",
+        as_of="2026-07-18",
+        code_pins={
+            name: {"commit": "0" * 40, "remote": f"https://github.com/hallovorld/{name}"}
+            for name in (
+                "renquant-strategy-104", "renquant-pipeline", "renquant-model",
+            )
+        },
+    )
+
+
+class TestCanonicalPublicationRecord:
+    """Codex round-4 review (2026-07-17) on this PR: "canonical provenance
+    still fails open when the run-intent record is not resolvable... A
+    promotion boundary cannot make local file visibility optional." Every
+    promotion_status='prod' kind='canonical' manifest must now resolve the
+    authoritative, producer-written publication record from the registry's
+    own canonical publication store -- keyed by the manifest's OWN
+    fingerprint -- and is rejected when that record is absent, unreadable,
+    mismatched, or fails verification. Local path visibility is
+    supplemental diagnostics only; it never decides whether canonical
+    evidence is checked."""
+
+    def _manifest(self, fingerprint: str, provenance: dict, **overrides) -> dict:
+        manifest = {
+            "artifact_id": "canonical-candidate",
+            "model_family": "gbdt-panel-ltr",
+            "strategy": "renquant_104",
+            "fingerprint": fingerprint,
+            "uri": "object://renquant-artifacts/canonical-candidate.bin",
+            "promotion_status": "prod",
+            "metrics": {"accepted": True},
+            "provenance": provenance,
+        }
+        manifest.update(overrides)
+        return manifest
+
+    def test_prod_with_fabricated_nonlocal_run_intent_rejected(self, tmp_path):
+        """THE negative test round 4 explicitly required: "a fabricated
+        nonlocal run_intent_path plus matching self-declared digest is
+        rejected." The store is real and non-empty (an UNRELATED genuine
+        publication exists, proving this is not just an empty-store
+        artifact); the candidate's provenance fields are perfectly
+        self-consistent (artifact_digest == fingerprint, an opaque
+        store:// run_intent_path nothing can resolve, a plausible
+        run_intent_digest) -- and it is still rejected, because
+        self-consistent fields are not authority: no publication is
+        registered for THIS artifact digest."""
+        pubs = tmp_path / "pubs"
+        unrelated_intent = _write_valid_intent(tmp_path / "runs" / "other", "run-other")
+        register_canonical_publication(
+            pubs,
+            run_intent_path=unrelated_intent,
+            artifact_digest="sha256:some-other-artifact",
+            artifact_uri="object://renquant-artifacts/other.bin",
+        )
+
+        manifest = self._manifest(
+            "sha256:fabricated-candidate",
+            {
+                "kind": "canonical",
+                "run_intent_path": "store://renquant-artifacts/fabricated/run_intent.json",
+                "run_intent_digest": "sha256:" + "f" * 64,
+                "artifact_digest": "sha256:fabricated-candidate",
+            },
+        )
+        with pytest.raises(ValueError, match="no canonical publication record is registered"):
+            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+
+    def test_prod_fails_closed_when_no_store_is_resolvable(self, tmp_path):
+        """With NO caller-supplied store location, the default resolves to
+        this repo's own registry/canonical_publications -- which carries no
+        INDEX (no canonical publication has ever been reviewed into the
+        registry). A prod canonical manifest must be rejected, not waved
+        through: an unresolvable authoritative record is absence, and
+        absence fails closed."""
+        manifest = self._manifest(
+            "sha256:no-store-candidate",
+            {
+                "kind": "canonical",
+                "run_intent_path": "store://renquant-artifacts/x/run_intent.json",
+                "run_intent_digest": "sha256:" + "a" * 64,
+                "artifact_digest": "sha256:no-store-candidate",
+            },
+        )
+        with pytest.raises(ValueError, match="canonical publication"):
+            validate_artifact_manifest(manifest)
+
+    def test_prod_registered_digest_mismatch_rejected(self, tmp_path):
+        """A genuine publication exists for this artifact digest, but the
+        manifest declares a DIFFERENT run_intent_digest than the one the
+        publication binds -- rejected as mismatched (a manifest cannot
+        re-attribute a published artifact to another run)."""
+        pubs = tmp_path / "pubs"
+        intent = _write_valid_intent(tmp_path / "runs" / "real", "run-real")
+        register_canonical_publication(
+            pubs,
+            run_intent_path=intent,
+            artifact_digest="sha256:published-artifact",
+            artifact_uri="object://renquant-artifacts/published.bin",
+        )
+        manifest = self._manifest(
+            "sha256:published-artifact",
+            {
+                "kind": "canonical",
+                "run_intent_path": "store://renquant-artifacts/real/run_intent.json",
+                "run_intent_digest": "sha256:" + "b" * 64,  # NOT the registered one
+                "artifact_digest": "sha256:published-artifact",
+            },
+        )
+        with pytest.raises(ValueError, match="does not match the registered publication binding"):
+            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+
+    def test_prod_tampered_publication_record_rejected(self, tmp_path):
+        """The persisted record file is edited AFTER publication (e.g. to
+        swap the producer). The store is content-addressed: recomputing the
+        record's sha256 against the indexed run_intent_digest detects the
+        edit with no local build-machine path involved -- rejected."""
+        pubs = tmp_path / "pubs"
+        intent = _write_valid_intent(tmp_path / "runs" / "tamper", "run-tamper")
+        register_canonical_publication(
+            pubs,
+            run_intent_path=intent,
+            artifact_digest="sha256:tamper-artifact",
+            artifact_uri="object://renquant-artifacts/tamper.bin",
+        )
+        digest = artifact_sha256(intent)
+        record_path = pubs / _record_filename(digest)
+        record = json.loads(record_path.read_text())
+        record["producer"] = {"repo": "evil", "entrypoint": "evil.Task"}
+        record_path.write_text(json.dumps(record))
+
+        manifest = self._manifest(
+            "sha256:tamper-artifact",
+            {
+                "kind": "canonical",
+                "run_intent_path": "store://renquant-artifacts/tamper/run_intent.json",
+                "run_intent_digest": digest,
+                "artifact_digest": "sha256:tamper-artifact",
+            },
+        )
+        with pytest.raises(ValueError, match="modified after publication"):
+            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+
+    def test_forged_record_with_unallowlisted_producer_rejected(self, tmp_path):
+        """Prod-side producer-allowlist enforcement through the PERSISTED
+        registry record (the round-4 replacement for relying on local
+        re-verification): an attacker forges a store entry wholesale --
+        record bytes, content-addressed filename, and index entry all
+        internally consistent -- but the record names a producer outside
+        CANONICAL_PRODUCERS. The resolver's intrinsic verification of the
+        persisted record rejects it."""
+        pubs = tmp_path / "pubs"
+        pubs.mkdir(parents=True)
+        forged = {
+            "schema_version": 1,
+            "kind": "canonical-run-intent",
+            "run_id": "run-forged",
+            "run_type": "daily_full",
+            "created_at": "2026-07-18T00:00:00Z",
+            "producer": {"repo": "somewhere-else", "entrypoint": "not.Allowlisted"},
+            "workflow_class": "canonical",
+            "strategy_manifest_fingerprint": "sha256:s",
+            "data_manifest_fingerprint": "sha256:d",
+            "strategy_config_digest": "sha256:sc",
+            "model_config_digest": "sha256:mc",
+            "calendar_universe_digest": "sha256:u",
+            "as_of": "2026-07-18",
+            "code_pins": {
+                name: {"commit": "0" * 40, "remote": "https://example.com/r"}
+                for name in (
+                    "renquant-strategy-104", "renquant-pipeline", "renquant-model",
+                )
+            },
+        }
+        forged_path = tmp_path / "forged_intent.json"
+        forged_path.write_text(json.dumps(forged))
+        digest = artifact_sha256(forged_path)
+        (pubs / _record_filename(digest)).write_bytes(forged_path.read_bytes())
+        (pubs / CANONICAL_PUBLICATIONS_INDEX_FILENAME).write_text(json.dumps({
+            "sha256:forged-artifact": {
+                "run_intent_digest": digest,
+                "record": _record_filename(digest),
+                "artifact_uri": "object://renquant-artifacts/forged.bin",
+                "registered_at": "2026-07-18T00:00:00Z",
+            }
+        }))
+
+        manifest = self._manifest(
+            "sha256:forged-artifact",
+            {
+                "kind": "canonical",
+                "run_intent_path": "store://renquant-artifacts/forged/run_intent.json",
+                "run_intent_digest": digest,
+                "artifact_digest": "sha256:forged-artifact",
+            },
+        )
+        with pytest.raises(ValueError, match="CANONICAL_PRODUCERS allowlist"):
+            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+
+    def test_prod_opaque_object_store_identity_accepted_via_publication_record(self, tmp_path):
+        """The normal object-store identity shape round 3/4 called out as
+        the primary registry deployment shape: the artifact's ONLY identity
+        is an opaque object:// URI, run_intent_path is an opaque store://
+        reference, and NOTHING resolves locally on the validating machine.
+        Acceptance is decided entirely by resolving the authoritative
+        publication record from the store -- proving the boundary no longer
+        depends on local file visibility in either direction."""
+        pubs = tmp_path / "pubs"
+        intent = _write_valid_intent(tmp_path / "runs" / "opaque", "run-opaque")
+        digest = artifact_sha256(intent)
+        register_canonical_publication(
+            pubs,
+            run_intent_path=intent,
+            artifact_digest="sha256:opaque-artifact",
+            artifact_uri="object://renquant-artifacts/opaque.bin",
+        )
+        manifest = self._manifest(
+            "sha256:opaque-artifact",
+            {
+                "kind": "canonical",
+                # Deliberately NOT the local path the intent was written to:
+                # the validating machine sees only the opaque reference.
+                "run_intent_path": "store://renquant-artifacts/opaque/run_intent.json",
+                "run_intent_digest": digest,
+                "artifact_digest": "sha256:opaque-artifact",
+            },
+        )
+        report = validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+        assert report["ok"] is True
+
+    def test_local_visibility_never_substitutes_for_publication_record(self, tmp_path):
+        """Round-4 requirement 4, exercised in the direction that matters:
+        a FULLY verifiable local run-intent (real git checkouts, matching
+        pins -- the strongest possible local evidence) with NO publication
+        in the store is still rejected at prod. The local walk is
+        supplemental diagnostics; it is never the boundary, and local
+        visibility cannot stand in for the authoritative registry record."""
+        fx = _CanonicalFixture(tmp_path)
+        pubs = tmp_path / "pubs"  # exists as a store location, but nothing registered
+        pubs.mkdir(parents=True)
+        manifest = self._manifest(
+            "sha256:local-only-candidate",
+            build_canonical_provenance_reference(
+                fx.run_intent_path, "sha256:local-only-candidate",
+            ),
+        )
+        with pytest.raises(ValueError, match="canonical publication"):
+            validate_artifact_manifest(manifest, canonical_publications_dir=pubs)
+
+    def test_register_is_append_only_per_artifact_digest(self, tmp_path):
+        """A publication may never be silently rebound: registering the
+        same artifact digest against a DIFFERENT run-intent record raises,
+        while re-registering the identical binding is an idempotent no-op."""
+        pubs = tmp_path / "pubs"
+        intent_a = _write_valid_intent(tmp_path / "runs" / "a", "run-a")
+        intent_b = _write_valid_intent(tmp_path / "runs" / "b", "run-b")
+        register_canonical_publication(
+            pubs, run_intent_path=intent_a,
+            artifact_digest="sha256:artifact-x",
+            artifact_uri="object://renquant-artifacts/x.bin",
+        )
+        # Idempotent re-registration of the identical binding.
+        register_canonical_publication(
+            pubs, run_intent_path=intent_a,
+            artifact_digest="sha256:artifact-x",
+            artifact_uri="object://renquant-artifacts/x.bin",
+        )
+        with pytest.raises(ValueError, match="may never be rebound"):
+            register_canonical_publication(
+                pubs, run_intent_path=intent_b,
+                artifact_digest="sha256:artifact-x",
+                artifact_uri="object://renquant-artifacts/x.bin",
+            )
+        entry, record, errors = resolve_canonical_publication("sha256:artifact-x", pubs)
+        assert errors == []
+        assert entry["run_intent_digest"] == artifact_sha256(intent_a)
+        assert record["run_id"] == "run-a"
+
+    def test_register_refuses_unverifiable_run_intent(self, tmp_path):
+        """The publisher-side gate: the store never accepts a record that
+        fails intrinsic verification (here: empty code_pins), so nothing
+        unverifiable can ever become the authoritative publication."""
+        run_dir = tmp_path / "runs" / "bad"
+        bad_intent = write_canonical_run_intent(
+            run_dir,
+            run_id="run-bad",
+            run_type="daily_full",
+            producer={
+                "repo": "renquant-orchestrator",
+                "entrypoint": "daily.TrainGbdtArtifactTask",
+            },
+            strategy_manifest_fingerprint="sha256:s",
+            data_manifest_fingerprint="sha256:d",
+            strategy_config_digest="sha256:sc",
+            model_config_digest="sha256:mc",
+            calendar_universe_digest="sha256:u",
+            as_of="2026-07-18",
+            code_pins={},
+        )
+        with pytest.raises(ValueError, match="failed intrinsic verification"):
+            register_canonical_publication(
+                tmp_path / "pubs",
+                run_intent_path=bad_intent,
+                artifact_digest="sha256:bad-artifact",
+                artifact_uri="object://renquant-artifacts/bad.bin",
+            )

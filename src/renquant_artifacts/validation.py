@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from renquant_common import Job, Pipeline, Task
@@ -13,6 +14,11 @@ from .experiment_registry import verify_artifact_provenance
 class ArtifactManifestContext:
     manifest: dict[str, Any]
     validation_report: dict[str, Any] = field(default_factory=dict)
+    #: Optional override for where the authoritative canonical publication
+    #: store lives (defaults to this repo's registry/canonical_publications
+    #: -- see renquant_artifacts.canonical_registry). Supplied by the
+    #: trusted validating caller only; NEVER read from the manifest.
+    canonical_publications_dir: Path | None = None
 
 
 class ValidateArtifactManifestTask(Task):
@@ -72,7 +78,17 @@ class ValidateArtifactManifestTask(Task):
         # so kind="none" can be independently checked against the
         # manifest's own on-disk identity fields -- see
         # verify_artifact_provenance / _verify_none_provenance.
-        verify_artifact_provenance(ctx.manifest)
+        #
+        # Round-4 follow-up (Codex, 2026-07-17): for
+        # promotion_status='prod' + kind='canonical', the authoritative,
+        # producer-written publication record must resolve from the
+        # registry's canonical publication store and verify -- local file
+        # visibility never decides whether canonical evidence is checked.
+        # See _verify_canonical_publication_record.
+        verify_artifact_provenance(
+            ctx.manifest,
+            canonical_publications_dir=ctx.canonical_publications_dir,
+        )
 
         ctx.validation_report = {
             "artifact_id": ctx.manifest["artifact_id"],
@@ -93,9 +109,15 @@ class ArtifactManifestValidationPipeline(Pipeline):
         super().__init__([ArtifactManifestValidationJob()], name="artifact-manifest-validation")
 
 
-def validate_artifact_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
+def validate_artifact_manifest(
+    manifest: dict[str, Any],
+    *,
+    canonical_publications_dir: Path | None = None,
+) -> dict[str, Any]:
     """Validate an artifact manifest and return its audit report."""
-    ctx = ArtifactManifestContext(manifest)
+    ctx = ArtifactManifestContext(
+        manifest, canonical_publications_dir=canonical_publications_dir,
+    )
     ArtifactManifestValidationPipeline().run(ctx)
     return ctx.validation_report
 

@@ -626,26 +626,80 @@ def _verify_canonical_not_exploratory(manifest: dict[str, Any]) -> None:
             ) from exc
 
 
-def _verify_canonical_run_intent_if_resolvable(provenance: dict[str, Any]) -> None:
-    """Best-effort supplemental check for ``kind="canonical"`` provenance.
+def _verify_canonical_publication_record(
+    manifest: dict[str, Any],
+    provenance: dict[str, Any],
+    canonical_publications_dir: Path | str | None,
+) -> None:
+    """MANDATORY, fail-closed resolution of the authoritative canonical
+    publication record for a ``promotion_status="prod"`` manifest -- the
+    round-4 promotion boundary (Codex review 2026-07-17 on
+    renquant-artifacts#24: "A promotion boundary cannot make local file
+    visibility optional... verify_artifact_provenance must resolve that
+    record for every promotion_status=prod canonical manifest and reject it
+    if absent, unreadable, mismatched, or if its ... evidence does not
+    verify").
 
-    If ``provenance["run_intent_path"]`` resolves to a real local file (or a
-    directory containing one), this recomputes its content hash and checks
-    it against ``run_intent_digest`` (a tamper check on the record itself),
-    then -- if a ``subrepos.lock.json`` can be discovered via a bounded
-    upward walk from that file -- runs the full
+    The record is resolved from the canonical publication store
+    (:mod:`renquant_artifacts.canonical_registry`,
+    ``registry/canonical_publications/`` by default -- a review-gated,
+    content-addressed, append-only store inside the artifact registry
+    itself), keyed by the manifest's OWN ``fingerprint``. Self-consistent
+    manifest fields are NOT authority: a fabricated
+    ``run_intent_path``/``run_intent_digest`` pair -- local, nonlocal, or
+    opaque ``store://``/``object://`` -- fails here unless a genuine,
+    producer-written publication for this exact artifact digest exists in
+    the store AND its registered ``run_intent_digest`` matches the one the
+    manifest declares AND the persisted record itself verifies. This runs
+    UNCONDITIONALLY for prod: no local-path resolvability check gates it.
+    """
+    from . import canonical_registry
+
+    if canonical_publications_dir is None:
+        canonical_publications_dir = canonical_registry.default_canonical_publications_dir()
+    entry, _record, errors = canonical_registry.resolve_canonical_publication(
+        manifest["fingerprint"], canonical_publications_dir,
+    )
+    if errors:
+        raise ValueError(
+            "prod canonical provenance rejected: the authoritative canonical "
+            "publication record could not be resolved and verified "
+            "(promotion_status='prod' requires a registered publication in "
+            "the canonical publication store -- self-consistent manifest "
+            f"fields are not authority): {errors}"
+        )
+    registered_digest = entry.get("run_intent_digest")
+    if registered_digest != provenance.get("run_intent_digest"):
+        raise ValueError(
+            "prod canonical provenance rejected: provenance.run_intent_digest "
+            f"({provenance.get('run_intent_digest')!r}) does not match the "
+            f"registered publication binding for this artifact "
+            f"({registered_digest!r})"
+        )
+
+
+def _verify_canonical_run_intent_if_resolvable(provenance: dict[str, Any]) -> None:
+    """SUPPLEMENTAL local diagnostics for ``kind="canonical"`` provenance --
+    never the promotion boundary, and never a condition for whether
+    canonical evidence is checked (Codex round-4 review, requirement 4:
+    "Keep any local path walk only as supplemental diagnostics, never as
+    the condition that decides whether canonical evidence is checked").
+    For ``promotion_status="prod"`` the mandatory boundary is
+    :func:`_verify_canonical_publication_record`, which has ALREADY run
+    unconditionally by the time this is called and depends on no local
+    path visibility at all.
+
+    What this adds when (and only when) local truth happens to be visible:
+    if ``provenance["run_intent_path"]`` resolves to a real local file (or
+    a directory containing one), this recomputes its content hash and
+    checks it against ``run_intent_digest`` (a tamper check on the local
+    copy), then -- if a ``subrepos.lock.json`` can be discovered via a
+    bounded upward walk from that file -- runs the full
     :func:`renquant_artifacts.canonical_registry.verify_canonical_run_intent`
     check (required keys, producer allowlist, and all 3 code pins against
-    the actual current checkout).
-
-    If ``run_intent_path`` does NOT resolve locally at all (this artifact's
-    only identity is an opaque ``store://``/``object://`` reference), or no
-    ``subrepos.lock.json`` is discoverable nearby, this is skipped --
-    consistent with this whole check's status as "a useful supplemental
-    detector, not a promotion boundary" (see :func:`verify_artifact_provenance`
-    and the F-7 design doc): the ``artifact_digest == manifest["fingerprint"]``
-    comparison already performed by the caller is the authoritative boundary
-    in that case, precisely because it needs no local disk access.
+    the actual current checkout). It can therefore only ADD rejections on
+    machines where the producing environment is inspectable; its silence on
+    machines where nothing is local decides nothing.
     """
     # Local import: canonical_registry imports verify_code_pin FROM this
     # module, so importing it back at module scope here would be circular.
@@ -758,8 +812,20 @@ def _verify_none_provenance(manifest: dict[str, Any]) -> None:
             ) from exc
 
 
-def verify_artifact_provenance(manifest: dict[str, Any]) -> None:
+def verify_artifact_provenance(
+    manifest: dict[str, Any],
+    *,
+    canonical_publications_dir: Path | str | None = None,
+) -> None:
     """Require and verify a candidate artifact manifest's lineage record.
+
+    ``canonical_publications_dir`` optionally overrides where the
+    authoritative canonical publication store lives (defaults to this
+    repo's own ``registry/canonical_publications/`` via
+    :func:`renquant_artifacts.canonical_registry.default_canonical_publications_dir`).
+    It is validation-infrastructure configuration supplied by the trusted
+    calling code -- NEVER read from the candidate manifest itself -- and an
+    unresolvable store fails closed for ``promotion_status="prod"``.
 
     This is the F-7 promotion-boundary fix, now covering BOTH of Codex's
     2026-07-14 findings on this same PR:
@@ -795,18 +861,21 @@ def verify_artifact_provenance(manifest: dict[str, Any]) -> None:
     * ``"canonical"`` -- requires ``run_intent_path``, ``run_intent_digest``,
       and ``artifact_digest`` (see :data:`PROVENANCE_CANONICAL_REQUIRED_KEYS`).
       ``artifact_digest`` is checked against ``manifest["fingerprint"]``
-      UNCONDITIONALLY and FIRST -- this is what makes the check work
-      identically for local and opaque ``store://``/``object://``-only
-      artifact identities: a dishonest manifest that copies a real
+      UNCONDITIONALLY and FIRST: a dishonest manifest that copies a real
       ``run_intent_path``/``run_intent_digest`` from a genuine canonical run
       onto a DIFFERENT artifact fails here, because that different
-      artifact's ``fingerprint`` won't match ``artifact_digest``. The
-      round-5-style exploratory-marker check
-      (:func:`_verify_canonical_not_exploratory`) and a best-effort local
-      re-verification of the run-intent record itself
-      (:func:`_verify_canonical_run_intent_if_resolvable`, supplementary --
-      same status as the ``kind="none"`` marker-scan, "a useful supplemental
-      detector, not a promotion boundary") both run afterward.
+      artifact's ``fingerprint`` won't match ``artifact_digest``. For
+      ``promotion_status="prod"`` the boundary is
+      :func:`_verify_canonical_publication_record`: the authoritative,
+      producer-written publication record MUST resolve from the registry's
+      own canonical publication store (keyed by the manifest's
+      ``fingerprint``) and verify, regardless of whether ANY path is
+      locally visible -- self-consistent manifest fields alone are never
+      authority (Codex round-4 review, 2026-07-17). The round-5-style
+      exploratory-marker check (:func:`_verify_canonical_not_exploratory`)
+      and the strictly-supplemental local diagnostics
+      (:func:`_verify_canonical_run_intent_if_resolvable`) also run; the
+      latter can only ADD rejections and never gates the record check.
     * ``"experiment"`` -- requires ``dir`` (the run's output directory,
       expected to carry ``_experiment_classification.json``) and
       ``registry_index_path`` (the immutable, git-tracked manifest-registry
@@ -846,9 +915,9 @@ def verify_artifact_provenance(manifest: dict[str, Any]) -> None:
         if manifest.get("promotion_status") == "prod":
             raise ValueError(
                 "provenance.kind='none' cannot be combined with "
-                "promotion_status='prod' -- use workflow_class="
-                "WORKFLOW_CLASS_CANONICAL (a verified run-intent binding) "
-                "instead"
+                "promotion_status='prod' -- a real production artifact must "
+                "carry provenance.kind='canonical' (a registered, verified "
+                "run-intent publication) instead"
             )
         _verify_none_provenance(manifest)
         return
@@ -866,6 +935,15 @@ def verify_artifact_provenance(manifest: dict[str, Any]) -> None:
                 "DIFFERENT artifact cannot be attached to this one"
             )
         _verify_canonical_not_exploratory(manifest)
+        if manifest.get("promotion_status") == "prod":
+            # The round-4 promotion boundary: MANDATORY, fail-closed
+            # resolution of the authoritative publication record from the
+            # registry's own canonical publication store. Runs before --
+            # and entirely independently of -- any local-path diagnostics
+            # below; nothing about local file visibility gates it.
+            _verify_canonical_publication_record(
+                manifest, provenance, canonical_publications_dir,
+            )
         _verify_canonical_run_intent_if_resolvable(provenance)
         return
     missing = PROVENANCE_EXPERIMENT_REQUIRED_KEYS - provenance.keys()

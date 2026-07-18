@@ -93,6 +93,115 @@ CANONICAL_PRODUCERS = frozenset(
 #: no caller can trigger a pathological/unbounded scan.
 MAX_REPO_ROOT_SEARCH_LEVELS = 6
 
+#: The authoritative canonical publication store (Codex round-4 review on
+#: renquant-artifacts#24, 2026-07-17: "Persist an authoritative canonical
+#: run-intent/publication record in the artifact registry ... keyed by
+#: run_intent_digest and artifact digest/immutable URI"). It lives INSIDE
+#: the artifact registry (``registry/canonical_publications/`` in this
+#: repo), so publication is a deliberate, review-gated act (a commit adding
+#: the record + index entry -- the same immutability model as the
+#: experiment-manifest ``INDEX.json``), never a runtime filesystem accident:
+#:
+#: * ``INDEX.json`` maps ``artifact_digest`` (the manifest's own
+#:   ``fingerprint``) -> ``{"run_intent_digest", "record", "artifact_uri",
+#:   "registered_at"}``.
+#: * ``<run_intent_digest hex>.json`` is the byte-verbatim, content-addressed
+#:   persisted copy of the producing run's ``run_intent.json``: its filename
+#:   and index entry are its own sha256, so any post-publication edit is
+#:   detectable by recomputation alone, with no local build-machine path
+#:   involved.
+CANONICAL_PUBLICATIONS_DIRNAME = "canonical_publications"
+CANONICAL_PUBLICATIONS_INDEX_FILENAME = "INDEX.json"
+
+
+def default_canonical_publications_dir() -> Path | None:
+    """The in-repo default location of the canonical publication store:
+    ``<repo-root>/registry/canonical_publications``, derived from this
+    package's own location (``src/renquant_artifacts/`` -> repo root).
+
+    Returns ``None`` when no ``registry/`` directory exists next to the
+    package (e.g. an installed wheel with no repo checkout). Callers on the
+    ``promotion_status="prod"`` path MUST treat ``None`` -- and a missing/
+    empty store at the returned path -- as fail-closed rejection, never as
+    "nothing to check": a promotion boundary cannot make the authoritative
+    record optional (Codex round-4 review on renquant-artifacts#24).
+    """
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    registry_dir = repo_root / "registry"
+    if not registry_dir.is_dir():
+        return None
+    return registry_dir / CANONICAL_PUBLICATIONS_DIRNAME
+
+
+def _verify_run_intent_intrinsic(record: Any, source: str) -> list[str]:
+    """Structural + allowlist verification of a run-intent record's OWN
+    content -- everything that can (and therefore must) be checked without
+    any local environment: shape, schema kind, required keys, producer
+    allowlist, code-pin entry shape, and non-empty evidence fields.
+
+    Shared by :func:`verify_canonical_run_intent` (which layers the
+    environment code-pin checks on top) and
+    :func:`resolve_canonical_publication` (the validation-time resolver,
+    which by design runs with NO local environment guarantees) -- one
+    implementation, per this package's triple-impl-avoidance idiom.
+    """
+    if not isinstance(record, dict):
+        return [f"run-intent record from {source} is not a JSON object"]
+
+    errors: list[str] = []
+    if record.get("kind") != "canonical-run-intent":
+        errors.append(
+            f"run-intent record from {source} has kind={record.get('kind')!r}, "
+            "expected 'canonical-run-intent'"
+        )
+    missing = CANONICAL_RUN_INTENT_REQUIRED_KEYS - record.keys()
+    if missing:
+        errors.append(
+            f"run-intent record from {source} missing required keys: {sorted(missing)}"
+        )
+        return errors
+
+    producer = record.get("producer")
+    producer_tuple = (
+        (producer.get("repo"), producer.get("entrypoint"))
+        if isinstance(producer, dict)
+        else None
+    )
+    if producer_tuple not in CANONICAL_PRODUCERS:
+        errors.append(
+            f"run-intent record producer {producer!r} is not in the "
+            f"CANONICAL_PRODUCERS allowlist {sorted(CANONICAL_PRODUCERS)}"
+        )
+
+    code_pins = record.get("code_pins")
+    if not isinstance(code_pins, dict):
+        errors.append("run-intent record code_pins must be an object")
+    else:
+        for category, subrepo_name in CANONICAL_CODE_PIN_SUBREPOS.items():
+            pin_entry = code_pins.get(subrepo_name)
+            if (
+                not isinstance(pin_entry, dict)
+                or not str(pin_entry.get("commit", "")).strip()
+                or not str(pin_entry.get("remote", "")).strip()
+            ):
+                errors.append(
+                    f"code_pins.{subrepo_name} ({category}): missing or malformed "
+                    "pin entry (commit + remote required)"
+                )
+
+    for evidence_key in (
+        "run_id", "strategy_manifest_fingerprint", "data_manifest_fingerprint",
+        "strategy_config_digest", "model_config_digest",
+        "calendar_universe_digest", "as_of",
+    ):
+        value = record.get(evidence_key)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(
+                f"run-intent record {evidence_key} must be a non-empty string, "
+                f"got {value!r}"
+            )
+    return errors
+
 
 def write_canonical_run_intent(
     output_dir: Path | str,
@@ -175,23 +284,9 @@ def verify_canonical_run_intent(
     if not isinstance(run_intent, dict):
         return [f"run_intent.json at {run_intent_path} is not a JSON object"]
 
-    missing = CANONICAL_RUN_INTENT_REQUIRED_KEYS - run_intent.keys()
-    if missing:
-        return [f"run_intent.json missing required keys: {sorted(missing)}"]
-
-    errors: list[str] = []
-
-    producer = run_intent.get("producer")
-    producer_tuple = (
-        (producer.get("repo"), producer.get("entrypoint"))
-        if isinstance(producer, dict)
-        else None
-    )
-    if producer_tuple not in CANONICAL_PRODUCERS:
-        errors.append(
-            f"run_intent.json producer {producer!r} is not in the "
-            f"CANONICAL_PRODUCERS allowlist {sorted(CANONICAL_PRODUCERS)}"
-        )
+    errors = _verify_run_intent_intrinsic(run_intent, str(run_intent_path))
+    if any("missing required keys" in e or "is not a JSON object" in e for e in errors):
+        return errors
 
     repo_root = Path(repo_root)
     if subrepos_lock is None:
@@ -264,3 +359,214 @@ def build_canonical_provenance_reference(
         "run_intent_digest": artifact_sha256(run_intent_path),
         "artifact_digest": artifact_digest,
     }
+
+
+# ---------------------------------------------------------------------------
+# Canonical publication store (Codex round-4 review, renquant-artifacts#24)
+# ---------------------------------------------------------------------------
+
+
+def _record_filename(run_intent_digest: str) -> str:
+    """Content-addressed record filename for a ``sha256:<hex>`` digest."""
+    return run_intent_digest.split(":", 1)[-1] + ".json"
+
+
+def register_canonical_publication(
+    publications_dir: Path | str,
+    *,
+    run_intent_path: Path | str,
+    artifact_digest: str,
+    artifact_uri: str,
+    repo_root: Path | str | None = None,
+) -> Path:
+    """Publisher-side write of the authoritative canonical publication record.
+
+    Called by the trusted publication workflow (NOT by manifest consumers,
+    and never driven by fields read from a candidate manifest): it derives
+    everything from the producer's own already-written ``run_intent.json`` --
+    the record's digest is recomputed here from the actual bytes, never
+    accepted as caller input -- and persists two things into the store:
+
+    * a byte-verbatim, content-addressed copy of ``run_intent.json`` at
+      ``<run_intent_digest hex>.json``;
+    * an ``INDEX.json`` entry keyed by ``artifact_digest`` binding that
+      artifact to this ``run_intent_digest`` + immutable ``artifact_uri``.
+
+    Fail-closed publisher gates:
+
+    * The run-intent record must pass
+      :func:`_verify_run_intent_intrinsic` (schema/producer-allowlist/pin
+      shape/evidence fields) BEFORE anything is persisted -- the store never
+      accepts an unverifiable record.
+    * When ``repo_root`` is supplied (the real producer machine has its
+      checkouts available), the FULL :func:`verify_canonical_run_intent`
+      environment check (all 3 code pins vs the actual checkouts +
+      ``subrepos.lock.json``) must also pass.
+    * The store is append-only per ``artifact_digest``: re-registering the
+      same artifact with the same record bytes is an idempotent no-op, but
+      re-registering it against a DIFFERENT run-intent digest raises -- a
+      publication may never be silently replaced (that would be exactly the
+      mutable-record laundering the round-4 review rejects).
+
+    Both file writes use the same write-to-tmp-then-rename idiom as
+    :func:`write_canonical_run_intent`.
+    """
+    publications_dir = Path(publications_dir)
+    run_intent_path = Path(run_intent_path)
+
+    if not run_intent_path.exists():
+        raise ValueError(f"cannot publish: run_intent.json not found at {run_intent_path}")
+    raw_bytes = run_intent_path.read_bytes()
+    try:
+        record = json.loads(raw_bytes)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"cannot publish: {run_intent_path} is unparsable: {exc}") from exc
+
+    intrinsic_errors = _verify_run_intent_intrinsic(record, str(run_intent_path))
+    if intrinsic_errors:
+        raise ValueError(
+            "cannot publish canonical run-intent record: it failed intrinsic "
+            f"verification (the store never accepts an unverifiable record): "
+            f"{intrinsic_errors}"
+        )
+    if repo_root is not None:
+        env_errors = verify_canonical_run_intent(run_intent_path, repo_root=repo_root)
+        if env_errors:
+            raise ValueError(
+                "cannot publish canonical run-intent record: environment "
+                f"verification failed: {env_errors}"
+            )
+
+    run_intent_digest = artifact_sha256(run_intent_path)
+    record_name = _record_filename(run_intent_digest)
+    publications_dir.mkdir(parents=True, exist_ok=True)
+
+    record_path = publications_dir / record_name
+    if record_path.exists():
+        if artifact_sha256(record_path) != run_intent_digest:
+            raise ValueError(
+                f"canonical publication store corruption: {record_path} exists "
+                "but its content does not match its own content-addressed name"
+            )
+    else:
+        tmp = record_path.with_suffix(".json.tmp")
+        tmp.write_bytes(raw_bytes)
+        tmp.rename(record_path)
+
+    index_path = publications_dir / CANONICAL_PUBLICATIONS_INDEX_FILENAME
+    index: dict[str, Any] = (
+        json.loads(index_path.read_text()) if index_path.exists() else {}
+    )
+    existing = index.get(artifact_digest)
+    if existing is not None:
+        if existing.get("run_intent_digest") != run_intent_digest:
+            raise ValueError(
+                f"canonical publication for artifact {artifact_digest} already "
+                f"exists bound to {existing.get('run_intent_digest')} -- a "
+                "publication is append-only and may never be rebound to a "
+                f"different run-intent record ({run_intent_digest})"
+            )
+        return index_path  # idempotent re-registration of the identical binding
+
+    index[artifact_digest] = {
+        "run_intent_digest": run_intent_digest,
+        "record": record_name,
+        "artifact_uri": artifact_uri,
+        "registered_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    tmp = index_path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(index, indent=2, sort_keys=True) + "\n")
+    tmp.rename(index_path)
+    return index_path
+
+
+def resolve_canonical_publication(
+    artifact_digest: str,
+    publications_dir: Path | str | None,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, list[str]]:
+    """Validation-side resolution of the authoritative publication record.
+
+    Returns ``(index_entry, run_intent_record, errors)``. ``errors`` is
+    non-empty (and both records are ``None``) whenever the authoritative
+    binding cannot be POSITIVELY established -- every one of the round-4
+    review's rejection conditions maps to an explicit error here:
+
+    * no store location at all (``publications_dir is None``), or the store/
+      ``INDEX.json`` missing or unparsable  -> "absent";
+    * no index entry for ``artifact_digest``, or an entry without a usable
+      ``run_intent_digest``/``record``                      -> "absent";
+    * the content-addressed record file missing, or its RECOMPUTED sha256
+      not equal to the indexed ``run_intent_digest``    -> "mismatched"
+      (a post-publication edit of the persisted record is detected by
+      recomputation alone -- no local build-machine path is involved);
+    * the persisted record failing
+      :func:`_verify_run_intent_intrinsic` (schema / producer allowlist /
+      pin shape / evidence fields)                       -> "does not verify".
+
+    This function deliberately performs NO environment (git-checkout) I/O:
+    it must behave identically on the producer machine, CI, and a pure
+    registry/runtime validator -- local file visibility is never the
+    condition that decides whether canonical evidence is checked (Codex
+    round-4, requirement 4). Environment re-verification is layered
+    separately where checkouts exist (:func:`verify_canonical_run_intent`
+    at publication time via ``register_canonical_publication(repo_root=...)``,
+    and the supplemental local diagnostics at validation time).
+    """
+    if publications_dir is None:
+        return None, None, [
+            "no canonical publication store is resolvable (no registry/ "
+            "directory next to this package and no explicit "
+            "canonical_publications_dir was provided)"
+        ]
+    publications_dir = Path(publications_dir)
+    index_path = publications_dir / CANONICAL_PUBLICATIONS_INDEX_FILENAME
+    if not index_path.exists():
+        return None, None, [
+            f"canonical publication index not found: {index_path}"
+        ]
+    try:
+        index = json.loads(index_path.read_text())
+    except (json.JSONDecodeError, OSError) as exc:
+        return None, None, [f"canonical publication index at {index_path} is unreadable: {exc}"]
+    if not isinstance(index, dict):
+        return None, None, [f"canonical publication index at {index_path} is not a JSON object"]
+
+    entry = index.get(artifact_digest)
+    if not isinstance(entry, dict):
+        return None, None, [
+            f"no canonical publication record is registered for artifact "
+            f"digest {artifact_digest} in {index_path}"
+        ]
+    run_intent_digest = entry.get("run_intent_digest")
+    record_name = entry.get("record")
+    if not run_intent_digest or not record_name:
+        return None, None, [
+            f"canonical publication entry for {artifact_digest} has no "
+            "run_intent_digest/record binding"
+        ]
+
+    record_path = publications_dir / record_name
+    if not record_path.exists():
+        return None, None, [
+            f"canonical publication record file missing: {record_path}"
+        ]
+    actual_digest = artifact_sha256(record_path)
+    if actual_digest != run_intent_digest:
+        return None, None, [
+            f"canonical publication record {record_path} does not match its "
+            f"registered run_intent_digest (registered {run_intent_digest}, "
+            f"recomputed {actual_digest}) -- the persisted record appears to "
+            "have been modified after publication"
+        ]
+    try:
+        record = json.loads(record_path.read_text())
+    except (json.JSONDecodeError, OSError) as exc:
+        return None, None, [f"canonical publication record {record_path} is unreadable: {exc}"]
+
+    intrinsic_errors = _verify_run_intent_intrinsic(record, str(record_path))
+    if intrinsic_errors:
+        return None, None, [
+            "persisted canonical run-intent record failed verification: "
+            f"{intrinsic_errors}"
+        ]
+    return entry, record, []

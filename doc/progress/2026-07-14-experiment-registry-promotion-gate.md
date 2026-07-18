@@ -414,3 +414,82 @@ umbrella `subrepos.lock.json` pins for `renquant-model` and
 cross-repo impact note above), and a fresh `pip install` of the pinned
 versions (not worktree `PYTHONPATH` overrides) should re-run both suites
 once more as the final real-pin proof.
+
+## Round 4 (2026-07-18): the canonical publication store — prod fails closed
+
+Codex's round-4 review (2026-07-17) found the P0 in the canonical
+follow-up: `_verify_canonical_run_intent_if_resolvable` skipped the
+producer/code-pin/run-intent verification whenever `run_intent_path` did
+not resolve locally, and the ordinary prod fixtures relied on exactly that
+non-resolving shape — "A caller can provide a prod manifest with
+`kind=canonical`, `artifact_digest == fingerprint`, and a fabricated
+nonlocal path/digest; the registry then has no independently resolved
+canonical record and accepts it. Self-consistent fields are not authority."
+
+Fix, per the review's four numbered requirements:
+
+1. **Authoritative record persisted in the artifact registry.** New
+   canonical publication store (`canonical_registry.py`):
+   `registry/canonical_publications/` holds a content-addressed,
+   byte-verbatim copy of each published run's `run_intent.json`
+   (`<run_intent_digest hex>.json`) plus `INDEX.json` keyed by
+   **artifact digest** → `{run_intent_digest, record, artifact_uri,
+   registered_at}`. `register_canonical_publication()` is the
+   publisher-side write: recomputes the record digest from actual bytes
+   (never caller input), refuses unverifiable records (intrinsic
+   schema/producer-allowlist/pin-shape/evidence checks — shared impl
+   `_verify_run_intent_intrinsic`, also reused by
+   `verify_canonical_run_intent`), optionally runs the full environment
+   verification when `repo_root` is supplied, and is append-only per
+   artifact digest (rebinding raises; identical re-registration is
+   idempotent). Store lives inside the reviewed registry, so publication
+   is a review-gated commit — the same immutability model as the
+   experiment `INDEX.json`.
+2. **Mandatory fail-closed resolution for every prod canonical manifest.**
+   `verify_artifact_provenance` now calls
+   `_verify_canonical_publication_record` UNCONDITIONALLY for
+   `promotion_status="prod"` + `kind="canonical"`:
+   `resolve_canonical_publication()` must positively establish the binding
+   (store present → index entry for this manifest's own `fingerprint` →
+   record file present → recomputed sha256 == indexed digest → persisted
+   record passes intrinsic verification) and the registered
+   `run_intent_digest` must equal the manifest's declared one. Absent,
+   unreadable, mismatched, or unverifiable → reject. The resolver performs
+   NO environment I/O by design, so it behaves identically on the producer
+   machine, CI, and a pure registry/runtime validator. The store location
+   is trusted-caller configuration (`canonical_publications_dir` threaded
+   through `validate_artifact_manifest` / `load_artifact_manifest` /
+   `resolve_artifact_manifest`, defaulting to this repo's own
+   `registry/canonical_publications/`) — never read from the manifest.
+3. **Non-resolving prod fixtures removed; required negative test added.**
+   `tests/test_artifact_registry.py`'s prod fixtures now build a REAL
+   publication (`_canonical_provenance_for`); the fabricated
+   `store://` + self-consistent-digest shape survives only inside
+   `TestCanonicalPublicationRecord::test_prod_with_fabricated_nonlocal_run_intent_rejected`,
+   which proves it rejected against a real, non-empty store.
+4. **Local walk demoted to supplemental diagnostics.**
+   `_verify_canonical_run_intent_if_resolvable` runs AFTER the mandatory
+   record check, can only add rejections, and its docstring now states it
+   never decides whether canonical evidence is checked.
+   `test_local_visibility_never_substitutes_for_publication_record` proves
+   the direction that matters: the strongest possible local evidence (real
+   checkouts, matching pins) with no publication is still rejected at prod.
+
+Also this round: branch rebuilt on current `main` (bundle-store phases
+`#25`/`#26`/`#27` had landed; only `src/renquant_artifacts/__init__.py`
+import unions conflicted — the bundle store is an adjacent but
+non-overlapping surface: machine-local transactional serving-pair storage
+under `RQ_ROOT`, vs. this PR's review-gated promotion-lineage records
+inside `registry/`).
+
+### Tests (round 4)
+
+- `TestCanonicalPublicationRecord` (9 new): the required fabricated-
+  nonlocal negative test, default-store fail-closed, registered-digest
+  mismatch, post-publication record tampering (detected by recomputation
+  alone), wholesale-forged store entry with unallowlisted producer,
+  opaque-object-store-identity acceptance via the record, local-evidence-
+  cannot-substitute, append-only rebinding refusal + idempotency, and the
+  publisher-side unverifiable-record refusal.
+- Repo suite: **294 passed, 0 failed** (`make test`; includes the 175
+  bundle-store/main tests picked up by the rebase). `make doctor` passes.

@@ -24,6 +24,10 @@ class ArtifactRegistryContext:
     selected_path: Path | None = None
     manifest: dict[str, Any] | None = None
     validation_report: dict[str, Any] = field(default_factory=dict)
+    #: Optional override for the canonical publication store location --
+    #: trusted-caller configuration threaded through to
+    #: validate_artifact_manifest; never read from a manifest.
+    canonical_publications_dir: Path | None = None
 
 
 class LoadArtifactRegistryTask(Task):
@@ -75,7 +79,10 @@ class ValidateSelectedArtifactManifestTask(Task):
     def run(self, ctx: ArtifactRegistryContext) -> bool | None:
         if ctx.manifest is None:
             raise ValueError("manifest must be selected before validation")
-        ctx.validation_report = validate_artifact_manifest(ctx.manifest)
+        ctx.validation_report = validate_artifact_manifest(
+            ctx.manifest,
+            canonical_publications_dir=ctx.canonical_publications_dir,
+        )
         ctx.validation_report["path"] = str(ctx.selected_path)
         return True
 
@@ -102,6 +109,7 @@ def resolve_artifact_manifest(
     strategy: str | None = None,
     model_family: str | None = None,
     promotion_status: str | None = None,
+    canonical_publications_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Resolve and validate exactly one artifact manifest from a registry."""
     ctx = ArtifactRegistryContext(
@@ -110,6 +118,7 @@ def resolve_artifact_manifest(
         strategy=strategy,
         model_family=model_family,
         promotion_status=promotion_status,
+        canonical_publications_dir=canonical_publications_dir,
     )
     ArtifactManifestResolverPipeline().run(ctx)
     if ctx.manifest is None:
@@ -117,8 +126,14 @@ def resolve_artifact_manifest(
     return ctx.manifest
 
 
-def load_artifact_manifest(path: str | Path) -> dict[str, Any]:
+def load_artifact_manifest(
+    path: str | Path,
+    *,
+    canonical_publications_dir: Path | None = None,
+) -> dict[str, Any]:
     """Load and validate a single artifact manifest file."""
     manifest = json.loads(Path(path).read_text(encoding="utf-8"))
-    validate_artifact_manifest(manifest)
+    validate_artifact_manifest(
+        manifest, canonical_publications_dir=canonical_publications_dir,
+    )
     return manifest

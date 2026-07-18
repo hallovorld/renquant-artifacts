@@ -5,7 +5,65 @@ from pathlib import Path
 
 import pytest
 
-from renquant_artifacts import load_artifact_manifest, resolve_artifact_manifest
+from renquant_artifacts import (
+    build_canonical_provenance_reference,
+    load_artifact_manifest,
+    register_canonical_publication,
+    resolve_artifact_manifest,
+    write_canonical_run_intent,
+)
+from renquant_artifacts.canonical_registry import (
+    CANONICAL_RUN_INTENT_FILENAME,
+    CANONICAL_CODE_PIN_SUBREPOS,
+)
+
+
+def _pubs_dir(root: Path) -> Path:
+    return root / "registry" / "canonical_publications"
+
+
+def _canonical_provenance_for(root: Path, fingerprint: str) -> dict:
+    """Build (and memoize per-fingerprint within one tmp root) a REAL
+    canonical publication for ``fingerprint``: a real ``run_intent.json``
+    written via ``write_canonical_run_intent`` and registered in a real
+    canonical publication store via ``register_canonical_publication``.
+
+    Codex round-4 review on renquant-artifacts#24 explicitly ordered the
+    previous fixture shape here removed: prod fixtures used to declare
+    ``kind="canonical"`` with a run_intent_path that resolved nowhere and a
+    fabricated self-consistent digest, which demonstrated the exact unsafe
+    acceptance path the boundary must reject. Prod fixtures now only
+    validate because a genuine publication record resolves from the store.
+    """
+    run_dir = root / "canonical_runs" / fingerprint.replace(":", "_")
+    run_intent_path = run_dir / CANONICAL_RUN_INTENT_FILENAME
+    if not run_intent_path.exists():
+        write_canonical_run_intent(
+            run_dir,
+            run_id=f"run-{fingerprint}",
+            run_type="daily_full",
+            producer={
+                "repo": "renquant-orchestrator",
+                "entrypoint": "daily.TrainGbdtArtifactTask",
+            },
+            strategy_manifest_fingerprint="sha256:strategy",
+            data_manifest_fingerprint="sha256:data",
+            strategy_config_digest="sha256:strategyconfig",
+            model_config_digest="sha256:modelconfig",
+            calendar_universe_digest="sha256:universe",
+            as_of="2026-07-18",
+            code_pins={
+                name: {"commit": "0" * 40, "remote": f"https://github.com/hallovorld/{name}"}
+                for name in CANONICAL_CODE_PIN_SUBREPOS.values()
+            },
+        )
+        register_canonical_publication(
+            _pubs_dir(root),
+            run_intent_path=run_intent_path,
+            artifact_digest=fingerprint,
+            artifact_uri=f"object://renquant-artifacts/{fingerprint.replace(':', '_')}.json",
+        )
+    return build_canonical_provenance_reference(run_intent_path, fingerprint)
 
 
 def _write_manifest(path: Path, **overrides) -> dict:
@@ -19,26 +77,19 @@ def _write_manifest(path: Path, **overrides) -> dict:
         "metrics": {"accepted": True, "oos_mean_ic": 0.03},
         "retention_class": "prod",
         # F-7 (renquant-artifacts#24, Codex 2026-07-14 follow-up):
-        # provenance is now a REQUIRED, typed manifest field -- see
+        # provenance is a REQUIRED, typed manifest field -- see
         # renquant_artifacts.experiment_registry.verify_artifact_provenance.
-        # These fixtures represent ordinary, non-experiment artifacts (the
-        # model-factory training path). F-7 canonical follow-up: kind="none"
-        # can no longer be combined with promotion_status="prod" (a real
-        # prod artifact must carry a verified run-intent binding instead),
-        # so these prod fixtures declare kind="canonical" with a
-        # run_intent_path that does not resolve locally -- the residual,
-        # honestly-disclosed "nothing to check" path already established for
-        # kind="none" over an opaque store://object:// identity, exercised
-        # here for kind="canonical" instead. The artifact_digest below MUST
-        # keep matching "fingerprint" for any test that doesn't override it.
-        "provenance": {
-            "kind": "canonical",
-            "run_intent_path": "store://renquant-artifacts/panel-ltr-prod/run_intent.json",
-            "run_intent_digest": "sha256:" + "0" * 64,
-            "artifact_digest": "sha256:artifact",
-        },
+        # F-7 round-4 follow-up: prod manifests must resolve a REAL
+        # publication record from the canonical publication store, so this
+        # fixture registers one (see _canonical_provenance_for) and tests
+        # thread canonical_publications_dir=_pubs_dir(tmp_path) into the
+        # resolve/load calls.
     }
     payload.update(overrides)
+    if "provenance" not in payload:
+        payload["provenance"] = _canonical_provenance_for(
+            path.parent, payload["fingerprint"],
+        )
     path.write_text(json.dumps(payload), encoding="utf-8")
     return payload
 
@@ -58,6 +109,7 @@ def test_resolve_artifact_manifest_selects_prod_by_strategy_and_family(tmp_path:
         strategy="renquant_104",
         model_family="gbdt-panel-ltr",
         promotion_status="prod",
+        canonical_publications_dir=_pubs_dir(tmp_path),
     )
 
     assert resolved == expected
@@ -80,7 +132,12 @@ def test_load_artifact_manifest_validates_file(tmp_path: Path) -> None:
     path = tmp_path / "manifest.json"
     _write_manifest(path)
 
-    assert load_artifact_manifest(path)["artifact_id"] == "panel-ltr-prod"
+    assert (
+        load_artifact_manifest(
+            path, canonical_publications_dir=_pubs_dir(tmp_path)
+        )["artifact_id"]
+        == "panel-ltr-prod"
+    )
 
 
 def test_load_artifact_manifest_rejects_draft_placeholder(tmp_path: Path) -> None:
