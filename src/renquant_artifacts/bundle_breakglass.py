@@ -6,23 +6,32 @@ It performs the same §2.3 protocol as any writer, with:
 * a MANDATORY incident/task reference (``--incident-ref``) recorded in
   ``authorization.source.incident_ref``;
 * ``authorization.tool = "bundle_breakglass"``;
-* an ALWAYS-fired alarm on commit (a break-glass commit is by definition
-  a containment event under the AC3 protocol; the drift-sentinel binding
-  is a later phase — the CLI surfaces the alarm on stderr, library
-  callers inject ``alarm_hook``);
+* an ALWAYS-fired alarm on commit, wired to the REAL drift-sentinel alarm
+  channel (AC4 P0): ``renquant_common.notify.send`` against
+  ``$RQ_ROOT/.env`` — the same canonical ntfy path the orchestrator
+  sentinel (``ops/run_surface_drift_check.py`` via
+  ``ops/liveness_common.py:alert``) delivers on — PLUS the stderr
+  ``ALARM[...]`` record (see :mod:`renquant_artifacts.bundle_alarms`);
 * ``--rollback-to <bundle_id>`` restricted to ancestors reachable via
   ``parent_bundle`` (enforced by the store).
+
+``--store-root`` is optional as of AC4 P0: without it the tool runs
+against the DECLARED real store location
+(:mod:`renquant_artifacts.bundle_store_location` — explicit CLI path >
+``RQ_BUNDLE_STORE_ROOT`` env > the umbrella's
+``deploy/bundle_store_location.json``), and the resolution source is
+echoed in the result JSON.
 
 Usage::
 
     python -m renquant_artifacts.bundle_breakglass \
-        --store-root <root> --incident-ref TASK-62 --operator renhao \
+        --incident-ref TASK-62 --operator renhao \
         --member panel-ltr.alpha158_fund.json=/path/to/panel.json \
         --member panel-rank-calibration.json=/path/to/cal.json \
         --bindings-json /path/to/bindings.json
 
     python -m renquant_artifacts.bundle_breakglass \
-        --store-root <root> --incident-ref TASK-62 --operator renhao \
+        --incident-ref TASK-62 --operator renhao \
         --rollback-to 20260718T031500Z-0123456789abcdef
 """
 from __future__ import annotations
@@ -34,10 +43,12 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping
 
+from .bundle_alarms import create_sentinel_alarm_hook
 from .bundle_schema import BREAKGLASS_TOOL, BUNDLE_MEMBER_NAMES, sha256_hex
 from .bundle_store import BundleStore, BundleStoreError
+from .bundle_store_location import StoreLocationError, resolve_store_root
 
-BREAKGLASS_TOOL_VERSION = "1.0.0"
+BREAKGLASS_TOOL_VERSION = "1.1.0"
 
 
 def build_breakglass_authorization(
@@ -72,7 +83,11 @@ def build_parser() -> argparse.ArgumentParser:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--store-root", required=True, help="bundle store root (…/prod)")
+    parser.add_argument(
+        "--store-root",
+        help="bundle store root (…/prod); default = the declared real "
+        "location (bundle_store_location resolution, echoed in the result)",
+    )
     parser.add_argument(
         "--incident-ref",
         required=True,
@@ -112,13 +127,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    def _alarm(kind: str, payload: dict[str, Any]) -> None:
-        print(
-            f"ALARM[{kind}] {json.dumps(payload, sort_keys=True)}", file=sys.stderr
-        )
-
     try:
-        store = BundleStore(args.store_root, alarm_hook=_alarm)
+        resolved = resolve_store_root(args.store_root)
+        store = BundleStore(resolved.path, alarm_hook=create_sentinel_alarm_hook())
         if args.rollback_to:
             authorization = build_breakglass_authorization(
                 incident_ref=args.incident_ref,
@@ -154,7 +165,12 @@ def main(argv: list[str] | None = None) -> int:
             result = store.publish(
                 members, bindings=bindings, authorization=authorization
             )
-    except (BundleStoreError, OSError, json.JSONDecodeError) as exc:
+    except (
+        BundleStoreError,
+        StoreLocationError,
+        OSError,
+        json.JSONDecodeError,
+    ) as exc:
         print(f"bundle_breakglass: {exc}", file=sys.stderr)
         return 1
 
@@ -164,6 +180,8 @@ def main(argv: list[str] | None = None) -> int:
                 "bundle_id": result.bundle_id,
                 "generation": result.generation,
                 "manifest_digest": result.manifest.manifest_digest,
+                "store_root": str(resolved.path),
+                "store_root_source": resolved.source,
             },
             sort_keys=True,
         )

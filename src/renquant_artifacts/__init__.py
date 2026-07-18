@@ -1,5 +1,11 @@
 """RenQuant artifact-registry package."""
 
+from .bundle_alarms import (
+    ALARM_TITLE_PREFIX,
+    AlarmHook,
+    create_sentinel_alarm_hook,
+    sentinel_env_file,
+)
 from .bundle_breakglass import build_breakglass_authorization
 from .bundle_contract_binding import (
     PairValidator,
@@ -34,6 +40,17 @@ from .bundle_store import (
     ResolvedBundle,
     RollbackTargetError,
 )
+from .bundle_store_init import StoreInitReport, init_store
+from .bundle_store_location import (
+    DECLARATION_RELPATH,
+    DEFAULT_RQ_ROOT,
+    RQ_ROOT_ENV,
+    STORE_ROOT_ENV,
+    ResolvedStoreRoot,
+    StoreLocationError,
+    declaration_path,
+    resolve_store_root,
+)
 from .contracts import (
     ContractResult,
     build_run_bundle,
@@ -59,6 +76,8 @@ from .validation import (
 )
 
 __all__ = [
+    "ALARM_TITLE_PREFIX",
+    "AlarmHook",
     "ArtifactManifestContext",
     "ArtifactManifestResolverPipeline",
     "ArtifactManifestValidationPipeline",
@@ -74,6 +93,8 @@ __all__ = [
     "BundleStoreError",
     "BundleValidationError",
     "ContractResult",
+    "DECLARATION_RELPATH",
+    "DEFAULT_RQ_ROOT",
     "EvidenceBoundPromotionNotImplementedError",
     "GCReport",
     "MemberDigest",
@@ -81,9 +102,14 @@ __all__ = [
     "PairValidator",
     "PairValidatorUnavailableError",
     "PublishResult",
+    "RQ_ROOT_ENV",
     "RecoveryRequiredError",
     "ResolvedBundle",
+    "ResolvedStoreRoot",
     "RollbackTargetError",
+    "STORE_ROOT_ENV",
+    "StoreInitReport",
+    "StoreLocationError",
     "WRITER_CHECKPOINTS",
     "build_breakglass_authorization",
     "build_bundle_manifest",
@@ -92,10 +118,15 @@ __all__ = [
     "compute_manifest_digest",
     "create_default_store",
     "create_pair_validator",
+    "create_sentinel_alarm_hook",
+    "declaration_path",
     "derive_bundle_id",
     "hash_jsonable",
+    "init_store",
     "load_artifact_manifest",
     "resolve_artifact_manifest",
+    "resolve_store_root",
+    "sentinel_env_file",
     "sha256_file",
     "validate_artifact_manifest",
     "validate_bundle_manifest_payload",
