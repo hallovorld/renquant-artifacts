@@ -6,12 +6,9 @@ It performs the same §2.3 protocol as any writer, with:
 * a MANDATORY incident/task reference (``--incident-ref``) recorded in
   ``authorization.source.incident_ref``;
 * ``authorization.tool = "bundle_breakglass"``;
-* an ALWAYS-fired alarm on commit, wired to the REAL drift-sentinel alarm
-  channel (AC4 P0): ``renquant_common.notify.send`` against
-  ``$RQ_ROOT/.env`` — the same canonical ntfy path the orchestrator
-  sentinel (``ops/run_surface_drift_check.py`` via
-  ``ops/liveness_common.py:alert``) delivers on — PLUS the stderr
-  ``ALARM[...]`` record (see :mod:`renquant_artifacts.bundle_alarms`);
+* an ALWAYS-fired structured ``ALARM[...]`` event on commit. An
+  orchestrator-owned adapter routes this event to the drift-sentinel channel;
+  this library deliberately owns no runtime notification configuration;
 * ``--rollback-to <bundle_id>`` restricted to ancestors reachable via
   ``parent_bundle`` (enforced by the store).
 
@@ -43,7 +40,7 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping
 
-from .bundle_alarms import create_sentinel_alarm_hook
+from .bundle_alarms import create_stderr_alarm_hook
 from .bundle_schema import BREAKGLASS_TOOL, BUNDLE_MEMBER_NAMES, sha256_hex
 from .bundle_store import BundleStore, BundleStoreError
 from .bundle_store_location import StoreLocationError, resolve_store_root
@@ -129,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         resolved = resolve_store_root(args.store_root)
-        store = BundleStore(resolved.path, alarm_hook=create_sentinel_alarm_hook())
+        store = BundleStore(resolved.path, alarm_hook=create_stderr_alarm_hook())
         if args.rollback_to:
             authorization = build_breakglass_authorization(
                 incident_ref=args.incident_ref,
