@@ -187,6 +187,12 @@ PROVENANCE_CANONICAL_REQUIRED_KEYS = frozenset(
     {"run_intent_path", "run_intent_digest", "artifact_digest"}
 )
 
+# Production-only bindings.  A diagnostic canonical manifest may describe a
+# pre-publication run; production may not.
+PROVENANCE_CANONICAL_PROD_REQUIRED_KEYS = frozenset(
+    {"registry_snapshot_commit", "publication_record_digest"}
+)
+
 #: Manifest keys that MAY carry a real, locally-resolvable filesystem
 #: reference to the artifact's own on-disk content -- as opposed to an
 #: opaque content-addressed ``store://``/``object://`` URI resolved by
@@ -701,7 +707,7 @@ def _verify_canonical_not_exploratory(manifest: dict[str, Any]) -> None:
 def _verify_canonical_publication_record(
     manifest: dict[str, Any],
     provenance: dict[str, Any],
-    canonical_publications_dir: Path | str | None,
+    canonical_publication_snapshot: Any | None,
 ) -> None:
     """MANDATORY, fail-closed resolution of the authoritative canonical
     publication record for a ``promotion_status="prod"`` manifest -- the
@@ -727,8 +733,21 @@ def _verify_canonical_publication_record(
     """
     from . import canonical_registry
 
-    if canonical_publications_dir is None:
-        canonical_publications_dir = canonical_registry.default_canonical_publications_dir()
+    canonical_publications_dir, snapshot_errors = (
+        canonical_registry.verify_canonical_publication_snapshot(
+            canonical_publication_snapshot,
+        )
+    )
+    if snapshot_errors:
+        raise ValueError(
+            "prod canonical provenance rejected: trusted registry snapshot "
+            f"verification failed: {snapshot_errors}"
+        )
+    if provenance.get("registry_snapshot_commit") != canonical_publication_snapshot.commit:
+        raise ValueError(
+            "prod canonical provenance rejected: manifest registry_snapshot_commit "
+            "does not match the trusted validating snapshot"
+        )
     entry, _record, errors = canonical_registry.resolve_canonical_publication(
         manifest["fingerprint"], canonical_publications_dir,
     )
@@ -747,6 +766,12 @@ def _verify_canonical_publication_record(
             f"({provenance.get('run_intent_digest')!r}) does not match the "
             f"registered publication binding for this artifact "
             f"({registered_digest!r})"
+        )
+    expected_record_digest = canonical_registry.canonical_publication_binding(entry)
+    if provenance.get("publication_record_digest") != expected_record_digest:
+        raise ValueError(
+            "prod canonical provenance rejected: provenance.publication_record_digest "
+            "does not match the trusted registry publication entry"
         )
 
 
@@ -887,17 +912,15 @@ def _verify_none_provenance(manifest: dict[str, Any]) -> None:
 def verify_artifact_provenance(
     manifest: dict[str, Any],
     *,
-    canonical_publications_dir: Path | str | None = None,
+    canonical_publication_snapshot: Any | None = None,
 ) -> None:
     """Require and verify a candidate artifact manifest's lineage record.
 
-    ``canonical_publications_dir`` optionally overrides where the
-    authoritative canonical publication store lives (defaults to this
-    repo's own ``registry/canonical_publications/`` via
-    :func:`renquant_artifacts.canonical_registry.default_canonical_publications_dir`).
-    It is validation-infrastructure configuration supplied by the trusted
-    calling code -- NEVER read from the candidate manifest itself -- and an
-    unresolvable store fails closed for ``promotion_status="prod"``.
+    ``canonical_publication_snapshot`` is a trusted caller-supplied pin to a
+    clean, exact ``renquant-artifacts`` checkout.  Production validation
+    never falls back to an ambient publication directory: the manifest must
+    bind the snapshot commit and publication-entry digest, and the registry
+    files must be tracked by that clean checkout.
 
     This is the F-7 promotion-boundary fix, now covering BOTH of Codex's
     2026-07-14 findings on this same PR:
@@ -1008,13 +1031,19 @@ def verify_artifact_provenance(
             )
         _verify_canonical_not_exploratory(manifest)
         if manifest.get("promotion_status") == "prod":
+            missing_prod = PROVENANCE_CANONICAL_PROD_REQUIRED_KEYS - provenance.keys()
+            if missing_prod:
+                raise ValueError(
+                    "prod canonical provenance missing required registry "
+                    f"bindings: {sorted(missing_prod)}"
+                )
             # The round-4 promotion boundary: MANDATORY, fail-closed
             # resolution of the authoritative publication record from the
             # registry's own canonical publication store. Runs before --
             # and entirely independently of -- any local-path diagnostics
             # below; nothing about local file visibility gates it.
             _verify_canonical_publication_record(
-                manifest, provenance, canonical_publications_dir,
+                manifest, provenance, canonical_publication_snapshot,
             )
         _verify_canonical_run_intent_if_resolvable(provenance)
         return

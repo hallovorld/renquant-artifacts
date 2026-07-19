@@ -174,11 +174,8 @@ class TestWindowOpenToleratesOnlyAbsence:
                 "artifact_digest": "sha256:artifact",
             },
         )
-        empty_store = tmp_path / "registry" / "canonical_publications"
-        with pytest.raises(ValueError):
-            validate_artifact_manifest(
-                manifest, canonical_publications_dir=empty_store,
-            )
+        with pytest.raises(ValueError, match="required registry bindings|trusted registry snapshot"):
+            validate_artifact_manifest(manifest)
 
     def test_verify_artifact_provenance_primitive_stays_strict(
         self, monkeypatch: pytest.MonkeyPatch,

@@ -51,6 +51,7 @@ from .bundle_store_location import (
     resolve_store_root,
 )
 from .canonical_registry import (
+    CanonicalPublicationSnapshot,
     CANONICAL_CODE_PIN_SUBREPOS,
     CANONICAL_PRODUCERS,
     CANONICAL_PUBLICATIONS_DIRNAME,
@@ -59,10 +60,12 @@ from .canonical_registry import (
     CANONICAL_RUN_INTENT_REQUIRED_KEYS,
     CANONICAL_RUN_INTENT_SCHEMA_VERSION,
     build_canonical_provenance_reference,
+    canonical_publication_binding,
     default_canonical_publications_dir,
     register_canonical_publication,
     resolve_canonical_publication,
     verify_canonical_run_intent,
+    verify_canonical_publication_snapshot,
     write_canonical_run_intent,
 )
 from .contracts import (
@@ -128,6 +131,7 @@ __all__ = [
     "BundleStoreError",
     "BundleValidationError",
     "CANONICAL_CODE_PIN_SUBREPOS",
+    "CanonicalPublicationSnapshot",
     "CANONICAL_PRODUCERS",
     "CANONICAL_PUBLICATIONS_DIRNAME",
     "CANONICAL_PUBLICATIONS_INDEX_FILENAME",
@@ -165,6 +169,7 @@ __all__ = [
     "build_breakglass_authorization",
     "build_bundle_manifest",
     "build_canonical_provenance_reference",
+    "canonical_publication_binding",
     "build_experiment_provenance_reference",
     "build_run_bundle",
     "canonical_manifest_bytes",
@@ -196,6 +201,7 @@ __all__ = [
     "verify_artifact_provenance",
     "verify_calendar_universe_pin",
     "verify_canonical_run_intent",
+    "verify_canonical_publication_snapshot",
     "verify_code_pin",
     "verify_data_snapshot_pin",
     "verify_experiment_pins",
