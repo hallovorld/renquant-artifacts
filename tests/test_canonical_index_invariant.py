@@ -22,19 +22,26 @@ no environment/git I/O by design), plus one pinned-checkout acceptance test.
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
+import sys
 import threading
 from pathlib import Path
 
 import pytest
 
 from renquant_artifacts import (
+    CandidatePublication,
     CanonicalPublicationSnapshot,
+    promote_candidate_publication,
     register_canonical_publication,
+    verify_candidate_authorization,
     verify_canonical_index_integrity,
+    verify_index_transition,
     write_canonical_run_intent,
 )
 from renquant_artifacts.canonical_registry import (
+    CANONICAL_PAIR_IDENTITY_KEY,
     CANONICAL_PUBLICATIONS_INDEX_FILENAME,
     CANONICAL_CODE_PIN_SUBREPOS,
     _index_append_only_errors,
@@ -42,6 +49,8 @@ from renquant_artifacts.canonical_registry import (
     resolve_canonical_publication,
 )
 from renquant_common.model_fingerprint import artifact_sha256
+
+_SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
 
 
 def _write_valid_intent(run_dir: Path, run_id: str) -> Path:
@@ -399,3 +408,238 @@ class TestPinnedCheckoutAcceptance:
         assert entry["run_intent_digest"] == artifact_sha256(intent)
         assert record["run_id"] == "run-a"
         assert commit  # a real pinned commit exists
+
+
+# ── cross-commit append-only (the transition verifier + CI guard) ───────────
+
+
+class TestIndexTransition:
+    """`verify_canonical_index_integrity` only sees ONE tree; a PR can delete a
+    historical entry or rewrite self-consistent non-content-addressed metadata
+    (`artifact_uri`/`registered_at`) of an existing entry and still pass it.
+    `verify_index_transition(base, candidate)` closes that by requiring every
+    base entry to survive byte-identically (record file included)."""
+
+    def _base_and_candidate(self, tmp_path):
+        base = tmp_path / "base" / "canonical_publications"
+        cand = tmp_path / "cand" / "canonical_publications"
+        _register(base, tmp_path / "runs" / "a", "run-a", "sha256:artifact-a")
+        # candidate starts as a byte-copy of base (a fresh checkout of the same tree)
+        shutil.copytree(base, cand)
+        return base, cand
+
+    def test_pure_append_is_ok(self, tmp_path):
+        base, cand = self._base_and_candidate(tmp_path)
+        _register(cand, tmp_path / "runs" / "b", "run-b", "sha256:artifact-b")
+        assert verify_index_transition(base, cand) == []
+
+    def test_empty_base_any_candidate_is_ok(self, tmp_path):
+        cand = tmp_path / "cand" / "canonical_publications"
+        _register(cand, tmp_path / "runs" / "a", "run-a", "sha256:artifact-a")
+        assert verify_index_transition(tmp_path / "missing_base", cand) == []
+
+    def test_deletion_of_historical_entry_is_refused(self, tmp_path):
+        base, cand = self._base_and_candidate(tmp_path)
+        # candidate drops the historical entry entirely
+        _write_index(cand, {})
+        errors = verify_index_transition(base, cand)
+        assert any("was deleted from the candidate index" in e for e in errors)
+
+    def test_artifact_uri_mutation_of_existing_entry_is_refused(self, tmp_path):
+        base, cand = self._base_and_candidate(tmp_path)
+        index = _read_index(cand)
+        index["sha256:artifact-a"]["artifact_uri"] = "object://evil/rehomed.bin"
+        _write_index(cand, index)
+        errors = verify_index_transition(base, cand)
+        assert any("was mutated in place" in e for e in errors)
+
+    def test_registered_at_mutation_of_existing_entry_is_refused(self, tmp_path):
+        base, cand = self._base_and_candidate(tmp_path)
+        index = _read_index(cand)
+        index["sha256:artifact-a"]["registered_at"] = "1999-01-01T00:00:00Z"
+        _write_index(cand, index)
+        errors = verify_index_transition(base, cand)
+        assert any("was mutated in place" in e for e in errors)
+
+    def test_record_file_byte_modification_is_refused(self, tmp_path):
+        base, cand = self._base_and_candidate(tmp_path)
+        record_name = _read_index(cand)["sha256:artifact-a"]["record"]
+        (cand / record_name).write_text(json.dumps({"swapped": True}))
+        errors = verify_index_transition(base, cand)
+        assert any("was modified in the candidate" in e for e in errors)
+
+    def test_record_file_deletion_is_refused(self, tmp_path):
+        base, cand = self._base_and_candidate(tmp_path)
+        record_name = _read_index(cand)["sha256:artifact-a"]["record"]
+        (cand / record_name).unlink()
+        errors = verify_index_transition(base, cand)
+        assert any("was deleted from the candidate" in e for e in errors)
+
+    def test_ci_script_exit_codes(self, tmp_path):
+        """The required-CI guard script returns 0 for a pure append and
+        non-zero for a deletion (this is what makes the guard blocking)."""
+        base, cand = self._base_and_candidate(tmp_path)
+        good_cand = tmp_path / "good" / "canonical_publications"
+        shutil.copytree(cand, good_cand)
+        _register(good_cand, tmp_path / "runs" / "b", "run-b", "sha256:artifact-b")
+        ok = subprocess.run(
+            [sys.executable, str(_SCRIPTS_DIR / "verify_canonical_index_transition.py"),
+             "--base", str(base), "--candidate", str(good_cand)],
+            capture_output=True, text=True,
+        )
+        assert ok.returncode == 0, ok.stderr
+
+        _write_index(cand, {})  # deletion
+        bad = subprocess.run(
+            [sys.executable, str(_SCRIPTS_DIR / "verify_canonical_index_transition.py"),
+             "--base", str(base), "--candidate", str(cand)],
+            capture_output=True, text=True,
+        )
+        assert bad.returncode == 1
+        assert "append-only guard FAILED" in bad.stderr
+
+
+# ── candidate -> verified-publisher authorization boundary ──────────────────
+
+
+class TestVerifiedPublisherBoundary:
+    """The candidate (producer, staging) -> verified promotion (publisher,
+    protected live store) boundary is code/CI-testable: only a verified
+    promotion updates the live INDEX, and an unauthorized/forged candidate is
+    rejected without touching the live store."""
+
+    def _candidate(self, tmp_path, run_id, artifact_digest, *, producer=None):
+        staging = tmp_path / "staging" / run_id
+        intent = write_canonical_run_intent(
+            staging,
+            run_id=run_id,
+            run_type="daily_full",
+            producer=producer or {
+                "repo": "renquant-orchestrator",
+                "entrypoint": "daily.TrainGbdtArtifactTask",
+            },
+            strategy_manifest_fingerprint="sha256:strategy",
+            data_manifest_fingerprint="sha256:data",
+            strategy_config_digest="sha256:strategyconfig",
+            model_config_digest="sha256:modelconfig",
+            calendar_universe_digest="sha256:universe",
+            as_of="2026-07-18",
+            code_pins={
+                name: {"commit": "0" * 40, "remote": f"https://github.com/hallovorld/{name}"}
+                for name in CANONICAL_CODE_PIN_SUBREPOS.values()
+            },
+        )
+        return CandidatePublication(
+            run_intent_path=intent,
+            artifact_digest=artifact_digest,
+            artifact_uri=f"object://renquant-artifacts/{artifact_digest.replace(':', '_')}.bin",
+        )
+
+    def test_authorized_candidate_promotes_into_live_index(self, tmp_path):
+        live = tmp_path / "live" / "canonical_publications"
+        cand = self._candidate(tmp_path, "run-a", "sha256:artifact-a")
+        # Before promotion the live store does not carry the candidate.
+        assert not (live / CANONICAL_PUBLICATIONS_INDEX_FILENAME).exists()
+        promote_candidate_publication(live, candidate=cand)
+        index = _read_index(live)
+        assert set(index) == {"sha256:artifact-a"}
+        assert verify_canonical_index_integrity(live) == []
+
+    def test_unauthorized_producer_candidate_is_rejected_without_touching_live(self, tmp_path):
+        live = tmp_path / "live" / "canonical_publications"
+        cand = self._candidate(
+            tmp_path, "run-x", "sha256:artifact-x",
+            producer={"repo": "somewhere-else", "entrypoint": "not.Allowlisted"},
+        )
+        with pytest.raises(ValueError, match="unauthorized canonical publication candidate"):
+            promote_candidate_publication(live, candidate=cand)
+        # The live store is byte-unchanged: no INDEX and no leaked record file.
+        assert not (live / CANONICAL_PUBLICATIONS_INDEX_FILENAME).exists()
+        assert not live.exists() or list(live.glob("*.json")) == []
+
+    def test_forged_candidate_run_intent_is_rejected(self, tmp_path):
+        live = tmp_path / "live" / "canonical_publications"
+        cand = self._candidate(tmp_path, "run-f", "sha256:artifact-f")
+        # Tamper the staging run-intent so it no longer verifies (drop pins).
+        record = json.loads(Path(cand.run_intent_path).read_text())
+        record["code_pins"] = {}
+        Path(cand.run_intent_path).write_text(json.dumps(record))
+        with pytest.raises(ValueError, match="unauthorized canonical publication candidate"):
+            promote_candidate_publication(live, candidate=cand)
+        assert not (live / CANONICAL_PUBLICATIONS_INDEX_FILENAME).exists()
+
+    def test_verify_candidate_authorization_envelope(self, tmp_path):
+        good = self._candidate(tmp_path, "run-ok", "sha256:ok")
+        assert verify_candidate_authorization(good.run_intent_path) == []
+        bad = self._candidate(
+            tmp_path, "run-bad", "sha256:bad",
+            producer={"repo": "nope", "entrypoint": "nope.Task"},
+        )
+        errors = verify_candidate_authorization(bad.run_intent_path)
+        assert any("CANONICAL_PRODUCERS allowlist" in e for e in errors)
+        assert verify_candidate_authorization(tmp_path / "does-not-exist.json") != []
+
+
+# ── additive pair-identity schema field (values arrive with AC4 producer) ───
+
+
+class TestPairIdentitySchema:
+    """The pair-identity schema field (bundle_id + manifest digest + member
+    digests) exists NOW as an optional/nullable entry field so the contract is
+    fixed; the AC4-seal producer hook populates its values later (design §6)."""
+
+    def test_entry_carries_present_nullable_pair_identity_by_default(self, tmp_path):
+        pubs = tmp_path / "pubs"
+        _register(pubs, tmp_path / "runs" / "a", "run-a", "sha256:artifact-a")
+        entry = _read_index(pubs)["sha256:artifact-a"]
+        assert CANONICAL_PAIR_IDENTITY_KEY in entry  # present...
+        assert entry[CANONICAL_PAIR_IDENTITY_KEY] is None  # ...but unpopulated
+
+    def test_valid_pair_identity_is_stored_and_resolves(self, tmp_path):
+        pubs = tmp_path / "pubs"
+        intent = _write_valid_intent(tmp_path / "runs" / "a", "run-a")
+        pair = {
+            "bundle_id": "bundle-2026-07-19",
+            "manifest_digest": "sha256:" + "b" * 64,
+            "member_digests": ["sha256:scorer", "sha256:calibrator"],
+        }
+        register_canonical_publication(
+            pubs, run_intent_path=intent,
+            artifact_digest="sha256:artifact-a",
+            artifact_uri="object://renquant-artifacts/a.bin",
+            pair_identity=pair,
+        )
+        entry, _record, errors = resolve_canonical_publication("sha256:artifact-a", pubs)
+        assert errors == []
+        assert entry[CANONICAL_PAIR_IDENTITY_KEY] == pair
+
+    def test_malformed_pair_identity_is_rejected(self, tmp_path):
+        pubs = tmp_path / "pubs"
+        intent = _write_valid_intent(tmp_path / "runs" / "a", "run-a")
+        with pytest.raises(ValueError, match="malformed pair_identity"):
+            register_canonical_publication(
+                pubs, run_intent_path=intent,
+                artifact_digest="sha256:artifact-a",
+                artifact_uri="object://renquant-artifacts/a.bin",
+                pair_identity={"bundle_id": "", "member_digests": []},
+            )
+
+    def test_rebinding_pair_identity_of_existing_entry_is_refused(self, tmp_path):
+        pubs = tmp_path / "pubs"
+        intent = _write_valid_intent(tmp_path / "runs" / "a", "run-a")
+        register_canonical_publication(
+            pubs, run_intent_path=intent,
+            artifact_digest="sha256:artifact-a",
+            artifact_uri="object://renquant-artifacts/a.bin",
+        )
+        with pytest.raises(ValueError, match="append-only and may not be mutated"):
+            register_canonical_publication(
+                pubs, run_intent_path=intent,
+                artifact_digest="sha256:artifact-a",
+                artifact_uri="object://renquant-artifacts/a.bin",
+                pair_identity={
+                    "bundle_id": "late-bundle",
+                    "manifest_digest": "sha256:" + "c" * 64,
+                    "member_digests": ["sha256:m1"],
+                },
+            )

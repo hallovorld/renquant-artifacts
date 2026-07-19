@@ -480,6 +480,23 @@ def _index_write_lock(publications_dir: Path):
         os.close(dir_fd)
 
 
+def _load_canonical_index(publications_dir: Path) -> tuple[dict[str, Any], list[str]]:
+    """Load a store's ``INDEX.json`` into ``(index, errors)``. An absent index
+    is ``({}, [])`` (nothing published is not a violation); an unreadable /
+    non-object index is ``({}, [<error>])``. One loader shared by the in-tree
+    and cross-commit verifiers (triple-impl-avoidance idiom)."""
+    index_path = publications_dir / CANONICAL_PUBLICATIONS_INDEX_FILENAME
+    if not index_path.exists():
+        return {}, []
+    try:
+        index = json.loads(index_path.read_text())
+    except (json.JSONDecodeError, OSError) as exc:
+        return {}, [f"canonical publication index at {index_path} is unreadable: {exc}"]
+    if not isinstance(index, dict):
+        return {}, [f"canonical publication index at {index_path} is not a JSON object"]
+    return index, []
+
+
 def _index_entry_content_addressed_errors(
     publications_dir: Path, artifact_digest: str, entry: Any,
 ) -> list[str]:
@@ -555,16 +572,7 @@ def verify_canonical_index_integrity(publications_dir: Path | str) -> list[str]:
       append.
     """
     publications_dir = Path(publications_dir)
-    index_path = publications_dir / CANONICAL_PUBLICATIONS_INDEX_FILENAME
-    if not index_path.exists():
-        return []
-    try:
-        index = json.loads(index_path.read_text())
-    except (json.JSONDecodeError, OSError) as exc:
-        return [f"canonical publication index at {index_path} is unreadable: {exc}"]
-    if not isinstance(index, dict):
-        return [f"canonical publication index at {index_path} is not a JSON object"]
-    errors: list[str] = []
+    index, errors = _load_canonical_index(publications_dir)
     for artifact_digest, entry in index.items():
         errors.extend(
             _index_entry_content_addressed_errors(publications_dir, artifact_digest, entry)
@@ -593,12 +601,115 @@ def _index_append_only_errors(
     return errors
 
 
+def verify_index_transition(
+    base_publications_dir: Path | str,
+    candidate_publications_dir: Path | str,
+) -> list[str]:
+    """Cross-COMMIT append-only guard: verify a CANDIDATE store (e.g. a PR-head
+    checkout) only ADDS to a BASE store (e.g. the default-branch / merge-base
+    checkout) and never deletes or in-place-mutates a historical entry.
+
+    This is the guarantee :func:`verify_canonical_index_integrity` and
+    :func:`_index_append_only_errors` structurally cannot give on their own:
+    within a single checkout the "previous" state is already whatever the
+    candidate commit says, so a PR that DELETES a valid historical entry, or
+    mutates self-consistent non-content-addressed metadata
+    (``artifact_uri`` / ``registered_at``) of an existing entry, still passes
+    the in-tree check. Only comparing the candidate against an independent BASE
+    tree catches those.
+
+    Every entry present in the base ``INDEX.json`` MUST survive in the
+    candidate BYTE-IDENTICALLY, and its referenced record file's bytes MUST be
+    unchanged; only pure additions (brand-new ``artifact_digest`` keys) are
+    permitted. Returns one error per violation (``[]`` when the candidate is a
+    clean superset). This is the machine check the required CI job runs against
+    the PR base -- the actual enforcement behind "any commit is verifiable",
+    NOT a human reading a diff.
+    """
+    base_dir = Path(base_publications_dir)
+    cand_dir = Path(candidate_publications_dir)
+    base_index, base_errors = _load_canonical_index(base_dir)
+    cand_index, cand_errors = _load_canonical_index(cand_dir)
+    errors: list[str] = base_errors + cand_errors
+    for key, base_entry in base_index.items():
+        cand_entry = cand_index.get(key)
+        if cand_entry is None:
+            errors.append(
+                f"append-only violation across commits: base canonical entry "
+                f"{key!r} was deleted from the candidate index"
+            )
+            continue
+        if cand_entry != base_entry:
+            errors.append(
+                f"append-only violation across commits: base canonical entry "
+                f"{key!r} was mutated in place in the candidate index"
+            )
+            continue
+        record_name = base_entry.get("record") if isinstance(base_entry, dict) else None
+        if isinstance(record_name, str) and record_name:
+            base_record = base_dir / record_name
+            cand_record = cand_dir / record_name
+            if base_record.exists() and not cand_record.exists():
+                errors.append(
+                    f"append-only violation across commits: record {record_name!r} "
+                    f"for entry {key!r} was deleted from the candidate"
+                )
+            elif (
+                base_record.exists()
+                and cand_record.read_bytes() != base_record.read_bytes()
+            ):
+                errors.append(
+                    f"append-only violation across commits: record {record_name!r} "
+                    f"for entry {key!r} was modified in the candidate"
+                )
+    return errors
+
+
+#: Optional/nullable INDEX-entry field carrying the canonical PAIR identity
+#: (design §2: ``bundle_id`` + manifest digest + member digests). The schema
+#: field exists NOW so the contract is fixed; its VALUES are populated later by
+#: the AC4-seal producer hook (design §6), which is the only point the pair is
+#: atomic. ``None`` until then -- present-but-unpopulated, never absent.
+CANONICAL_PAIR_IDENTITY_KEY = "pair_identity"
+
+
+def _verify_pair_identity_shape(pair_identity: Any) -> list[str]:
+    """Shape check for the OPTIONAL :data:`CANONICAL_PAIR_IDENTITY_KEY`
+    binding. ``None`` is valid (the additive field is present but unpopulated
+    until the AC4-seal producer hook lands). When present it must be a
+    well-formed object: non-empty ``bundle_id`` + ``manifest_digest`` strings
+    and a non-empty list of non-empty ``member_digests`` strings."""
+    if pair_identity is None:
+        return []
+    if not isinstance(pair_identity, dict):
+        return [
+            f"pair_identity must be an object or null, got "
+            f"{type(pair_identity).__name__}"
+        ]
+    errors: list[str] = []
+    for field in ("bundle_id", "manifest_digest"):
+        value = pair_identity.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"pair_identity.{field} must be a non-empty string")
+    members = pair_identity.get("member_digests")
+    if (
+        not isinstance(members, list)
+        or not members
+        or not all(isinstance(m, str) and m.strip() for m in members)
+    ):
+        errors.append(
+            "pair_identity.member_digests must be a non-empty list of non-empty strings"
+        )
+    return errors
+
+
 def register_canonical_publication(
     publications_dir: Path | str,
     *,
     run_intent_path: Path | str,
     artifact_digest: str,
     artifact_uri: str,
+    pair_identity: dict[str, Any] | None = None,
     repo_root: Path | str | None = None,
 ) -> Path:
     """Publisher-side write of the authoritative canonical publication record.
@@ -612,7 +723,17 @@ def register_canonical_publication(
     * a byte-verbatim, content-addressed copy of ``run_intent.json`` at
       ``<run_intent_digest hex>.json``;
     * an ``INDEX.json`` entry keyed by ``artifact_digest`` binding that
-      artifact to this ``run_intent_digest`` + immutable ``artifact_uri``.
+      artifact to this ``run_intent_digest`` + immutable ``artifact_uri`` +
+      the optional :data:`CANONICAL_PAIR_IDENTITY_KEY` pair binding.
+
+    ``pair_identity`` is the ADDITIVE, forward-declared schema field for the
+    canonical pair identity (design §2: ``bundle_id`` + manifest digest +
+    member digests). It is ``None`` today -- present-but-unpopulated -- because
+    those values only exist once the AC4-seal producer hook lands (design §6);
+    the field is written NOW so the entry schema is fixed and the producer only
+    populates it later. Its shape is validated (:func:`_verify_pair_identity_shape`)
+    and, once written, it is covered by the same append-only invariant as the
+    rest of the entry (it may never be mutated in place).
 
     Fail-closed publisher gates:
 
@@ -664,6 +785,12 @@ def register_canonical_publication(
             f"verification (the store never accepts an unverifiable record): "
             f"{intrinsic_errors}"
         )
+    pair_identity_errors = _verify_pair_identity_shape(pair_identity)
+    if pair_identity_errors:
+        raise ValueError(
+            f"cannot publish canonical publication: malformed pair_identity: "
+            f"{pair_identity_errors}"
+        )
     if repo_root is not None:
         env_errors = verify_canonical_run_intent(run_intent_path, repo_root=repo_root)
         if env_errors:
@@ -714,6 +841,18 @@ def register_canonical_publication(
                     "publication is append-only and may never be rebound to a "
                     f"different run-intent record ({run_intent_digest})"
                 )
+            # Same run-intent: a replay is idempotent ONLY when the stable
+            # metadata also matches. A re-registration that changes artifact_uri
+            # or pair_identity is an in-place mutation of an existing entry and
+            # is refused (append-only), not silently accepted or overwritten.
+            if existing.get("artifact_uri") != artifact_uri or existing.get(
+                CANONICAL_PAIR_IDENTITY_KEY
+            ) != pair_identity:
+                raise ValueError(
+                    f"canonical publication for artifact {artifact_digest} already "
+                    "exists; its metadata (artifact_uri / pair_identity) is "
+                    "append-only and may not be mutated by re-registration"
+                )
             return index_path  # idempotent re-registration of the identical binding
 
         next_index = dict(index)
@@ -721,6 +860,7 @@ def register_canonical_publication(
             "run_intent_digest": run_intent_digest,
             "record": record_name,
             "artifact_uri": artifact_uri,
+            CANONICAL_PAIR_IDENTITY_KEY: pair_identity,
             "registered_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         append_only_errors = _index_append_only_errors(index, next_index)
@@ -732,6 +872,99 @@ def register_canonical_publication(
         tmp.write_text(json.dumps(next_index, indent=2, sort_keys=True) + "\n")
         tmp.rename(index_path)
         return index_path
+
+
+# ---------------------------------------------------------------------------
+# Candidate -> verified-publisher promotion boundary (F-7 #517 §5)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class CandidatePublication:
+    """A producer-principal-proposed canonical publication awaiting verified
+    promotion.
+
+    F-7's three-principal flow (issue #31 / design §2 REGISTERED state): the
+    orchestrator PRODUCER prepares a candidate (writes its ``run_intent.json``
+    to a STAGING path it owns and proposes an artifact binding); the VERIFIED
+    PUBLISHER promotes it into the protected live registry; the OPERATOR
+    separately deploys. A candidate is inert DATA -- constructing one grants no
+    authority. Only :func:`promote_candidate_publication` may move it into the
+    live ``INDEX.json``, and only after re-verifying producer authorization +
+    provenance + the store invariant.
+
+    On the live registry, "the default branch has no direct producer write
+    path" is enforced by deployment config (GitHub branch protection +
+    CODEOWNERS: a producer cannot push to ``main``; a publication lands only as
+    a reviewed commit). This dataclass + :func:`promote_candidate_publication`
+    are the code/CI-testable half of that same boundary -- the part that can be
+    unit-tested here, independent of the repo's branch-protection settings.
+    """
+
+    run_intent_path: Path | str
+    artifact_digest: str
+    artifact_uri: str
+    pair_identity: dict[str, Any] | None = None
+
+
+def verify_candidate_authorization(run_intent_path: Path | str) -> list[str]:
+    """The provenance/authorization envelope the verified publisher checks
+    BEFORE promoting a producer candidate into the live registry.
+
+    Returns ``[]`` iff the candidate's ``run_intent.json`` parses, carries the
+    ``canonical-run-intent`` schema, names a :data:`CANONICAL_PRODUCERS`
+    allow-listed producer principal, and carries well-formed pins + non-empty
+    evidence (:func:`_verify_run_intent_intrinsic`). A non-empty return is an
+    UNAUTHORIZED candidate the publisher must refuse.
+
+    The producer field lives inside the content-addressed run-intent record, so
+    it cannot be swapped without changing the ``run_intent_digest`` the
+    publication binds -- authorization is bound to the record's identity, not to
+    a mutable side-channel claim.
+    """
+    run_intent_path = Path(run_intent_path)
+    if not run_intent_path.exists():
+        return [f"candidate run_intent.json not found at {run_intent_path}"]
+    try:
+        record = json.loads(run_intent_path.read_text())
+    except (json.JSONDecodeError, OSError) as exc:
+        return [f"candidate run_intent.json at {run_intent_path} is unparsable: {exc}"]
+    return _verify_run_intent_intrinsic(record, str(run_intent_path))
+
+
+def promote_candidate_publication(
+    publications_dir: Path | str,
+    *,
+    candidate: CandidatePublication,
+    repo_root: Path | str | None = None,
+) -> Path:
+    """Verified-publisher boundary: promote a producer-proposed candidate into
+    the protected live registry (F-7 #517 §5).
+
+    This is the ONLY code path that turns a candidate into a live publication.
+    Authorization is checked FIRST (:func:`verify_candidate_authorization`): an
+    unauthorized/forged candidate -- a producer not in
+    :data:`CANONICAL_PRODUCERS`, or a tampered/unparsable run-intent -- raises
+    and the live store is left byte-unchanged (the authorization check reads
+    only the staging candidate; nothing is written to the live registry). Only
+    an authorized candidate proceeds to :func:`register_canonical_publication`,
+    which re-runs the full provenance + content-address + append-only + whole-
+    index invariant enforcement before the live ``INDEX.json`` is touched.
+    """
+    auth_errors = verify_candidate_authorization(candidate.run_intent_path)
+    if auth_errors:
+        raise ValueError(
+            "refusing to promote an unauthorized canonical publication candidate "
+            f"(verified-publisher authorization gate): {auth_errors}"
+        )
+    return register_canonical_publication(
+        publications_dir,
+        run_intent_path=candidate.run_intent_path,
+        artifact_digest=candidate.artifact_digest,
+        artifact_uri=candidate.artifact_uri,
+        pair_identity=candidate.pair_identity,
+        repo_root=repo_root,
+    )
 
 
 def resolve_canonical_publication(
