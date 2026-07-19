@@ -25,7 +25,6 @@ from renquant_artifacts import (
     build_canonical_provenance_reference,
     build_experiment_provenance_reference,
     load_artifact_manifest,
-    register_canonical_publication,
     reject_exploratory_promotion,
     resolve_artifact_manifest,
     resolve_canonical_publication,
@@ -44,6 +43,10 @@ from renquant_artifacts import (
 from renquant_artifacts.canonical_registry import (
     CANONICAL_PUBLICATIONS_INDEX_FILENAME,
     _record_filename,
+    # White-box: the raw live-store writer is module-private (only
+    # promote_candidate_publication may reach it in production). These
+    # registry-primitive tests exercise it directly by design.
+    _register_canonical_publication as register_canonical_publication,
     canonical_publication_binding,
 )
 from renquant_common.model_fingerprint import artifact_sha256

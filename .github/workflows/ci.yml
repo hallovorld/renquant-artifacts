@@ -43,9 +43,15 @@ jobs:
       - name: Canonical INDEX append-only guard (candidate vs PR base)
         if: github.event_name == 'pull_request'
         working-directory: renquant-artifacts
+        env:
+          # FIXED base commit recorded at the PR event, NOT the moving base
+          # branch tip: re-fetching the base branch could grab a later main
+          # between the PR event and this job run and cause non-reproducible
+          # false rejections. This sha is reachable because the checkout used
+          # fetch-depth: 0.
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}"
-          git worktree add ../artifacts-base FETCH_HEAD
+          git worktree add ../artifacts-base "$BASE_SHA"
           python scripts/verify_canonical_index_transition.py \
             --base ../artifacts-base/registry/canonical_publications \
             --candidate registry/canonical_publications

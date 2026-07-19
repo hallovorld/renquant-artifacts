@@ -30,11 +30,12 @@ from pathlib import Path
 
 import pytest
 
+import renquant_artifacts
+
 from renquant_artifacts import (
     CandidatePublication,
     CanonicalPublicationSnapshot,
     promote_candidate_publication,
-    register_canonical_publication,
     verify_candidate_authorization,
     verify_canonical_index_integrity,
     verify_index_transition,
@@ -46,6 +47,10 @@ from renquant_artifacts.canonical_registry import (
     CANONICAL_CODE_PIN_SUBREPOS,
     _index_append_only_errors,
     _record_filename,
+    # White-box: the raw live-store writer is module-private; production writes
+    # go through promote_candidate_publication. Invariant-primitive fixtures
+    # seed the store directly by design.
+    _register_canonical_publication as register_canonical_publication,
     resolve_canonical_publication,
 )
 from renquant_common.model_fingerprint import artifact_sha256
@@ -643,3 +648,50 @@ class TestPairIdentitySchema:
                     "member_digests": ["sha256:m1"],
                 },
             )
+
+
+# ── the raw writer is not a public bypass of the verified-publisher gate ────
+
+
+def test_no_public_direct_live_store_write_path():
+    """The raw live-store writer is module-private: the public package exposes
+    NO direct-registration write path, so a caller cannot bypass the
+    verified-publisher authorization gate. The only public write entrypoint is
+    promote_candidate_publication."""
+    assert not hasattr(renquant_artifacts, "register_canonical_publication")
+    assert "register_canonical_publication" not in renquant_artifacts.__all__
+    assert hasattr(renquant_artifacts, "promote_candidate_publication")
+    assert "promote_candidate_publication" in renquant_artifacts.__all__
+    # The primitive still exists, but only as a module-private symbol reached
+    # via promote (or explicitly by white-box tests).
+    from renquant_artifacts import canonical_registry
+    assert hasattr(canonical_registry, "_register_canonical_publication")
+    assert not hasattr(canonical_registry, "register_canonical_publication")
+
+
+# ── CI append-only guard config: FIXED base commit, no drift ────────────────
+
+
+class TestCiAppendOnlyGuardConfig:
+    """Point-2 guard: the transition-verifier CI step MUST pin the base to the
+    PR event's recorded base SHA, never re-fetch the moving base branch tip
+    (which could grab a later `main` between the PR event and the job run and
+    cause non-reproducible false rejections)."""
+
+    def _ci_text(self) -> str:
+        ci = Path(__file__).resolve().parent.parent / ".github" / "workflows" / "ci.yml"
+        return ci.read_text()
+
+    def test_guard_step_present_and_uses_fixed_base_sha(self):
+        text = self._ci_text()
+        assert "verify_canonical_index_transition.py" in text
+        assert "github.event.pull_request.base.sha" in text
+        assert 'git worktree add ../artifacts-base "$BASE_SHA"' in text
+
+    def test_guard_does_not_worktree_a_drifting_ref(self):
+        text = self._ci_text()
+        # never build the base worktree from a re-fetched moving ref/tip
+        assert "FETCH_HEAD" not in text
+        assert "base.ref" not in text
+        # full history is fetched so the fixed base.sha is reachable
+        assert "fetch-depth: 0" in text

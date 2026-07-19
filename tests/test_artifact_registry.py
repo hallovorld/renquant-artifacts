@@ -10,13 +10,16 @@ from renquant_artifacts import (
     CanonicalPublicationSnapshot,
     build_canonical_provenance_reference,
     load_artifact_manifest,
-    register_canonical_publication,
     resolve_artifact_manifest,
     write_canonical_run_intent,
 )
 from renquant_artifacts.canonical_registry import (
     CANONICAL_RUN_INTENT_FILENAME,
     CANONICAL_CODE_PIN_SUBREPOS,
+    # White-box: the raw live-store writer is module-private (production
+    # writes go through promote_candidate_publication). This fixture helper
+    # seeds a store directly by design.
+    _register_canonical_publication as register_canonical_publication,
     canonical_publication_binding,
     resolve_canonical_publication,
 )

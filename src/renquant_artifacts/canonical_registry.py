@@ -566,7 +566,8 @@ def verify_canonical_index_integrity(publications_dir: Path | str) -> list[str]:
     * CI / a pre-commit hook runs it over the committed registry, so any
       non-append mutation of an existing entry is caught at review time (this
       is what makes "any commit is machine-verifiable" true).
-    * :func:`register_canonical_publication` runs it as a FAIL-CLOSED
+    * :func:`_register_canonical_publication` (reached via
+      :func:`promote_candidate_publication`) runs it as a FAIL-CLOSED
       precondition before it ever appends, so a store that is already
       corrupt/tampered is never laundered forward by a subsequent legitimate
       append.
@@ -703,7 +704,7 @@ def _verify_pair_identity_shape(pair_identity: Any) -> list[str]:
     return errors
 
 
-def register_canonical_publication(
+def _register_canonical_publication(
     publications_dir: Path | str,
     *,
     run_intent_path: Path | str,
@@ -712,7 +713,17 @@ def register_canonical_publication(
     pair_identity: dict[str, Any] | None = None,
     repo_root: Path | str | None = None,
 ) -> Path:
-    """Publisher-side write of the authoritative canonical publication record.
+    """INTERNAL live-store write primitive -- NOT a public API.
+
+    This is deliberately module-private: the ONLY supported way to add a
+    canonical publication is :func:`promote_candidate_publication` (the
+    verified-publisher gate), which calls this after
+    :func:`verify_candidate_authorization`. Keeping the raw writer public would
+    make "promote is the only path" false -- a caller could bypass the
+    authorization boundary and write the live store directly. The public
+    package (``renquant_artifacts``) therefore exports only
+    ``promote_candidate_publication``; this primitive is reachable only from
+    within this module and from white-box tests that import it explicitly.
 
     Called by the trusted publication workflow (NOT by manifest consumers,
     and never driven by fields read from a candidate manifest): it derives
@@ -917,10 +928,17 @@ def verify_candidate_authorization(run_intent_path: Path | str) -> list[str]:
     evidence (:func:`_verify_run_intent_intrinsic`). A non-empty return is an
     UNAUTHORIZED candidate the publisher must refuse.
 
-    The producer field lives inside the content-addressed run-intent record, so
-    it cannot be swapped without changing the ``run_intent_digest`` the
-    publication binds -- authorization is bound to the record's identity, not to
-    a mutable side-channel claim.
+    SCOPE / KNOWN LIMITATION (deliberately honest -- do not overclaim): the
+    ``producer`` field checked here is SELF-REPORTED by the candidate. The
+    content-address binds that claim to the record's identity (it cannot be
+    changed without changing the ``run_intent_digest`` the publication binds),
+    but it does NOT prove WHO actually produced or committed the candidate -- an
+    attacker who writes an allow-listed producer NAME into a fabricated
+    run-intent still passes this check. Establishing real producer AUTHENTICITY
+    (a cryptographic signature / GitHub workflow-identity attestation + an
+    immutable intake reference) is a separate, substantial mechanism tracked as
+    a follow-up (renquant-artifacts#33); it is NOT delivered here. This function
+    is the allow-list + shape gate, not a proof of origin.
     """
     run_intent_path = Path(run_intent_path)
     if not run_intent_path.exists():
@@ -941,15 +959,21 @@ def promote_candidate_publication(
     """Verified-publisher boundary: promote a producer-proposed candidate into
     the protected live registry (F-7 #517 §5).
 
-    This is the ONLY code path that turns a candidate into a live publication.
+    This is the ONLY public code path that turns a candidate into a live
+    publication -- the raw writer :func:`_register_canonical_publication` is
+    module-private precisely so this authorization gate cannot be bypassed.
     Authorization is checked FIRST (:func:`verify_candidate_authorization`): an
     unauthorized/forged candidate -- a producer not in
     :data:`CANONICAL_PRODUCERS`, or a tampered/unparsable run-intent -- raises
     and the live store is left byte-unchanged (the authorization check reads
     only the staging candidate; nothing is written to the live registry). Only
-    an authorized candidate proceeds to :func:`register_canonical_publication`,
+    an authorized candidate proceeds to :func:`_register_canonical_publication`,
     which re-runs the full provenance + content-address + append-only + whole-
     index invariant enforcement before the live ``INDEX.json`` is touched.
+
+    Note the allow-list checked here is a SELF-REPORTED producer field, not a
+    proof of origin -- see :func:`verify_candidate_authorization` for the
+    authenticity limitation and its follow-up (renquant-artifacts#33).
     """
     auth_errors = verify_candidate_authorization(candidate.run_intent_path)
     if auth_errors:
@@ -957,7 +981,7 @@ def promote_candidate_publication(
             "refusing to promote an unauthorized canonical publication candidate "
             f"(verified-publisher authorization gate): {auth_errors}"
         )
-    return register_canonical_publication(
+    return _register_canonical_publication(
         publications_dir,
         run_intent_path=candidate.run_intent_path,
         artifact_digest=candidate.artifact_digest,
@@ -996,7 +1020,7 @@ def resolve_canonical_publication(
     condition that decides whether canonical evidence is checked (Codex
     round-4, requirement 4). Environment re-verification is layered
     separately where checkouts exist (:func:`verify_canonical_run_intent`
-    at publication time via ``register_canonical_publication(repo_root=...)``,
+    at publication time via ``promote_candidate_publication(repo_root=...)``,
     and the supplemental local diagnostics at validation time).
     """
     if publications_dir is None:
