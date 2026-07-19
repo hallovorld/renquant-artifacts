@@ -9,5 +9,6 @@
     "accepted": false,
     "oos_mean_ic": 0.0
   },
-  "retention_class": "fixture"
+  "retention_class": "fixture",
+  "provenance": {"kind": "none"}
 }

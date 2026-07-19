@@ -1,16 +1,50 @@
 """Artifact-manifest validation pipeline."""
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from renquant_common import Job, Pipeline, Task
+
+from .experiment_registry import provenance_required, verify_artifact_provenance
+
+#: FutureWarning emitted (instead of raising) when a manifest with NO
+#: ``provenance`` key validates through the standard funnel while the F-7
+#: enforcement window is still open -- see
+#: ``experiment_registry.PROVENANCE_REQUIRED_AFTER`` for the window contract.
+_MISSING_PROVENANCE_WARNING = (
+    "artifact manifest has no 'provenance' record. The F-7 provenance "
+    "contract (renquant-artifacts#24) makes this REQUIRED once the "
+    "sequenced consumer migrations land -- renquant-model#55 and "
+    "renquant-orchestrator#518 are the migrations that close this "
+    "tolerance window by stamping/threading provenance on every consumer "
+    "manifest. Until then a provenance-less (pre-F-7) manifest validates "
+    "with this warning only; on/after PROVENANCE_REQUIRED_AFTER "
+    "(2026-08-15), or earlier with RQ_REQUIRE_PROVENANCE=1 / "
+    "require_provenance=True, it fails closed with ValueError. Manifests "
+    "that DO carry a provenance record are always fully verified, "
+    "window or no window."
+)
 
 
 @dataclass
 class ArtifactManifestContext:
     manifest: dict[str, Any]
     validation_report: dict[str, Any] = field(default_factory=dict)
+    #: Optional override for where the authoritative canonical publication
+    #: store lives (defaults to this repo's registry/canonical_publications
+    #: -- see renquant_artifacts.canonical_registry). Supplied by the
+    #: trusted validating caller only; NEVER read from the manifest.
+    canonical_publications_dir: Path | None = None
+    #: Trusted-caller opt-in that closes the F-7 provenance tolerance
+    #: window for THIS validation regardless of date/environment (it can
+    #: only strengthen enforcement, never weaken it -- once
+    #: ``provenance_required()`` is True, False here is ignored). This is
+    #: the per-callsite hook the sequenced consumer migrations
+    #: (renquant-model#55, renquant-orchestrator#518) flip as they land.
+    require_provenance: bool = False
 
 
 class ValidateArtifactManifestTask(Task):
@@ -37,6 +71,75 @@ class ValidateArtifactManifestTask(Task):
             raise ValueError("prod artifact must have accepted=true metrics")
         if ctx.manifest["uri"].startswith("/Users/"):
             raise ValueError("artifact uri must not be developer-local absolute path")
+
+        # F-7 promotion-boundary enforcement (Codex review 2026-07-14 on
+        # RenQuant#471 / renquant-artifacts#24). Round 1 wired
+        # reject_exploratory_promotion() in here conditionally on a
+        # caller-supplied ``provenance_dir`` string -- Codex's follow-up
+        # review correctly flagged that as still bypassable: "provenance is
+        # optional and self-declared... An experiment-derived result can
+        # therefore be promoted simply by omitting provenance_dir." A local
+        # filesystem path is also not durable provenance for a registry
+        # artifact on its own.
+        #
+        # provenance is now a REQUIRED, typed lineage record (see
+        # verify_artifact_provenance / PROVENANCE_KINDS) resolved
+        # deterministically for EVERY candidate manifest -- there is no
+        # longer a code path where a manifest validates successfully
+        # without an explicit provenance/exploratory-status determination
+        # being made. Every real caller across the multirepo funnels
+        # through this one function --
+        # renquant_pipeline.inference.ValidateRuntimeInputsTask (live/
+        # shadow/sim runtime) and
+        # renquant_artifacts.registry.{load,resolve}_artifact_manifest
+        # (registry resolution) -- so wiring the check here makes the
+        # EXPLORATORY_ONLY marker real enforcement instead of an inert log
+        # line nothing consumes.
+        #
+        # Round-3 follow-up (Codex, same PR): "provenance.kind='none'
+        # remains a direct bypass of the experiment gate... an artifact
+        # built from a registered experiment can set {'kind': 'none'} and
+        # verify_artifact_provenance() returns immediately." Fixed by
+        # passing the FULL manifest (not just ctx.manifest["provenance"])
+        # so kind="none" can be independently checked against the
+        # manifest's own on-disk identity fields -- see
+        # verify_artifact_provenance / _verify_none_provenance.
+        #
+        # Round-4 follow-up (Codex, 2026-07-17): for
+        # promotion_status='prod' + kind='canonical', the authoritative,
+        # producer-written publication record must resolve from the
+        # registry's canonical publication store and verify -- local file
+        # visibility never decides whether canonical evidence is checked.
+        # See _verify_canonical_publication_record.
+        #
+        # Enforcement-window follow-up (2026-07-18): #24's own review
+        # ordering sequenced the consumer migrations (renquant-model#55,
+        # renquant-orchestrator#518) AFTER this contract change, but the
+        # required-provenance raise landed unconditionally -- a flag-day
+        # break of every consumer repo's CI on any fresh run (backtesting
+        # 2 tests, model 4, orchestrator 26). The requirement is therefore
+        # GOVERNED here, mirroring the umbrella resolver's
+        # ARTIFACT_DIGEST_REQUIRED_AFTER precedent: while the window is
+        # open (see experiment_registry.PROVENANCE_REQUIRED_AFTER /
+        # provenance_required), a manifest with NO provenance key at all
+        # -- the pre-F-7 legacy shape -- validates with a FutureWarning
+        # instead of raising. Everything else stays strict: a PRESENT
+        # provenance record (even a malformed one) is always fully
+        # verified, verify_artifact_provenance itself is unchanged for
+        # direct callers, and the #24 canonical-publication paths keep
+        # unconditional enforcement (new surfaces, no legacy callers).
+        if (
+            "provenance" in ctx.manifest
+            or ctx.require_provenance
+            or provenance_required()
+        ):
+            verify_artifact_provenance(
+                ctx.manifest,
+                canonical_publications_dir=ctx.canonical_publications_dir,
+            )
+        else:
+            warnings.warn(_MISSING_PROVENANCE_WARNING, FutureWarning, stacklevel=2)
+
         ctx.validation_report = {
             "artifact_id": ctx.manifest["artifact_id"],
             "fingerprint": ctx.manifest["fingerprint"],
@@ -56,9 +159,23 @@ class ArtifactManifestValidationPipeline(Pipeline):
         super().__init__([ArtifactManifestValidationJob()], name="artifact-manifest-validation")
 
 
-def validate_artifact_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
-    """Validate an artifact manifest and return its audit report."""
-    ctx = ArtifactManifestContext(manifest)
+def validate_artifact_manifest(
+    manifest: dict[str, Any],
+    *,
+    canonical_publications_dir: Path | None = None,
+    require_provenance: bool = False,
+) -> dict[str, Any]:
+    """Validate an artifact manifest and return its audit report.
+
+    ``require_provenance=True`` closes the F-7 provenance tolerance window
+    for this call (see :class:`ArtifactManifestContext`); it can only
+    strengthen enforcement, never weaken it.
+    """
+    ctx = ArtifactManifestContext(
+        manifest,
+        canonical_publications_dir=canonical_publications_dir,
+        require_provenance=require_provenance,
+    )
     ArtifactManifestValidationPipeline().run(ctx)
     return ctx.validation_report
 
